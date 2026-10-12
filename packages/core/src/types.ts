@@ -105,6 +105,16 @@ export const ItemSchema = z.object({
   official: OfficialStateSchema.nullable(),
   /** Residents contradicting an official "resolved". */
   disagreeing: z.number().int().nonnegative().optional(),
+  /**
+   * When the daily digest carried this item to the Prefeitura (enviadoEm, ISO). Null while it waits
+   * for the next digest; absent on fixtures, whose dates are derived from `days`.
+   */
+  sentAt: z.string().nullable().optional(),
+  /**
+   * The Prefeitura's protocol (protocoladoEm), when one came back: evidence of receipt and the
+   * reference for the legal deadline. It never restarts the public clock (DECISIONS, rounds 5 and 18).
+   */
+  protocol: z.object({ number: z.string(), at: z.string() }).nullable().optional(),
   events: z.array(ItemEventSchema).optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;

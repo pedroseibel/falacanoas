@@ -135,7 +135,44 @@ export const digestDay = (now: Date, muni: Pick<Municipality, "timezone" | "dige
 
 /** Posted but not yet sent in a digest: the public clock hasn't started. */
 export const awaitingDigest = (it: Item) =>
-  Boolean(it.events?.length) && !it.events?.some((e) => e.kind === "sent_to_authority");
+  it.sentAt === null || (Boolean(it.events?.length) && !it.events?.some((e) => e.kind === "sent_to_authority"));
+
+const DAY_MS = 864e5;
+
+/**
+ * The Ouvidoria's legal deadline (Lei 13.460, art. 16): 30 days from receipt, extendable once by
+ * another 30 with justification. Counted from the protocol, separately from the public clock.
+ */
+export function legalDeadline(protocolAt: Date, now: Date, days = 30) {
+  const due = new Date(protocolAt.getTime() + days * DAY_MS);
+  const extendedDue = new Date(protocolAt.getTime() + 2 * days * DAY_MS);
+  const daysLeft = Math.ceil((due.getTime() - now.getTime()) / DAY_MS);
+  return { due, extendedDue, daysLeft, overdue: daysLeft < 0 };
+}
+
+/** A confirmation must come from a phone verified at least this long ago (DECISIONS round 18, Q17). */
+export const CONFIRMATION_MIN_HOURS = 72;
+
+export type ConfirmationStatus = "counts" | "already" | "too-new";
+
+/**
+ * Whether a neighbour's confirmation counts as independent: a different account (the author is
+ * recorded as having confirmed already), one per account, and a phone verified ≥72 h ago, counted
+ * from the verification, not from when the account or session was created.
+ */
+export function confirmationStatus({
+  alreadyConfirmed,
+  phoneVerifiedAt,
+  now,
+}: {
+  alreadyConfirmed: boolean;
+  phoneVerifiedAt: Date | null;
+  now: Date;
+}): ConfirmationStatus {
+  if (alreadyConfirmed) return "already";
+  if (!phoneVerifiedAt || now.getTime() - phoneVerifiedAt.getTime() < CONFIRMATION_MIN_HOURS * 36e5) return "too-new";
+  return "counts";
+}
 
 function scopeOf(v: ReportFields, at: LngLat | null): Scope {
   if (v.kind === "public_issue" && v.reach === "municipality") return { type: "municipality" };
@@ -186,6 +223,8 @@ export function itemFromReport(v: ReportFields, muni: Municipality, ctx: ReportC
     author: anonymous ? null : ctx.nick,
     community: "reported",
     official: null,
+    sentAt: null,
+    protocol: null,
     events: [
       {
         at: stamp,

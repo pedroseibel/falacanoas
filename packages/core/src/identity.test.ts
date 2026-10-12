@@ -1,5 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { NickSchema, initials, isBrazilianMobileE164, maskedPhone, suggestNicks, toE164BR } from "./identity";
+import {
+  NickSchema,
+  initials,
+  isBrazilianMobileE164,
+  maskedPhone,
+  nickAvailable,
+  nickKey,
+  suggestNicks,
+  toE164BR,
+} from "./identity";
 
 describe("toE164BR", () => {
   test("accepts the common ways a number is typed", () => {
@@ -49,4 +58,39 @@ test("suggestNicks returns distinct, valid apelidos", () => {
 test("initials skip short joining words", () => {
   expect(initials("garça-do-sinos")).toBe("GS");
   expect(initials("quero-quero-da-praça")).toBe("QQ");
+});
+
+describe("apelido reservation", () => {
+  const day = 864e5;
+  const now = 1_000 * day;
+  test("accents, hyphens and look-alikes collide", () => {
+    expect(nickKey("garça-do-sinos")).toBe(nickKey("garca-d0-sinos"));
+    expect(nickKey("garça-do-sinos")).toBe(nickKey("GARCADOSINOS"));
+    expect(nickKey("sabiá-1")).toBe(nickKey("sabia-l"));
+    expect(nickKey("garça-do-sinos")).not.toBe(nickKey("garça-do-ipê"));
+  });
+  test("free names and your own are available", () => {
+    expect(nickAvailable(undefined, "a", now)).toBeTrue();
+    expect(nickAvailable({ ownerId: "a", lastOwnerId: "a", published: true, releasedAt: null }, "a", now)).toBeTrue();
+  });
+  test("a name held by another account is not", () =>
+    expect(
+      nickAvailable({ ownerId: "b", lastOwnerId: "b", published: false, releasedAt: null }, "a", now),
+    ).toBeFalse());
+  test("a released name that signed something is never reused", () =>
+    expect(
+      nickAvailable({ ownerId: null, lastOwnerId: "b", published: true, releasedAt: now - 9000 * day }, "a", now),
+    ).toBeFalse());
+  test("an unpublished name is held for 90 days", () => {
+    const r = (daysAgo: number) => ({
+      ownerId: null,
+      lastOwnerId: "b",
+      published: false,
+      releasedAt: now - daysAgo * day,
+    });
+    expect(nickAvailable(r(89), "a", now)).toBeFalse();
+    expect(nickAvailable(r(90), "a", now)).toBeTrue();
+  });
+  test("its last owner can take it back", () =>
+    expect(nickAvailable({ ownerId: null, lastOwnerId: "a", published: true, releasedAt: now }, "a", now)).toBeTrue());
 });

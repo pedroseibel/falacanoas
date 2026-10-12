@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   awaitingDigest,
+  confirmationStatus,
   confirmItem,
   digestDay,
   findDuplicate,
   itemFromReport,
+  legalDeadline,
   newItemId,
   reportSchema,
   reportTitle,
@@ -238,4 +240,44 @@ describe("confirmItem", () => {
     expect(confirmItem(base, muni, { ...ctx, counts: false }).confirmations).toBe(2);
     expect(confirmItem(base, muni, { ...ctx, counts: false, photos: [] })).toBe(base);
   });
+});
+
+describe("legalDeadline", () => {
+  const at = new Date("2026-09-11T13:02:00Z");
+  test("30 days from the protocol, extendable once by 30", () => {
+    const d = legalDeadline(at, new Date("2026-09-20T12:00:00Z"));
+    expect(d.due.toISOString()).toBe("2026-10-11T13:02:00.000Z");
+    expect(d.extendedDue.toISOString()).toBe("2026-11-10T13:02:00.000Z");
+    expect(d.daysLeft).toBe(22);
+    expect(d.overdue).toBeFalse();
+  });
+  test("past the date it is overdue", () => {
+    const d = legalDeadline(at, new Date("2026-10-13T14:00:00Z"));
+    expect(d.overdue).toBeTrue();
+    expect(d.daysLeft).toBe(-2);
+  });
+});
+
+describe("confirmationStatus", () => {
+  const now = new Date("2026-10-12T12:00:00Z");
+  const hoursAgo = (h: number) => new Date(now.getTime() - h * 36e5);
+  test("a phone verified 72 h ago counts", () =>
+    expect(confirmationStatus({ alreadyConfirmed: false, phoneVerifiedAt: hoursAgo(72), now })).toBe("counts"));
+  test("a phone verified less than 72 h ago doesn't count yet", () =>
+    expect(confirmationStatus({ alreadyConfirmed: false, phoneVerifiedAt: hoursAgo(71), now })).toBe("too-new"));
+  test("no verification time doesn't count", () =>
+    expect(confirmationStatus({ alreadyConfirmed: false, phoneVerifiedAt: null, now })).toBe("too-new"));
+  test("one per account, the author included", () =>
+    expect(confirmationStatus({ alreadyConfirmed: true, phoneVerifiedAt: hoursAgo(500), now })).toBe("already"));
+});
+
+describe("digest dates", () => {
+  test("a new report waits for its first digest", () => {
+    const it = itemFromReport(fields(), muni, { id: "ACDEF", nick: "x-y-z", photos: [], now: new Date() });
+    expect(it.sentAt).toBeNull();
+    expect(it.protocol).toBeNull();
+    expect(awaitingDigest(it)).toBeTrue();
+  });
+  test("once sent, it no longer waits", () =>
+    expect(awaitingDigest(item({ sentAt: "2026-10-12T21:00:00Z", events: [] }))).toBeFalse());
 });

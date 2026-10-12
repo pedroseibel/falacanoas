@@ -79,3 +79,51 @@ export const initials = (nick: string) =>
     .map((w) => w.charAt(0))
     .join("")
     .toUpperCase();
+
+/* ---------- Apelido reservation (DECISIONS round 18, Q28) ---------- */
+
+const LOOKALIKES: Record<string, string> = {
+  "0": "o",
+  "1": "i",
+  l: "i",
+  "3": "e",
+  "4": "a",
+  "5": "s",
+  "7": "t",
+  "8": "b",
+};
+
+/**
+ * The key two apelidos collide on: accents, hyphens and look-alike characters removed, so
+ * "garça-do-sinos", "garca-d0-sinos" and "garcadosinos" are one name.
+ */
+export const nickKey = (nick: string) =>
+  nick
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .replace(/[01345l78]/g, (c) => LOOKALIKES[c] ?? c);
+
+export interface NickReservation {
+  /** The account holding it now, or null once released. */
+  ownerId: string | null;
+  /** Who held it last (a released name can go back to them). */
+  lastOwnerId: string;
+  /** It signed a public contribution, so it is never given to anyone else. */
+  published: boolean;
+  /** When it was released (ms), or null while held. */
+  releasedAt: number | null;
+}
+
+/** Days a released apelido that never signed anything stays held before anyone else can take it. */
+export const NICK_HOLD_DAYS = 90;
+
+/** Can this account take an apelido whose key has this reservation? */
+export function nickAvailable(r: NickReservation | undefined, accountId: string, now: number): boolean {
+  if (!r || r.ownerId === accountId) return true;
+  if (r.ownerId) return false;
+  if (r.lastOwnerId === accountId) return true;
+  if (r.published || r.releasedAt === null) return false;
+  return now - r.releasedAt >= NICK_HOLD_DAYS * 864e5;
+}
