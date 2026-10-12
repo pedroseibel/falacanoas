@@ -8,9 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-/** "floating": search over the map (phone). Raised card surface, taller touch target. */
+/**
+ * "floating": search over the map (phone). Raised card surface, taller touch target.
+ * "lg": a 48px form field on panel fill (DESIGN.md Inputs), 16px text so phones don't zoom in.
+ */
 const inputGroupVariants = cva("", {
-  variants: { variant: { default: "", floating: "h-11.5 bg-card shadow-float dark:bg-card" } },
+  variants: {
+    variant: {
+      default: "",
+      floating: "h-11.5 bg-card shadow-float dark:bg-card",
+      lg: "h-12 bg-card hover:border-hairline-strong has-[[data-slot=input-group-control]:focus-visible]:ring-ring/14 dark:bg-card [&_input]:text-base md:[&_input]:text-base [&>[data-align=inline-start]]:pl-3.5",
+    },
+  },
   defaultVariants: { variant: "default" },
 });
 

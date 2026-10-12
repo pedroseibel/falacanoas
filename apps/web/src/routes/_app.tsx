@@ -2,6 +2,7 @@ import {
   Link,
   Outlet,
   createFileRoute,
+  useLocation,
   useMatchRoute,
   useNavigate,
   useRouter,
@@ -10,8 +11,6 @@ import {
 import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
-import { openSignIn } from "@/features/auth/auth-store";
-import { SignInDialog } from "@/features/auth/sign-in-dialog";
 import { ReportDialog } from "@/features/report/report-dialog";
 import { openReport } from "@/features/report/report-store";
 import { AppShell, type Section } from "@/features/shell/app-shell";
@@ -30,22 +29,15 @@ const PATH: Record<Section, "/mapa" | "/placar" | "/bairro" | "/voce"> = {
   voce: "/voce",
 };
 
-/** Registrar needs a verified phone and an apelido; sign-in picks up where it was asked for. */
-function startReport(account: AccountData) {
-  if (!account || account.guest || !account.phoneVerified)
-    return openSignIn(
-      "Para registrar um problema, entre com o seu celular. Mandamos um código pelo WhatsApp.",
-      "phone",
-      openReport,
-    );
-  if (!account.nick) return openSignIn(null, "profile", openReport);
-  openReport();
-}
+/** Registrar needs a verified phone and an apelido: /entrar or /bem-vindo first, then straight into the form. */
+const reportGate = (account: AccountData) =>
+  !account || account.guest || !account.phoneVerified ? "/entrar" : !account.nick ? "/bem-vindo" : null;
 
 function AppLayout() {
   const match = useMatchRoute();
   const navigate = useNavigate();
   const router = useRouter();
+  const here = useLocation({ select: (l) => l.href });
   const search = useSearch({ strict: false });
   const section: Section = match({ to: "/placar" })
     ? "placar"
@@ -67,8 +59,12 @@ function AppLayout() {
       onQuery={onQuery}
       signedIn={Boolean(account && !account.guest)}
       nick={account?.nick ?? null}
-      onSignIn={() => openSignIn()}
-      onReport={() => startReport(account)}
+      onSignIn={() => void navigate({ to: "/entrar", search: { volta: here } })}
+      onReport={() => {
+        const gate = reportGate(account);
+        if (!gate) return openReport();
+        void navigate({ to: gate, search: { volta: here, depois: "registrar" } });
+      }}
       link={(to, children, className, current) => (
         <Link key={to} to={PATH[to]} className={className} aria-current={current ? "page" : undefined}>
           {children}
@@ -76,7 +72,6 @@ function AppLayout() {
       )}
     >
       <Outlet />
-      <SignInDialog />
       <ReportDialog
         muni={canoas}
         items={city.items}

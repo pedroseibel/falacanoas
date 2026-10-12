@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as BemVindoRouteImport } from './routes/bem-vindo'
+import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as AppMapRouteImport } from './routes/_app/_map'
 import { Route as AppPlacarRouteImport } from './routes/_app/placar'
 import { Route as AppVoceRouteImport } from './routes/_app/voce'
@@ -28,6 +30,16 @@ const IndexRoute = IndexRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BemVindoRoute = BemVindoRouteImport.update({
+  id: '/bem-vindo',
+  path: '/bem-vindo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EntrarRoute = EntrarRouteImport.update({
+  id: '/entrar',
+  path: '/entrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppMapRoute = AppMapRouteImport.update({
@@ -77,6 +89,8 @@ const AppMapOIdRoute = AppMapOIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/bem-vindo': typeof BemVindoRoute
+  '/entrar': typeof EntrarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
   '/mapa': typeof AppMapMapaRoute
@@ -88,6 +102,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/bem-vindo': typeof BemVindoRoute
+  '/entrar': typeof EntrarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
   '/mapa': typeof AppMapMapaRoute
@@ -101,6 +117,8 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/bem-vindo': typeof BemVindoRoute
+  '/entrar': typeof EntrarRoute
   '/_app/_map': typeof AppMapRouteWithChildren
   '/_app/placar': typeof AppPlacarRoute
   '/_app/voce': typeof AppVoceRoute
@@ -115,6 +133,8 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/bem-vindo'
+    | '/entrar'
     | '/placar'
     | '/voce'
     | '/mapa'
@@ -126,6 +146,8 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/bem-vindo'
+    | '/entrar'
     | '/placar'
     | '/voce'
     | '/mapa'
@@ -138,6 +160,8 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
+    | '/bem-vindo'
+    | '/entrar'
     | '/_app/_map'
     | '/_app/placar'
     | '/_app/voce'
@@ -152,6 +176,8 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  BemVindoRoute: typeof BemVindoRoute
+  EntrarRoute: typeof EntrarRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFotosKeyRoute: typeof ApiFotosKeyRoute
 }
@@ -170,6 +196,20 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bem-vindo': {
+      id: '/bem-vindo'
+      path: '/bem-vindo'
+      fullPath: '/bem-vindo'
+      preLoaderRoute: typeof BemVindoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/entrar': {
+      id: '/entrar'
+      path: '/entrar'
+      fullPath: '/entrar'
+      preLoaderRoute: typeof EntrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/_map': {
@@ -272,6 +312,8 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  BemVindoRoute: BemVindoRoute,
+  EntrarRoute: EntrarRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFotosKeyRoute: ApiFotosKeyRoute,
 }

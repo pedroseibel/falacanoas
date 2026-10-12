@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { toast } from "sonner";
-import { openSignIn } from "@/features/auth/auth-store";
 import { VocePage } from "@/features/voce/voce-page";
 import { authClient } from "@/lib/auth-client";
 import { accountQuery, cityQuery } from "@/lib/city";
@@ -25,8 +24,8 @@ function VoceRoute() {
       muni={canoas}
       items={city.items}
       onOpen={(id) => void navigate({ to: "/o/$id", params: { id } })}
-      onSignIn={() => openSignIn()}
-      onPickNick={() => openSignIn(null, "profile")}
+      onSignIn={() => void navigate({ to: "/entrar", search: { volta: "/voce" } })}
+      onPickNick={() => void navigate({ to: "/bem-vindo", search: { volta: "/voce" } })}
       onSignOut={() =>
         void authClient.signOut().then(() => {
           queryClient.setQueryData(accountQuery.queryKey, null);

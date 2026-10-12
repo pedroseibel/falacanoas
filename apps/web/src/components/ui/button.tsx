@@ -9,7 +9,8 @@ const buttonVariants = cva(
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
         /* Orange: the main action only (Three Places Rule, DESIGN.md). */
-        signal: "bg-signal text-signal-foreground shadow-xs hover:bg-signal/90",
+        /* Painted to the border edge, so it lines up with the fields above it. */
+        signal: "bg-signal bg-clip-border text-signal-foreground shadow-xs hover:bg-signal/90",
         /* Controls floating over the map: raised card surface. */
         floating: "border-hairline bg-card text-foreground shadow-soft hover:bg-muted",
         outline:
@@ -29,6 +30,8 @@ const buttonVariants = cva(
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         /* The landing page's comfortable call to action (52px). */
         xl: "h-13 gap-2.5 px-5.5 text-[0.96875rem] font-semibold tracking-tight [&_svg:not([class*='size-'])]:size-4.5",
+        /* Choice chip (DESIGN.md): a compact pill for a mouse, a 36px pill under a finger or on a phone. */
+        chip: "h-6 gap-1 rounded-full px-2.5 text-xs max-compact:h-9 max-compact:px-3.5 max-compact:text-sm pointer-coarse:h-9 pointer-coarse:px-3.5 pointer-coarse:text-sm",
         icon: "size-8",
         "icon-xs":
           "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",

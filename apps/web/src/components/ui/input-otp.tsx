@@ -21,14 +21,22 @@ function InputOTP({
   );
 }
 
-/** lg: the sign-in code, one big mono digit per box. */
-function InputOTPGroup({ className, size = "default", ...props }: ComponentProps<"div"> & { size?: "default" | "lg" }) {
+/**
+ * lg: one big mono digit per box.
+ * fill: the sign-in page's code: six separate boxes sharing the column's full width, 56px tall;
+ * the current one takes an ink border on all four sides and DESIGN.md's 3px ring of ink at 14%.
+ */
+function InputOTPGroup({
+  className,
+  size = "default",
+  ...props
+}: ComponentProps<"div"> & { size?: "default" | "lg" | "fill" }) {
   return (
     <div
       data-slot="input-otp-group"
       data-size={size}
       className={cn(
-        "flex items-center rounded-lg has-aria-invalid:border-destructive has-aria-invalid:ring-3 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40",
+        "flex items-center rounded-lg data-[size=fill]:w-full data-[size=fill]:gap-2 has-aria-invalid:border-destructive has-aria-invalid:ring-3 has-aria-invalid:ring-destructive/20 dark:has-aria-invalid:ring-destructive/40",
         className,
       )}
       {...props}
@@ -51,7 +59,7 @@ function InputOTPSlot({
       data-slot="input-otp-slot"
       data-active={isActive}
       className={cn(
-        "relative flex size-8 items-center justify-center border-y border-r border-input text-sm transition-all in-data-[size=lg]:size-12 in-data-[size=lg]:bg-card in-data-[size=lg]:font-mono in-data-[size=lg]:text-xl outline-none first:rounded-l-lg first:border-l last:rounded-r-lg aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-3 data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:bg-input/30 dark:data-[active=true]:aria-invalid:ring-destructive/40",
+        "relative flex size-8 items-center justify-center border-y border-r border-input text-sm transition-all in-data-[size=lg]:size-12 in-data-[size=lg]:bg-card in-data-[size=lg]:font-mono in-data-[size=lg]:text-xl in-data-[size=fill]:h-14 in-data-[size=fill]:min-w-0 in-data-[size=fill]:flex-1 in-data-[size=fill]:rounded-lg in-data-[size=fill]:border-l in-data-[size=fill]:bg-card in-data-[size=fill]:font-mono in-data-[size=fill]:text-2xl in-data-[size=fill]:tabular-nums in-data-[size=fill]:data-[active=true]:ring-ring/14 outline-none first:rounded-l-lg first:border-l last:rounded-r-lg aria-invalid:border-destructive data-[active=true]:z-10 data-[active=true]:border-ring data-[active=true]:ring-3 data-[active=true]:ring-ring/50 data-[active=true]:aria-invalid:border-destructive data-[active=true]:aria-invalid:ring-destructive/20 dark:bg-input/30 dark:data-[active=true]:aria-invalid:ring-destructive/40",
         className,
       )}
       {...props}
@@ -59,7 +67,7 @@ function InputOTPSlot({
       {char}
       {hasFakeCaret && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000" />
+          <div className="h-4 w-px animate-caret-blink bg-foreground duration-1000 in-data-[size=fill]:h-6" />
         </div>
       )}
     </div>

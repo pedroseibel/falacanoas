@@ -39,7 +39,7 @@ export const cn = createCn({
         "coda",
         "stage-phone",
       ],
-      container: ["wrap", "headline", "lede", "coda", "claim", "copy", "foot", "note", "long"],
+      container: ["wrap", "headline", "lede", "coda", "claim", "copy", "foot", "note", "long", "auth"],
       shadow: ["panel", "soft", "float"],
     },
   },

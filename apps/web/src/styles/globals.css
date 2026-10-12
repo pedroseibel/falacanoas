@@ -97,6 +97,8 @@
   --container-foot: 46ch;
   --container-note: 62ch;
   --container-long: 72ch;
+  /* The sign-in column (/entrar, /bem-vindo). */
+  --container-auth: 26rem;
 
   --spacing-gutter: clamp(1.25rem, 4.2vw, 2.75rem);
   --spacing-section: clamp(5.5rem, 11vw, 9.5rem);
