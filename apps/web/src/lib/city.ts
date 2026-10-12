@@ -3,6 +3,7 @@ import { getCity, getItem, getThreads } from "@/server/data";
 import { getAccount, getAuthConfig } from "@/server/account";
 import { getFollowing } from "@/server/follows";
 import { getItemViewer } from "@/server/item-actions";
+import { getIsModerator, getModerationQueue } from "@/server/moderation";
 import { getQueue } from "@/server/queue";
 
 /** Server state lives in TanStack Query. Loaders prefetch, components read. */
@@ -57,4 +58,17 @@ export const authConfigQuery = queryOptions({
   queryKey: ["auth-config"],
   queryFn: () => getAuthConfig(),
   staleTime: Infinity,
+});
+
+/** The moderation queue (null when the person doesn't moderate). */
+export const moderationQueueQuery = queryOptions({
+  queryKey: ["moderation"],
+  queryFn: () => getModerationQueue(),
+  staleTime: 15_000,
+});
+
+export const isModeratorQuery = queryOptions({
+  queryKey: ["moderator"],
+  queryFn: () => getIsModerator(),
+  staleTime: 60_000,
 });

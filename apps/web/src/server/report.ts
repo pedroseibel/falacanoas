@@ -1,8 +1,20 @@
-import { digestDay, itemFromReport, newItemId, reportSchema, type Item, type ReportFields } from "@fala/core";
+import {
+  digestDay,
+  holdsPublication,
+  inElection,
+  itemFromReport,
+  newItemId,
+  prescreen,
+  reportSchema,
+  type Item,
+  type ReportFields,
+} from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
+import { db } from "./db/client";
 import { createdSince, hashKey, insertItem, itemExists, joinItem } from "./items";
+import { openCase } from "./moderation-store";
 import { markNickPublished } from "./nicks";
 import { member, type Failure } from "./member";
 import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
@@ -62,9 +74,17 @@ export const createReport = createServerFn({ method: "POST" })
     if (!photos) return { ok: false, error: PHOTO_ERROR };
     const now = new Date();
     const id = await uniqueId();
-    const item = itemFromReport(parsed.data, canoas, { id, nick: who.nick, photos: photos.srcs, now });
+    // The pre-screen (round 5): personal data, insults, named people, anonymous propaganda in a
+    // campaign. Anything it flags waits for a moderator instead of going out.
+    const flags = prescreen(`${parsed.data.title} ${parsed.data.text}`, { electoral: inElection(canoas, now) });
+    const held = holdsPublication(flags, parsed.data.visibility);
+    const item: Item = {
+      ...itemFromReport(parsed.data, canoas, { id, nick: who.nick, photos: photos.srcs, now }),
+      ...(held ? { moderation: "pending" } : {}),
+    };
     try {
       await insertItem(item, who.id, now);
+      if (held) await openCase(db, id, "prescreen", flags);
     } catch (e) {
       await removePhotos(photos.keys);
       throw e;
@@ -137,6 +157,13 @@ async function createGuestPin(data: FormData, guestId: string): Promise<ReportRe
   const key = Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64url");
   try {
     await insertItem(item, guestId, now, await hashKey(key));
+    // Every guest pin waits for a moderator; the pre-screen's flags go with it.
+    await openCase(
+      db,
+      id,
+      "guest_pin",
+      prescreen(`${item.title} ${item.text}`, { electoral: inElection(canoas, now) }),
+    );
   } catch (e) {
     await removePhotos(photos.keys);
     throw e;

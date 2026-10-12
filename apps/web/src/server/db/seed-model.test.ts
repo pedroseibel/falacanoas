@@ -37,6 +37,7 @@ function stored(row: ReturnType<typeof seedRows>["row"]): ItemRow {
     round: row.round ?? 0,
     moderation: row.moderation ?? "published",
     trackingKeyHash: row.trackingKeyHash ?? null,
+    moderationHandle: row.moderationHandle ?? null,
   };
 }
 

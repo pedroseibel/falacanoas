@@ -74,6 +74,9 @@ export const canoas = defineMunicipality({
     boundary: BoundaryCollectionSchema.parse(boundaryGeo),
   },
   branding: { name: "Fala, Canoas", domain: "falacanoas.com.br" },
+  // 2026: propaganda allowed after 15 Aug (Lei 9.504, art. 36); 1st round 4 Oct and runoff 25 Oct
+  // (CF, art. 77: first and last Sundays of October).
+  electionPeriods: [{ from: "2026-08-16", to: "2026-10-25" }],
 });
 
 export default canoas;

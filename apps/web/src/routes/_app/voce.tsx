@@ -26,6 +26,7 @@ function VoceRoute() {
       onOpen={(id) => void navigate({ to: "/o/$id", params: { id } })}
       onSignIn={() => void navigate({ to: "/entrar", search: { volta: "/voce" } })}
       onPickNick={() => void navigate({ to: "/bem-vindo", search: { volta: "/voce" } })}
+      onModerate={() => void navigate({ to: "/moderar" })}
       onSignOut={() =>
         void authClient.signOut().then(() => {
           queryClient.setQueryData(accountQuery.queryKey, null);

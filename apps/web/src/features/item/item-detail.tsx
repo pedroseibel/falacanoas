@@ -38,6 +38,7 @@ import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
 import { whereOf } from "@/features/map/item-card";
 import { ItemActions, usePhotoInput } from "./item-actions";
+import { ModerationNotice } from "./moderation-notice";
 import { useItemActions } from "./use-item-actions";
 
 const EVENT_ICON: Record<ItemEventKind, LucideIcon> = {
@@ -119,6 +120,7 @@ export function ItemDetail({
   now,
   member,
   onSignIn,
+  trackingKey,
 }: {
   it: Item;
   muni: Municipality;
@@ -128,6 +130,8 @@ export function ItemDetail({
   member: boolean;
   /** Where actions send someone who can't act yet. */
   onSignIn: () => void;
+  /** A guest pin's tracking key, from its link: lets its author contest a refusal. */
+  trackingKey: string | null;
 }) {
   const a = useItemActions(it, member, onSignIn);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -280,19 +284,7 @@ export function ItemDetail({
         </section>
 
         {it.moderation ? (
-          <section
-            aria-labelledby="analise"
-            className="grid gap-1 rounded-xl border border-dashed border-hairline-strong p-3.5"
-          >
-            <h3 id="analise" className="text-sm font-semibold">
-              {it.moderation === "pending" ? "Em análise" : "Não publicado"}
-            </h3>
-            <p className="text-sm text-ink-2">
-              {it.moderation === "pending"
-                ? "Registros sem conta passam pela moderação antes de aparecer no mapa. Guarde o link desta página: é o jeito de acompanhar."
-                : "A moderação não publicou este registro. O histórico abaixo diz o motivo."}
-            </p>
-          </section>
+          <ModerationNotice it={it} trackingKey={trackingKey} />
         ) : (
           <ItemActions it={it} muni={muni} actions={a} now={now} onWrite={write} />
         )}

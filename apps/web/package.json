@@ -14,7 +14,9 @@
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
     "db:seed": "bun src/server/db/seed.ts",
-    "db:roles": "bun src/server/db/roles.ts"
+    "db:roles": "bun src/server/db/roles.ts",
+    "moderator:add": "bun src/server/db/moderators.ts add",
+    "moderator:remove": "bun src/server/db/moderators.ts remove"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

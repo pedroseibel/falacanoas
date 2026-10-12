@@ -17,7 +17,12 @@ export const Route = createFileRoute("/_app/_map/o/$id")({
   },
   head: ({ loaderData }) => ({
     meta: loaderData?.moderation
-      ? [{ title: "Registro em análise · Fala, Canoas" }, { name: "robots", content: "noindex" }]
+      ? [
+          {
+            title: `Registro ${loaderData.moderation === "pending" ? "em análise" : "não publicado"} · Fala, Canoas`,
+          },
+          { name: "robots", content: "noindex" },
+        ]
       : loaderData
         ? [
             { title: `${loaderData.title} · Fala, Canoas` },
@@ -53,6 +58,7 @@ function ItemRoute() {
       now={new Date(city.now)}
       member={gate === null}
       onSignIn={() => void navigate({ to: gate ?? "/entrar", search: { volta: `/o/${item.id}` } })}
+      trackingKey={chave ?? null}
     />
   );
 }

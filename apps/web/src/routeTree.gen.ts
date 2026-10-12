@@ -15,6 +15,7 @@ import { Route as BemVindoRouteImport } from './routes/bem-vindo'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as AppMapRouteImport } from './routes/_app/_map'
+import { Route as AppModerarRouteImport } from './routes/_app/moderar'
 import { Route as AppPlacarRouteImport } from './routes/_app/placar'
 import { Route as AppVoceRouteImport } from './routes/_app/voce'
 import { Route as AppMapMapaRouteImport } from './routes/_app/_map/mapa'
@@ -51,6 +52,11 @@ const PrivacidadeRoute = PrivacidadeRouteImport.update({
 } as any)
 const AppMapRoute = AppMapRouteImport.update({
   id: '/_map',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppModerarRoute = AppModerarRouteImport.update({
+  id: '/moderar',
+  path: '/moderar',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPlacarRoute = AppPlacarRouteImport.update({
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/bem-vindo': typeof BemVindoRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
   '/mapa': typeof AppMapMapaRoute
@@ -119,6 +126,7 @@ export interface FileRoutesByTo {
   '/bem-vindo': typeof BemVindoRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
   '/mapa': typeof AppMapMapaRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
   '/_app/_map': typeof AppMapRouteWithChildren
+  '/_app/moderar': typeof AppModerarRoute
   '/_app/placar': typeof AppPlacarRoute
   '/_app/voce': typeof AppVoceRoute
   '/_app/_map/mapa': typeof AppMapMapaRoute
@@ -154,6 +163,7 @@ export interface FileRouteTypes {
     | '/bem-vindo'
     | '/entrar'
     | '/privacidade'
+    | '/moderar'
     | '/placar'
     | '/voce'
     | '/mapa'
@@ -169,6 +179,7 @@ export interface FileRouteTypes {
     | '/bem-vindo'
     | '/entrar'
     | '/privacidade'
+    | '/moderar'
     | '/placar'
     | '/voce'
     | '/mapa'
@@ -186,6 +197,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/privacidade'
     | '/_app/_map'
+    | '/_app/moderar'
     | '/_app/placar'
     | '/_app/voce'
     | '/_app/_map/mapa'
@@ -250,6 +262,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppMapRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/moderar': {
+      id: '/_app/moderar'
+      path: '/moderar'
+      fullPath: '/moderar'
+      preLoaderRoute: typeof AppModerarRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/placar': {
@@ -333,6 +352,7 @@ const AppMapRouteWithChildren =
 
 interface AppRouteChildren {
   AppMapRoute: typeof AppMapRouteWithChildren
+  AppModerarRoute: typeof AppModerarRoute
   AppPlacarRoute: typeof AppPlacarRoute
   AppVoceRoute: typeof AppVoceRoute
   AppBairroSlugRoute: typeof AppBairroSlugRoute
@@ -341,6 +361,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppMapRoute: AppMapRouteWithChildren,
+  AppModerarRoute: AppModerarRoute,
   AppPlacarRoute: AppPlacarRoute,
   AppVoceRoute: AppVoceRoute,
   AppBairroSlugRoute: AppBairroSlugRoute,

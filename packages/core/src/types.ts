@@ -234,4 +234,9 @@ export interface Municipality {
   neighborhoods: Neighborhood[];
   geo: { neighborhoods: NeighborhoodCollection; boundary: BoundaryCollection };
   branding: { name: string; domain: string };
+  /**
+   * Campaign periods (inclusive dates, local), when anonymous electoral propaganda is held for
+   * moderation (round 18, Q31).
+   */
+  electionPeriods?: { from: string; to: string }[];
 }

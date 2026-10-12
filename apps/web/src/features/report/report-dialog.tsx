@@ -135,10 +135,14 @@ function ReportDone({
 }) {
   if (tracking)
     return <GuestDone muni={muni} item={item} tracking={tracking} phone={phone} head={head} onView={onView} />;
+  // Held by the pre-screen: not on the map yet, nothing to share.
+  const held = item.moderation === "pending";
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Header head={head} title="Registrado">
-        Entra no resumo {digest === "hoje" ? "de hoje" : "de amanhã"}, às {muni.digestHour}h. O relógio começa no envio.
+      <Header head={head} title={held ? "Recebido" : "Registrado"}>
+        {held
+          ? "Fica em análise até alguém da moderação olhar. Depois, entra no mapa e no resumo diário."
+          : `Entra no resumo ${digest === "hoje" ? "de hoje" : "de amanhã"}, às ${muni.digestHour}h. O relógio começa no envio.`}
       </Header>
       <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
         <div className="grid gap-3 rounded-xl border border-hairline bg-muted p-4">
@@ -155,6 +159,13 @@ function ReportDone({
             <b className="font-medium text-foreground">{item.title}</b> · {whereOf(item, muni)}
           </p>
         </div>
+        {item.moderation === "pending" && (
+          <p className="rounded-xl border border-hairline bg-muted px-3.5 py-2.5 text-sm text-ink-2">
+            <b className="font-medium text-foreground">Em análise.</b> A verificação automática segurou o registro para
+            alguém olhar antes de publicar: ele pode ter um telefone, um CPF, o nome de uma pessoa ou uma ofensa. A
+            decisão aparece na página dele.
+          </p>
+        )}
         {/* Until the digest service runs (research/BUILD.md, 3.1), nothing reaches the Prefeitura. */}
         <p className="rounded-xl border border-dashed border-hairline-strong px-3.5 py-2.5 text-caption text-ink-2">
           Protótipo: o registro fica salvo, mas o resumo diário ainda não vai à Prefeitura. O relógio só começa quando
@@ -167,10 +178,12 @@ function ReportDone({
           phone ? "pb-safe grid" : "flex justify-end",
         )}
       >
-        <Button variant="outline" size={phone ? "xl" : "lg"} onClick={() => void share(item)}>
-          <Share2 data-icon="inline-start" />
-          Compartilhar
-        </Button>
+        {!held && (
+          <Button variant="outline" size={phone ? "xl" : "lg"} onClick={() => void share(item)}>
+            <Share2 data-icon="inline-start" />
+            Compartilhar
+          </Button>
+        )}
         <Button
           variant="signal"
           size={phone ? "xl" : "lg"}
@@ -179,8 +192,8 @@ function ReportDone({
             onView(item.id);
           }}
         >
-          <MapIcon data-icon="inline-start" />
-          Ver no mapa
+          {!held && <MapIcon data-icon="inline-start" />}
+          {held ? "Abrir o registro" : "Ver no mapa"}
         </Button>
       </div>
     </div>

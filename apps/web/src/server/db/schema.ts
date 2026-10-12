@@ -128,6 +128,11 @@ export const items = fala
       moderation: moderationState().notNull().default("published"),
       /** SHA-256 of a guest pin's secret tracking key (round 2): the link is the guest's only way back. */
       trackingKeyHash: text(),
+      /**
+       * What moderators see instead of an author (round 18, Q19): random per item, never a global id,
+       * with no way back from it to the account.
+       */
+      moderationHandle: text().unique(),
       /** Fictional demonstration data, always labelled "exemplo". */
       demo: boolean().notNull().default(false),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
@@ -282,6 +287,56 @@ export const follows = fala
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [index().on(t.accountId)],
+  )
+  .enableRLS();
+
+/* ---------- Moderation (round 5; round 18, Q19 and Q31) ---------- */
+
+/** Bairro volunteer moderators. They never see identity: cases show an opaque handle. */
+export const moderators = fala
+  .table("moderators", {
+    accountId: uuid()
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Bairros this person moderates; null for every bairro. */
+    neighborhoods: text().array(),
+    addedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /** Who added them and why: governance belongs to the associação. */
+    addedBy: text().notNull(),
+  })
+  .enableRLS();
+
+export const caseReason = fala.enum("case_reason", ["guest_pin", "prescreen"]);
+export const caseStatus = fala.enum("case_status", ["open", "published", "rejected", "republish"]);
+export const contestStatus = fala.enum("contest_status", ["open", "upheld", "overturned"]);
+
+/** One decision to make about one item, and its contestation. */
+export const moderationCases = fala
+  .table(
+    "moderation_cases",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      itemId: text()
+        .notNull()
+        .references(() => items.id, { onDelete: "cascade" }),
+      reason: caseReason().notNull(),
+      /** core's ModerationFlag values the pre-screen raised. */
+      flags: text()
+        .array()
+        .notNull()
+        .default(sql`'{}'::text[]`),
+      status: caseStatus().notNull().default("open"),
+      /** The decision's reason, shown to the author and in the item's history. */
+      note: text(),
+      decidedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+      decidedAt: timestamp({ withTimezone: true }),
+      contestText: text(),
+      contestedAt: timestamp({ withTimezone: true }),
+      contestStatus: contestStatus(),
+      contestNote: text(),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.status), index().on(t.itemId)],
   )
   .enableRLS();
 

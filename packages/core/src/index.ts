@@ -11,3 +11,4 @@ export * from "./vault-assertion";
 export * from "./access-evidence";
 export * from "./actions";
 export * from "./follows";
+export * from "./moderation";

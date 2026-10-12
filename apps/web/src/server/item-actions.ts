@@ -1,4 +1,4 @@
-import type { EvidenceAction, Item } from "@fala/core";
+import { prescreen, refusalFor, refusedInUpdates, type EvidenceAction, type Item } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
@@ -48,6 +48,10 @@ export const actOnItemFn = createServerFn({ method: "POST" })
     const parsed = ActionInputSchema.safeParse(readActionFormData(data));
     if (!parsed.success) return { ok: false, error: "Confira o que você enviou." };
     const input = parsed.data;
+    if (input.type === "update") {
+      const refused = refusedInUpdates(prescreen(input.text, { electoral: false }));
+      if (refused.length) return { ok: false, error: refusalFor(refused) };
+    }
     const files = input.type === "resolved" || input.type === "photo" ? input.photos : [];
     const photos = files.length ? await keepPhotos(files) : { keys: [], srcs: [] };
     if (!photos) return { ok: false, error: PHOTO_ERROR };

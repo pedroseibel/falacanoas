@@ -82,12 +82,12 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - a secret link `/o/ID?chave=…` (only its SHA-256 is stored) is the guest's way back; without it the pin answers 404;
   - published guest pins count in the Placar after two independent confirmations (2.1).
 - [ ] **2.6 Forum** (round 5): threads under each pin and one board per bairro, persisted and moderated.
-- [ ] **2.7 Moderation** (round 5, Q19, Q31):
-  - an automatic pre-screen flags insults, personal names, CPF or phone numbers and children in photos;
-  - a queue for volunteer moderators;
-  - an opaque id per item;
-  - the election-period rule;
-  - contestation.
+- [x] **2.7 Moderation** (round 5, Q19, Q31). Done 2026-10-12, verified in the browser with an author and two moderators.
+  - the pre-screen (core): CPFs (check digits), phone numbers, strong insults, a title before a name, and electoral wording during the instance's campaign window (Canoas 2026: 16 Aug to 25 Oct). Reports it flags wait for a moderator; updates are refused with a sentence that says what to take out; children in photos waits on 2.11's detection service;
+  - every guest pin opens a case too;
+  - `/moderar`, for moderators added with `bun run moderator:add <apelido> [bairro…]` (all bairros, or some): the item, its flags, a random handle per item and how many of the same author's posts were refused before, never who they are; moderators never see cases for their own posts;
+  - the election rule: signed political content goes out; anonymous propaganda is held, and the moderator can ask for it to be republished signed;
+  - every decision goes into the item's history; the author (by session, or a guest by the pin's link) can contest, and someone other than the deciding moderator judges the contest.
 - [~] **2.8 Account lifecycle** (Q20, Q25, Q26, Q32):
   - closing an account;
   - changing number with recent re-authentication;

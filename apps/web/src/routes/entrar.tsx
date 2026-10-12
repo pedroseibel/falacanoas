@@ -16,6 +16,9 @@ export const Route = createFileRoute("/entrar")({
     const account = await context.queryClient.ensureQueryData(accountQuery);
     if (!account || account.guest || !account.phoneVerified) return;
     if (!account.nick) throw redirect({ to: "/bem-vindo", search, replace: true });
+    // Signed in already (another tab, an earlier visit): still do what they came for. Client only:
+    // the report store is per browser, never per server.
+    if (search.depois === "registrar" && typeof window !== "undefined") openReport();
     throw redirect({ href: returnPath(search), replace: true });
   },
   loader: () => getAuthConfig(),

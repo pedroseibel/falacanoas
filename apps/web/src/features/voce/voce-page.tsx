@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ItemCard } from "@/features/map/item-card";
-import { followingQuery } from "@/lib/city";
+import { followingQuery, isModeratorQuery } from "@/lib/city";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
 import { Following } from "./following";
@@ -64,6 +64,7 @@ export function VocePage({
   onSignIn,
   onPickNick,
   onSignOut,
+  onModerate,
 }: {
   account: Account | null;
   muni: Municipality;
@@ -72,6 +73,7 @@ export function VocePage({
   onSignIn: () => void;
   onPickNick: () => void;
   onSignOut: () => void;
+  onModerate: () => void;
 }) {
   const theme = useTheme();
   const nick = account?.nick ?? null;
@@ -79,6 +81,7 @@ export function VocePage({
   // From the server, by authorship: "Anônimo em público" reports included, since only their owner sees this.
   const { data: following } = useQuery({ ...followingQuery, enabled: Boolean(account && !account.guest) });
   const mine = following?.mine ?? [];
+  const { data: moderator } = useQuery({ ...isModeratorQuery, enabled: Boolean(account && !account.guest) });
   return (
     <div className="mx-auto grid max-w-295 gap-5 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
@@ -127,6 +130,22 @@ export function VocePage({
               </p>
               <Button variant="signal" className="justify-self-start" onClick={onSignIn}>
                 Entrar com o celular
+              </Button>
+            </section>
+          )}
+          {moderator && (
+            <section
+              className="grid gap-3 rounded-2xl border border-hairline bg-card p-5 shadow-soft"
+              aria-labelledby="mod-t"
+            >
+              <h2 id="mod-t" className="text-sm font-semibold">
+                Moderação
+              </h2>
+              <p className="text-sm text-ink-2">
+                Você modera. A fila tem o que a verificação automática segurou e os registros sem conta.
+              </p>
+              <Button variant="outline" className="justify-self-start" onClick={onModerate}>
+                Abrir a fila
               </Button>
             </section>
           )}
