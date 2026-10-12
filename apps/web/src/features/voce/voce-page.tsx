@@ -9,6 +9,7 @@ import { followingQuery, isModeratorQuery } from "@/lib/city";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
 import { Following } from "./following";
+import { CloseAccount } from "./close-account";
 import { Passkeys } from "./passkeys";
 import { ThemeSchema, setTheme, useTheme, type Theme } from "./theme";
 
@@ -65,6 +66,7 @@ export function VocePage({
   onPickNick,
   onSignOut,
   onModerate,
+  onClosed,
 }: {
   account: Account | null;
   muni: Municipality;
@@ -74,6 +76,8 @@ export function VocePage({
   onPickNick: () => void;
   onSignOut: () => void;
   onModerate: () => void;
+  /** The account was closed: signed out everywhere. */
+  onClosed: () => void;
 }) {
   const theme = useTheme();
   const nick = account?.nick ?? null;
@@ -171,6 +175,20 @@ export function VocePage({
               ))}
             </ToggleGroup>
           </section>
+          {account && !account.guest && account.phoneVerified && (
+            <section
+              className="grid gap-3 rounded-2xl border border-hairline bg-card p-5 shadow-soft"
+              aria-labelledby="dados-t"
+            >
+              <h2 id="dados-t" className="text-sm font-semibold">
+                Seus dados
+              </h2>
+              <p className="text-sm text-pretty text-ink-2">
+                Você pode encerrar a conta quando quiser. O que publicou continua no mapa, sem ligação com você.
+              </p>
+              <CloseAccount onClosed={onClosed} />
+            </section>
+          )}
         </div>
         <div className="col-span-7 grid gap-5 max-split:col-span-1">
           {account && !account.guest && (

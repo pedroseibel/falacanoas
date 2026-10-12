@@ -103,6 +103,27 @@ export function pgStore(db: Db): VaultStore {
         .set({ lastSignInAt: at, ...rekey })
         .where(eq(phones.id, linkId));
     },
+    async linkOf(accountId) {
+      const [row] = await db
+        .select({
+          id: phones.id,
+          accountId: phones.accountId,
+          keyVersion: phones.keyVersion,
+          phoneMac: phones.phoneMac,
+          phoneSealed: phones.phoneSealed,
+          verifiedAt: phones.verifiedAt,
+          lastSignInAt: phones.lastSignInAt,
+        })
+        .from(phones)
+        .where(and(eq(phones.accountId, accountId), isNull(phones.unlinkedAt)));
+      return row ?? null;
+    },
+    async unlinkAccount(accountId, at) {
+      await db
+        .update(phones)
+        .set({ unlinkedAt: at })
+        .where(and(eq(phones.accountId, accountId), isNull(phones.unlinkedAt)));
+    },
   };
 }
 

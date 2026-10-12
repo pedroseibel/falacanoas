@@ -3,7 +3,16 @@
 import { describe, expect, test } from "bun:test";
 import { readVaultAssertion, type VaultAssertion } from "@fala/core";
 import { importVaultKeys, type VaultKeys } from "./crypto";
-import { DORMANT_MS, sendCode, verifyCode, type Gateway, type Link, type VaultStore } from "./gateway";
+import {
+  closeAccount,
+  DORMANT_MS,
+  sendCode,
+  sendReauthCode,
+  verifyCode,
+  type Gateway,
+  type Link,
+  type VaultStore,
+} from "./gateway";
 
 const raw = () => btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32))));
 const v1 = { seal: raw(), mac: raw() };
@@ -50,6 +59,10 @@ function memoryStore() {
       if (!l) return;
       l.lastSignInAt = at;
       if (rekey) Object.assign(l, rekey);
+    },
+    linkOf: async (accountId) => links.find((l) => !l.unlinkedAt && l.accountId === accountId) ?? null,
+    unlinkAccount: async (accountId, at) => {
+      for (const l of links) if (l.accountId === accountId && !l.unlinkedAt) l.unlinkedAt = at;
     },
   };
   return { store, links, codes };
@@ -190,5 +203,51 @@ describe("checking a code", () => {
     const again = await signIn(gw, later(60_000));
     expect(again.sub).toBe(first.sub);
     expect(gw.mem.links[0]?.keyVersion).toBe(2);
+  });
+});
+
+describe("re-authenticating and closing an account", () => {
+  test("the code goes to the number already linked, found by account", async () => {
+    const gw = await gateway();
+    const a = await signIn(gw, t0);
+    const r = await sendReauthCode(gw.g, { accountId: a.sub, now: later(60_000) });
+    expect(r).toEqual({ ok: true, hint: "(51) 9…4567" });
+    expect(gw.sent.at(-1)?.phone).toBe(phone);
+  });
+
+  test("an account with no live number can't re-authenticate by code", async () => {
+    const gw = await gateway();
+    expect(await sendReauthCode(gw.g, { accountId: crypto.randomUUID(), now: t0 })).toEqual({
+      ok: false,
+      error: "unlinked",
+    });
+  });
+
+  test("three codes per account every 15 minutes", async () => {
+    const gw = await gateway();
+    const a = await signIn(gw, t0);
+    for (const s of [1, 2, 3])
+      expect((await sendReauthCode(gw.g, { accountId: a.sub, now: later(s * 1000) })).ok).toBeTrue();
+    expect(await sendReauthCode(gw.g, { accountId: a.sub, now: later(4000) })).toEqual({ ok: false, error: "rate" });
+  });
+
+  test("closing needs the right code, then unlinks the number: the next code opens a new account", async () => {
+    const gw = await gateway();
+    const a = await signIn(gw, t0);
+    await sendReauthCode(gw.g, { accountId: a.sub, now: later(1000) });
+    const code = gw.sent.at(-1)?.code ?? "";
+    const wrong = code === "000000" ? "111111" : "000000";
+    expect(await closeAccount(gw.g, { accountId: a.sub, code: wrong, now: later(2000) })).toEqual({
+      ok: false,
+      error: "invalid",
+    });
+    expect(gw.mem.links.every((l) => !l.unlinkedAt)).toBeTrue();
+    expect(await closeAccount(gw.g, { accountId: a.sub, code, now: later(3000) })).toEqual({ ok: true });
+    expect(gw.mem.links.find((l) => l.accountId === a.sub)?.unlinkedAt).toBeInstanceOf(Date);
+    // The code was used once.
+    expect((await closeAccount(gw.g, { accountId: a.sub, code, now: later(4000) })).ok).toBeFalse();
+    const next = await signIn(gw, later(60_000));
+    expect(next.created).toBeTrue();
+    expect(next.sub).not.toBe(a.sub);
   });
 });

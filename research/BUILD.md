@@ -94,7 +94,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - the election rule: signed political content goes out; anonymous propaganda is held, and the moderator can ask for it to be republished signed;
   - every decision goes into the item's history; the author (by session, or a guest by the pin's link) can contest, and someone other than the deciding moderator judges the contest.
 - [~] **2.8 Account lifecycle** (Q20, Q25, Q26, Q32):
-  - closing an account;
+  - [x] closing an account (2026-10-12, verified in the browser): in Você, after a code to the number already on the account, which the vault looks up by account (the app never sees it). Reports, confirmations and replies stay public, unlinked from the account; an apelido that signed anything stays reserved; profile, sessions, passkeys, follows and votes go. The vault unlinks the number and keeps it 6 months with the access evidence (`account_closed`), then the daily purge deletes it. The app's deletion commits only if the vault accepted the code;
   - changing number with recent re-authentication;
   - [x] 180-day dormancy: in the vault, which opens a new account and unlinks the old one atomically; passkey sign-ins count;
   - the data-subject request channel, including people without an account.

@@ -8,7 +8,15 @@ import { z } from "zod";
  * Evidence ties a connection to an action; it doesn't prove who someone is (an IP can be shared).
  */
 
-export const EvidenceActionSchema = z.enum(["sign_in", "publication", "confirmation", "comment", "guest_pin"]);
+export const EvidenceActionSchema = z.enum([
+  "sign_in",
+  "publication",
+  "confirmation",
+  "comment",
+  "guest_pin",
+  "account_closed",
+  "phone_changed",
+]);
 export type EvidenceAction = z.infer<typeof EvidenceActionSchema>;
 
 /**

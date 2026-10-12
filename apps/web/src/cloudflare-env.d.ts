@@ -6,6 +6,18 @@ declare module "cloudflare:workers" {
       fetch(request: Request): Promise<Response>;
       /** An account signed in: counts against the 180-day rule, and is recorded as access evidence. */
       signedIn(accountId: string, connection: import("@fala/core").Connection): Promise<void>;
+      /** A code to the account's own number, before closing it or changing it. */
+      reauthCode(
+        accountId: string,
+      ): Promise<
+        { ok: true; hint: string; devCode: string | null } | { ok: false; error: "unlinked" | "rate" | "send" }
+      >;
+      /** Closes the account in the vault (its number unlinked) once the code checks out. */
+      close(
+        accountId: string,
+        code: string,
+        connection: import("@fala/core").Connection,
+      ): Promise<{ ok: true } | { ok: false; error: "invalid" }>;
       /** A guest pin's Turnstile token, checked by the vault (it holds the secret). */
       human(token: string, ip: string | null): Promise<boolean>;
       /** Write-only access evidence for a publication, confirmation, comment or guest pin. */

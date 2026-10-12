@@ -27,6 +27,12 @@ function VoceRoute() {
       onSignIn={() => void navigate({ to: "/entrar", search: { volta: "/voce" } })}
       onPickNick={() => void navigate({ to: "/bem-vindo", search: { volta: "/voce" } })}
       onModerate={() => void navigate({ to: "/moderar" })}
+      onClosed={() => {
+        queryClient.setQueryData(accountQuery.queryKey, null);
+        void queryClient.invalidateQueries();
+        void navigate({ to: "/mapa", replace: true });
+        toast("Conta encerrada. Obrigado por cuidar do bairro.");
+      }}
       onSignOut={() =>
         void authClient.signOut().then(() => {
           queryClient.setQueryData(accountQuery.queryKey, null);

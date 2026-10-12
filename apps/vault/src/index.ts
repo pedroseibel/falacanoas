@@ -8,7 +8,7 @@ import {
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
 import { importVaultKeys, type VaultKeys } from "./crypto";
-import { sendCode, verifyCode, type Gateway } from "./gateway";
+import { closeAccount, sendCode, sendReauthCode, verifyCode, type Gateway, type Outbox } from "./gateway";
 import { outbox, peekDevCode } from "./outbox";
 import { openStore } from "./store";
 import { turnstile } from "./turnstile";
@@ -72,22 +72,78 @@ export default class Vault extends WorkerEntrypoint<Env> {
     const ip = request.headers.get("cf-connecting-ip");
     const now = new Date();
 
-    const { keys, signingKey } = await importKeys(this.env);
     const db = await openStore(this.env.VAULT_DATABASE_URL);
     try {
-      const g: Gateway = {
-        store: db.store,
-        keys,
-        signingKey,
-        outbox: outbox(development),
-        human: turnstile(this.env, development),
-      };
+      const g = await this.gateway(db.store);
       if (action === "send") {
         const r = await sendCode(g, { phone: input.telefone, token: input.token, ip, now });
         return r.ok ? json({ ok: true }) : json(r, STATUS[r.error]);
       }
       const r = await verifyCode(g, { phone: input.telefone, code: input.codigo, ip, now });
       return r.ok ? json({ ok: true, assertion: r.assertion }) : json(r, STATUS[r.error]);
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  private async gateway(store: Gateway["store"], delivery?: Outbox): Promise<Gateway> {
+    const development = this.env.VAULT_MODE === "development";
+    const { keys, signingKey } = await importKeys(this.env);
+    return {
+      store,
+      keys,
+      signingKey,
+      outbox: delivery ?? outbox(development),
+      human: turnstile(this.env, development),
+    };
+  }
+
+  /**
+   * RPC: a code to the account's own number, before closing the account or changing the number. The
+   * app gets the masked number to show; in development, the code too, since nothing is sent.
+   */
+  async reauthCode(
+    accountId: unknown,
+  ): Promise<{ ok: true; hint: string; devCode: string | null } | { ok: false; error: "unlinked" | "rate" | "send" }> {
+    const id = z.uuid().parse(accountId);
+    const development = this.env.VAULT_MODE === "development";
+    const base = outbox(development);
+    let sent: string | null = null;
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      const g = await this.gateway(db.store, {
+        async deliver(phone, code) {
+          await base.deliver(phone, code);
+          sent = code;
+        },
+      });
+      const r = await sendReauthCode(g, { accountId: id, now: new Date() });
+      return r.ok ? { ...r, devCode: development ? sent : null } : r;
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  /** RPC: closes the account once the code checks out; recorded as access evidence (round 18, Q21, Q26). */
+  async close(
+    accountId: unknown,
+    code: unknown,
+    connection: unknown,
+  ): Promise<{ ok: true } | { ok: false; error: "invalid" }> {
+    const id = z.uuid().parse(accountId);
+    const now = new Date();
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      const r = await closeAccount(await this.gateway(db.store), { accountId: id, code, now });
+      if (r.ok)
+        await db.recordEvidence({
+          action: "account_closed",
+          accountId: id,
+          itemId: null,
+          connection: emptyOr(connection),
+          at: now,
+        });
+      return r;
     } finally {
       this.ctx.waitUntil(db.close());
     }

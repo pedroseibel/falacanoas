@@ -75,11 +75,14 @@ export const evidenceAction = cofre.enum("evidence_action", [
   "confirmation",
   "comment",
   "guest_pin",
+  "account_closed",
+  "phone_changed",
 ]);
 
 /**
- * One row per sign-in, publication, confirmation, comment or guest pin; never for reads. Deleted
- * after 6 months unless a preservation hold covers it. Leaves the Fala only by court order.
+ * One row per sign-in, publication, confirmation, comment, guest pin, closed account or changed
+ * number; never for reads. Deleted after 6 months unless a preservation hold covers it. Leaves the
+ * Fala only by court order.
  */
 export const accessEvidence = cofre
   .table(

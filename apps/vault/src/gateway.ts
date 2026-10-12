@@ -10,7 +10,7 @@ import {
   VERIFY_WINDOWS_PER_IP,
   type Window,
 } from "@fala/core";
-import { codeHash, newCode, phoneMacs, same, sealPhone, type VaultKeys } from "./crypto";
+import { codeHash, newCode, phoneMacs, same, sealPhone, unsealPhone, type VaultKeys } from "./crypto";
 
 /**
  * The auth gateway (DECISIONS round 18, Q16, Q20, Q29): it receives the phone, sends and checks the
@@ -64,6 +64,10 @@ export interface VaultStore {
     at: Date,
     rekey: { phoneMac: string; phoneSealed: string; keyVersion: number } | null,
   ): Promise<void>;
+  /** The account's live link, with its sealed phone. */
+  linkOf(accountId: string): Promise<(Link & { phoneSealed: string }) | null>;
+  /** Closing the account: its phone is unlinked, and the 6-month deletion takes it from there. */
+  unlinkAccount(accountId: string, at: Date): Promise<void>;
 }
 
 export interface Outbox {
@@ -186,4 +190,65 @@ export async function verifyCode(
     g.signingKey,
   );
   return { ok: true, assertion };
+}
+
+export type ReauthSendResult = { ok: true; hint: string } | { ok: false; error: "unlinked" | "rate" | "send" };
+
+/**
+ * Re-authentication before a sensitive change (closing the account, changing number; round 18, Q20
+ * and Q26): a code to the number already linked, looked up by account, so a session cookie alone
+ * can't pass it and nobody can confirm with a different number.
+ */
+export async function sendReauthCode(g: Gateway, input: { accountId: string; now: Date }): Promise<ReauthSendResult> {
+  const { accountId, now } = input;
+  const link = await g.store.linkOf(accountId);
+  if (!link) return { ok: false, error: "unlinked" };
+  if (!(await allowed(g.store, `reautenticar:${accountId}`, CODE_WINDOWS, now))) return { ok: false, error: "rate" };
+  const phone = await unsealPhone(g.keys, link.keyVersion, link.phoneSealed);
+  const code = newCode();
+  await g.store.putCode(
+    link.phoneMac,
+    await codeHash(g.keys, link.phoneMac, code),
+    new Date(now.getTime() + CODE_TTL_MS),
+  );
+  try {
+    await g.outbox.deliver(phone, code);
+  } catch {
+    await g.store.dropCode(link.phoneMac);
+    return { ok: false, error: "send" };
+  }
+  return { ok: true, hint: maskedPhone(phone) };
+}
+
+/** The code sent by `sendReauthCode`: three tries, five minutes, used once. */
+export async function checkReauthCode(
+  g: Gateway,
+  input: { accountId: string; code: unknown; now: Date },
+): Promise<boolean> {
+  const { accountId, code, now } = input;
+  if (typeof code !== "string" || !/^\d{6}$/.test(code)) return false;
+  const link = await g.store.linkOf(accountId);
+  if (!link) return false;
+  const waiting = await g.store.getCode(link.phoneMac);
+  if (!waiting || waiting.expiresAt <= now || waiting.attempts >= CODE_TRIES) return false;
+  if (!same(waiting.codeHash, await codeHash(g.keys, link.phoneMac, code))) {
+    await g.store.failCode(link.phoneMac);
+    return false;
+  }
+  await g.store.dropCode(link.phoneMac);
+  return true;
+}
+
+/**
+ * Closing an account (round 18, Q26), once re-authenticated: the phone is unlinked, so a new code
+ * opens a new account. The sealed number stays 6 months with the access evidence, unless a
+ * preservation hold keeps it longer, then goes.
+ */
+export async function closeAccount(
+  g: Gateway,
+  input: { accountId: string; code: unknown; now: Date },
+): Promise<{ ok: true } | { ok: false; error: "invalid" }> {
+  if (!(await checkReauthCode(g, input))) return { ok: false, error: "invalid" };
+  await g.store.unlinkAccount(input.accountId, input.now);
+  return { ok: true };
 }
