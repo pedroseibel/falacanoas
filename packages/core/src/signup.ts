@@ -56,12 +56,15 @@ export type QueueSignup = z.infer<typeof QueueSignupSchema>;
 
 const CODE_ALPHABET = "ACDEFHJKMNPRTUVWXY3479";
 
-/** Four characters the person sends back to confirm, without look-alikes (0/O, 1/I, 5/S…). */
-export function confirmationCode(random: ArrayLike<number>): string {
+/** A short code people can read aloud or type, without look-alikes (0/O, 1/I, 5/S…). */
+export function readableCode(random: ArrayLike<number>, length: number): string {
   let s = "";
-  for (let i = 0; i < 4; i++) s += CODE_ALPHABET.charAt((random[i] ?? 0) % CODE_ALPHABET.length);
+  for (let i = 0; i < length; i++) s += CODE_ALPHABET.charAt((random[i] ?? 0) % CODE_ALPHABET.length);
   return s;
 }
+
+/** Four characters the person sends back to confirm. */
+export const confirmationCode = (random: ArrayLike<number>) => readableCode(random, 4);
 
 /** Sign-ups still missing for a bairro to open. Null threshold: it opens with the first bairro. */
 export const missingSignups = (threshold: number | null, confirmed: number) =>
