@@ -8,3 +8,4 @@ export * from "./report";
 export * from "./media";
 export * from "./limits";
 export * from "./vault-assertion";
+export * from "./access-evidence";

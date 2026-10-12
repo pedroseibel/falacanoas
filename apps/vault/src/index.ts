@@ -1,4 +1,4 @@
-import { importVaultKey, isBrazilianMobileE164 } from "@fala/core";
+import { ConnectionSchema, EvidenceActionSchema, importVaultKey, isBrazilianMobileE164 } from "@fala/core";
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
 import { importVaultKeys, type VaultKeys } from "./crypto";
@@ -88,13 +88,58 @@ export default class Vault extends WorkerEntrypoint<Env> {
   }
 
   /** RPC: the account signed in some other way (a passkey); it counts against the 180-day rule. */
-  async signedIn(accountId: string): Promise<void> {
+  async signedIn(accountId: string, connection: unknown): Promise<void> {
     if (!z.uuid().safeParse(accountId).success) return;
+    const now = new Date();
     const db = await openStore(this.env.VAULT_DATABASE_URL);
     try {
-      await db.touchAccount(accountId, new Date());
+      await db.touchAccount(accountId, now);
+      await db.recordEvidence({ action: "sign_in", accountId, itemId: null, connection: emptyOr(connection), at: now });
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  /** RPC: write-only access evidence for an action the app performed (round 18, Q21). */
+  async record(input: unknown): Promise<void> {
+    const e = RecordSchema.parse(input);
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      await db.recordEvidence({ ...e, at: new Date() });
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  /** Daily: 6-month deletion, sparing what preservation holds cover (round 18, Q23). */
+  async scheduled(): Promise<void> {
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      const r = await db.purge(new Date());
+      console.info(
+        `cofre: apagados ${r.evidence} registros de acesso e ${r.links} vínculos antigos; ${r.holds} preservações ativas`,
+      );
     } finally {
       this.ctx.waitUntil(db.close());
     }
   }
 }
+
+const NO_CONNECTION = {
+  clientIp: null,
+  clientPort: null,
+  ipVersion: null,
+  edgeIp: null,
+  edgePort: null,
+  transport: null,
+  cfRay: null,
+} satisfies z.infer<typeof ConnectionSchema>;
+
+const emptyOr = (c: unknown) => ConnectionSchema.safeParse(c).data ?? NO_CONNECTION;
+
+const RecordSchema = z.object({
+  action: EvidenceActionSchema,
+  accountId: z.uuid().nullable(),
+  itemId: z.string().max(12).nullable(),
+  connection: ConnectionSchema,
+});

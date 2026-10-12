@@ -124,7 +124,11 @@ export const auth = betterAuth({
   },
   databaseHooks: {
     // Every sign-in, passkeys included, keeps the account out of the 180-day dormancy rule (Q20).
-    session: { create: { after: async (session) => noteSignIn(session.userId) } },
+    session: {
+      create: {
+        after: async (session, ctx) => noteSignIn(session.userId, ctx?.headers ?? ctx?.request?.headers ?? null),
+      },
+    },
   },
   plugins: [
     anonymous({ emailDomainName: "convidado.falacanoas.invalid", generateName: () => "Convidado" }),

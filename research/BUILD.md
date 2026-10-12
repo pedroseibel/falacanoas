@@ -49,10 +49,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - sign-ups stored with an unconfirmed status;
   - per-bairro counts from confirmed sign-ups only;
   - the confirmation screen stops saying "nothing is stored".
-- [~] **1.8 Round 18 tables:**
+- [x] **1.8 Round 18 tables.** Done 2026-10-12.
   - [x] apelido reservations (Q28): `fala.nick_reservations`, claimed under a row lock;
-  - [ ] `AccessEvidence` (Q21), in the vault;
-  - [ ] 6-month deletion with preservation holds (Q23);
+  - [x] `AccessEvidence` (Q21), in the vault (`fala_cofre.access_evidence`): every sign-in (code or passkey), publication and confirmation; comments and guest pins record theirs when 2.6 and 2.5 land. Only Cloudflare's headers are read; until the Transform Rule exists (4.5), the port, edge address and transport are null;
+  - [x] 6-month deletion with preservation holds (Q23): a daily cron in the vault deletes older evidence and old unlinked phone links, sparing what an active hold covers. A hold lapses after 60 days without a court order. Holds are entered by the operator, with grounds and scope; there is no screen for them;
   - [x] room reserved for nível 2 (Q12): `identityVerified` on the account, no flow.
 
 ## 2. Product loop

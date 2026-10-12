@@ -1,4 +1,11 @@
-import { importVaultKey, readVaultAssertion, type VaultAssertion } from "@fala/core";
+import {
+  connectionFromHeaders,
+  importVaultKey,
+  readVaultAssertion,
+  type EvidenceAction,
+  type VaultAssertion,
+} from "@fala/core";
+import { getRequestHeaders } from "@tanstack/react-start/server";
 import { env } from "cloudflare:workers";
 
 /**
@@ -17,9 +24,29 @@ export function readAssertion(token: string, now = Date.now()): Promise<VaultAss
   return verifyKey.then((key) => readVaultAssertion(token, key, Math.floor(now / 1000)));
 }
 
-/** Best effort: a failed notice must not fail a sign-in. */
-export async function noteSignIn(accountId: string): Promise<void> {
-  await env.VAULT?.signedIn(accountId).catch((e: unknown) => console.error("cofre: signedIn falhou", e));
+/**
+ * Every sign-in (code or passkey): the vault resets the account's 180-day clock and records the access
+ * evidence (round 18, Q20 and Q21). A failure is logged, never turned into a failed sign-in.
+ */
+export async function noteSignIn(accountId: string, headers: Headers | null): Promise<void> {
+  const connection = connectionFromHeaders(headers ?? new Headers());
+  await env.VAULT?.signedIn(accountId, connection).catch((e: unknown) => console.error("cofre: signedIn falhou", e));
+}
+
+/**
+ * Access evidence for an action this request performed (round 18, Q21): the connection as
+ * Cloudflare saw it, kept by the vault for 6 months. Logged on failure, so the person's report still
+ * goes through.
+ */
+export async function recordEvidence(
+  action: EvidenceAction,
+  accountId: string | null,
+  itemId: string | null,
+): Promise<void> {
+  const connection = connectionFromHeaders(new Headers(getRequestHeaders()));
+  await env.VAULT?.record({ action, accountId, itemId, connection }).catch((e: unknown) =>
+    console.error(`cofre: evidência de ${action} falhou`, e),
+  );
 }
 
 /**

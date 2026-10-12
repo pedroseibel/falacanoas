@@ -6,6 +6,7 @@ import { createdSince, insertItem, itemExists, joinItem } from "./items";
 import { markNickPublished } from "./nicks";
 import { putPhoto, removePhotos } from "./photos";
 import { getSession } from "./session";
+import { recordEvidence } from "./vault";
 
 /**
  * The report flow's writes (research/DECISIONS.md, rounds 3, 4, 6 and 15). Posting needs a
@@ -77,6 +78,7 @@ export const createReport = createServerFn({ method: "POST" })
       throw e;
     }
     if (parsed.data.visibility === "pseudonymous") await markNickPublished(who.id);
+    await recordEvidence("publication", who.id, item.id);
     return { ok: true, item, digest: digestDay(now, canoas) };
   });
 
@@ -108,5 +110,6 @@ export const joinReport = createServerFn({ method: "POST" })
     }
     if (parsed.data.visibility === "pseudonymous" && (joined.confirmation === "counts" || photos.srcs.length))
       await markNickPublished(who.id);
+    await recordEvidence("confirmation", who.id, joined.item.id);
     return { ok: true, ...joined };
   });

@@ -1,9 +1,10 @@
-import { and, asc, eq, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { evidenceCutoff, holdActive, type Connection, type EvidenceAction } from "@fala/core";
+import { and, asc, eq, gte, inArray, isNotNull, isNull, lt, lte, not, or, sql, type SQL } from "drizzle-orm";
 import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 import type { VaultStore } from "./gateway";
 import * as schema from "./schema";
-import { codes, hits, phones } from "./schema";
+import { accessEvidence, codes, hits, phones, preservationHolds } from "./schema";
 
 type Db = NodePgDatabase<typeof schema>;
 
@@ -14,12 +15,20 @@ type Db = NodePgDatabase<typeof schema>;
 export async function openStore(url: string): Promise<{
   store: VaultStore;
   touchAccount: (accountId: string, at: Date) => Promise<void>;
+  recordEvidence: (e: Evidence) => Promise<void>;
+  purge: (now: Date) => Promise<PurgeReport>;
   close: () => Promise<void>;
 }> {
   const client = new Client({ connectionString: url });
   await client.connect();
   const db = drizzle(client, { schema, casing: "snake_case" });
-  return { store: pgStore(db), touchAccount: (id, at) => touchAccount(db, id, at), close: () => client.end() };
+  return {
+    store: pgStore(db),
+    touchAccount: (id, at) => touchAccount(db, id, at),
+    recordEvidence: (e) => recordEvidence(db, e),
+    purge: (now) => purge(db, now),
+    close: () => client.end(),
+  };
 }
 
 const DAY_MS = 24 * 3_600_000;
@@ -103,4 +112,65 @@ async function touchAccount(db: Db, accountId: string, at: Date): Promise<void> 
     .update(phones)
     .set({ lastSignInAt: at })
     .where(and(eq(phones.accountId, accountId), isNull(phones.unlinkedAt)));
+}
+
+export interface Evidence {
+  action: EvidenceAction;
+  accountId: string | null;
+  itemId: string | null;
+  connection: Connection;
+  at: Date;
+}
+
+async function recordEvidence(db: Db, e: Evidence): Promise<void> {
+  await db
+    .insert(accessEvidence)
+    .values({ action: e.action, accountId: e.accountId, itemId: e.itemId, ...e.connection, at: e.at });
+}
+
+export interface PurgeReport {
+  evidence: number;
+  links: number;
+  holds: number;
+}
+
+/**
+ * The daily clean-up (round 18, Q23): evidence and unlinked phone links older than 6 months go,
+ * except what an active preservation hold covers; expired codes and day-old rate-limit hits go too.
+ */
+async function purge(db: Db, now: Date): Promise<PurgeReport> {
+  const cutoff = evidenceCutoff(now);
+  const holds = (await db.select().from(preservationHolds)).filter((h) => holdActive(h, now));
+
+  const held: SQL[] = holds.flatMap((h) => {
+    const scope = [
+      h.accountId ? eq(accessEvidence.accountId, h.accountId) : undefined,
+      h.itemId ? eq(accessEvidence.itemId, h.itemId) : undefined,
+    ].filter((c) => c !== undefined);
+    const range = [
+      h.coversFrom ? gte(accessEvidence.at, h.coversFrom) : undefined,
+      h.coversTo ? lte(accessEvidence.at, h.coversTo) : undefined,
+    ].filter((c) => c !== undefined);
+    const covered = and(or(...scope), ...range);
+    return covered ? [covered] : [];
+  });
+  const anyHeld = or(...held);
+  const evidence = await db
+    .delete(accessEvidence)
+    .where(and(lt(accessEvidence.at, cutoff), anyHeld ? not(anyHeld) : undefined));
+
+  const heldAccounts = holds.flatMap((h) => (h.accountId ? [h.accountId] : []));
+  const links = await db
+    .delete(phones)
+    .where(
+      and(
+        isNotNull(phones.unlinkedAt),
+        lt(phones.unlinkedAt, cutoff),
+        heldAccounts.length ? not(inArray(phones.accountId, heldAccounts)) : undefined,
+      ),
+    );
+
+  await db.delete(codes).where(lt(codes.expiresAt, now));
+  await db.delete(hits).where(lt(hits.at, new Date(now.getTime() - DAY_MS)));
+  return { evidence: evidence.rowCount ?? 0, links: links.rowCount ?? 0, holds: holds.length };
 }

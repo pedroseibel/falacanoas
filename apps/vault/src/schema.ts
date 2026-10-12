@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { check, index, integer, pgSchema, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { check, index, integer, pgSchema, smallint, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 
 /**
  * The identity vault's tables (DECISIONS round 18, Q5 and Q29), in their own schema, reached only by
@@ -64,5 +64,72 @@ export const hits = cofre
       at: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [index().on(t.key, t.at)],
+  )
+  .enableRLS();
+
+/* ---------- Access evidence (round 18, Q21-Q23; Marco Civil art. 15) ---------- */
+
+export const evidenceAction = cofre.enum("evidence_action", [
+  "sign_in",
+  "publication",
+  "confirmation",
+  "comment",
+  "guest_pin",
+]);
+
+/**
+ * One row per sign-in, publication, confirmation, comment or guest pin; never for reads. Deleted
+ * after 6 months unless a preservation hold covers it. Leaves the Fala only by court order.
+ */
+export const accessEvidence = cofre
+  .table(
+    "access_evidence",
+    {
+      eventId: uuid().primaryKey().defaultRandom(),
+      action: evidenceAction().notNull(),
+      accountId: uuid(),
+      /** The item published, confirmed, commented on or dropped as a guest pin. */
+      itemId: text(),
+      clientIp: text(),
+      clientPort: integer(),
+      ipVersion: smallint(),
+      edgeIp: text(),
+      edgePort: integer(),
+      /** "tcp" (HTTP/1.1, HTTP/2) or "quic" (HTTP/3). */
+      transport: text(),
+      /** Correlation only: Ray IDs can repeat. */
+      cfRay: text(),
+      /** UTC, to the millisecond. */
+      at: timestamp({ withTimezone: true, precision: 3 }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.at), index().on(t.accountId, t.at), index().on(t.itemId)],
+  )
+  .enableRLS();
+
+/**
+ * A preservation request (art. 15 §2): it suspends deletion for its scope, with its grounds and dates
+ * documented, and lapses after 60 days unless a court order is sought (core: holdActive).
+ */
+export const preservationHolds = cofre
+  .table(
+    "preservation_holds",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      /** Who asked and their reference (authority, procedure number). */
+      reference: text().notNull(),
+      grounds: text().notNull(),
+      /** Scope: an account, an item, or both, optionally within a time range. */
+      accountId: uuid(),
+      itemId: text(),
+      coversFrom: timestamp({ withTimezone: true }),
+      coversTo: timestamp({ withTimezone: true }),
+      requestedAt: timestamp({ withTimezone: true }).notNull(),
+      courtOrderSoughtAt: timestamp({ withTimezone: true }),
+      refusedAt: timestamp({ withTimezone: true }),
+      endsAt: timestamp({ withTimezone: true }),
+      releasedAt: timestamp({ withTimezone: true }),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [check("preservation_holds_scope", sql`${t.accountId} is not null or ${t.itemId} is not null`)],
   )
   .enableRLS();
