@@ -10,3 +10,8 @@ TURNSTILE_SECRET_KEY=
 # Passkeys are bound to a domain, never an IP: in development use the tailnet host and its HTTPS origin.
 PASSKEY_RP_ID=
 PASSKEY_ORIGINS=
+# Supabase Postgres (São Paulo), the session pooler string from Connect in the dashboard. Server-side only.
+DATABASE_URL=
+# Supabase API, server-side only (Storage). The secret key never reaches the browser.
+SUPABASE_URL=
+SUPABASE_SECRET_KEY=

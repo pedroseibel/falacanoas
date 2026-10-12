@@ -23,12 +23,11 @@ Blocked items are built behind an interface with a development fallback where th
 
 The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every access is server-side; the browser never talks to Supabase.
 
-- [ ] **1.1 Connection.**
+- [x] **1.1 Connection.** Done 2026-10-12: `db()` in `src/server/db/client.ts`, with `bun run db:generate` and `bun run db:migrate`; the Hyperdrive binding comes at deploy (4.5).
   - Drizzle on node-postgres, with a client per request: Workers can't share sockets between requests.
   - Development uses `DATABASE_URL` (the Supabase pooler); production uses a Hyperdrive binding.
   - Migrations live in `apps/web/drizzle/`, managed with drizzle-kit.
-  - ⛔ Needs `DATABASE_URL` (with the database password) in `apps/web/.dev.vars`.
-- [ ] **1.2 Locked down by default.** App tables live in a schema that the Data API doesn't expose, with RLS on and no anon or authenticated grants.
+- [x] **1.2 Locked down by default.** Verified: `anon` and `authenticated` have no rights in `fala`, and the Data API answers "Invalid schema: fala". App tables live in a schema that the Data API doesn't expose, with RLS on and no anon or authenticated grants.
 - [ ] **1.3 Better Auth on Postgres:**
   - Drizzle adapter, with its tables in the app schema;
   - rate-limit storage in the database;
@@ -43,7 +42,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - the server functions read and write the database;
   - fixtures become seed data, still labelled "exemplo".
 - [~] **1.6 Photos in Supabase Storage:** a private `fotos` bucket (created 2026-10-12: 3 MB, WebP and JPEG only). The server strips metadata and stores the photo; `/api/fotos/$key` streams it.
-- [ ] **1.7 Waitlist persisted** (rounds 6, 12, 17):
+- [x] **1.7 Waitlist persisted** (rounds 6, 12, 17). Stored in `fala.queue_signups`. Confirmation waits on the WhatsApp and e-mail senders (3.1, 3.2), and the done screen says so.
   - sign-ups stored with an unconfirmed status;
   - per-bairro counts from confirmed sign-ups only;
   - the confirmation screen stops saying "nothing is stored".
@@ -122,7 +121,6 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 
 ## Founder inputs that unblock items
 
-- **Database password**, as `DATABASE_URL` in `.dev.vars`: 1.1 and everything after it.
 - **E-mail sender and Ouvidoria address:** 3.1.
 - **WhatsApp provider and number:** 3.2.
 - **Open-data licence:** 3.3.

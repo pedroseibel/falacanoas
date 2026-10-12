@@ -1,0 +1,135 @@
+{
+  "id": "b39a30dd-febd-4f6c-9baa-7c037ffb444e",
+  "prevId": "4cf65a26-0dbf-4f22-8d36-92a6da10e389",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "fala.queue_signups": {
+      "name": "queue_signups",
+      "schema": "fala",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "neighborhood": {
+          "name": "neighborhood",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "signup_channel",
+          "typeSchema": "fala",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contact": {
+          "name": "contact",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "help": {
+          "name": "help",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::text[]"
+        },
+        "code": {
+          "name": "code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmed_at": {
+          "name": "confirmed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "queue_signups_neighborhood_index": {
+          "name": "queue_signups_neighborhood_index",
+          "columns": [
+            {
+              "expression": "neighborhood",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "with": {},
+          "method": "btree",
+          "concurrently": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "queue_signups_contact_unique": {
+          "name": "queue_signups_contact_unique",
+          "columns": [
+            "contact"
+          ],
+          "nullsNotDistinct": false
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "queue_signups_code": {
+          "name": "queue_signups_code",
+          "value": "\"fala\".\"queue_signups\".\"code\" ~ '^[A-Z0-9]{4}$'"
+        },
+        "queue_signups_help": {
+          "name": "queue_signups_help",
+          "value": "\"fala\".\"queue_signups\".\"help\" <@ array['moderar','codigo','divulgar']::text[]"
+        }
+      },
+      "isRLSEnabled": true
+    }
+  },
+  "enums": {
+    "fala.signup_channel": {
+      "name": "signup_channel",
+      "schema": "fala",
+      "values": [
+        "whatsapp",
+        "email"
+      ]
+    }
+  },
+  "schemas": {
+    "fala": "fala"
+  },
+  "views": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

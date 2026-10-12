@@ -292,7 +292,13 @@ function Done({
   muni: Municipality;
   confirmed: Record<string, number>;
   sent: QueueSignup;
-  result: { code: string; saved: boolean; whatsappNumber: string | null };
+  result: {
+    code: string;
+    saved: boolean;
+    alreadyConfirmed: boolean;
+    delivered: boolean;
+    whatsappNumber: string | null;
+  };
 }) {
   const [copied, setCopied] = useState(false);
   const b = muni.neighborhoods.find((n) => n.slug === sent.neighborhood);
@@ -313,14 +319,24 @@ function Done({
   return (
     <div ref={focusOnMount} tabIndex={-1} aria-live="polite" className="grid gap-4.5 p-card outline-none">
       <h3 className="text-2xl font-semibold tracking-tight">
-        {wa ? "Falta um passo: confirmar no WhatsApp." : "Falta um passo: abrir o e-mail."}
+        {result.alreadyConfirmed
+          ? `Você já está na fila de ${b.name}.`
+          : wa
+            ? "Falta um passo: confirmar no WhatsApp."
+            : "Falta um passo: abrir o e-mail."}
       </h3>
       <p className="text-ui text-ink-2">
-        {wa
-          ? `Toque no botão e envie a mensagem que já vem escrita. É assim que sabemos que o número é seu. Só depois disso você passa a contar na fila de ${b.name}.`
-          : `Mandamos um link de confirmação para ${sent.contact.trim()}. Se não chegar em alguns minutos, olhe a caixa de spam. Só depois disso você passa a contar na fila de ${b.name}.`}
+        {result.alreadyConfirmed
+          ? "Esta inscrição já foi confirmada antes e continua contando. Nada mudou."
+          : wa
+            ? result.whatsappNumber
+              ? `Toque no botão e envie a mensagem que já vem escrita. É assim que sabemos que o número é seu. Só depois disso você passa a contar na fila de ${b.name}.`
+              : `Sua inscrição está guardada. O número do Fala no WhatsApp ainda não está ativo: quando estiver, mandamos uma mensagem para você confirmar, e só depois disso você passa a contar na fila de ${b.name}.`
+            : result.delivered
+              ? `Mandamos um link de confirmação para ${sent.contact.trim()}. Se não chegar em alguns minutos, olhe a caixa de spam. Só depois disso você passa a contar na fila de ${b.name}.`
+              : `Sua inscrição está guardada. O envio do link de confirmação por e-mail ainda não está ligado: quando estiver, mandamos o link para ${sent.contact.trim()}, e só depois disso você passa a contar na fila de ${b.name}.`}
       </p>
-      {wa && (
+      {wa && !result.alreadyConfirmed && (
         <>
           <div className="rounded-xl border border-hairline bg-muted px-3.5 py-3 text-center font-mono text-lg tracking-widest">
             {confirmText}

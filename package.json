@@ -13,7 +13,9 @@
     "test": "bun test",
     "typecheck": "bun --filter '*' typecheck",
     "lint": "oxlint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "db:generate": "bun --filter @fala/web db:generate",
+    "db:migrate": "bun --filter @fala/web db:migrate"
   },
   "workspaces": [
     "apps/*",
