@@ -1,0 +1,100 @@
+import { importVaultKey, isBrazilianMobileE164 } from "@fala/core";
+import { WorkerEntrypoint } from "cloudflare:workers";
+import { z } from "zod";
+import { importVaultKeys, type VaultKeys } from "./crypto";
+import { sendCode, verifyCode, type Gateway } from "./gateway";
+import { outbox, peekDevCode } from "./outbox";
+import { openStore } from "./store";
+import { turnstile } from "./turnstile";
+
+export interface Env {
+  /** The vault's own database role: fala_cofre only. */
+  VAULT_DATABASE_URL: string;
+  VAULT_KEY_VERSION: string;
+  /** JSON: { "<version>": "<base64 32 bytes>" }. */
+  VAULT_SEAL_KEYS: string;
+  VAULT_MAC_KEYS: string;
+  /** Ed25519 private JWK; the app holds only the public half. */
+  VAULT_SIGNING_KEY: string;
+  TURNSTILE_SECRET_KEY?: string;
+  /** The instance's host, which real Turnstile tokens must name. */
+  TURNSTILE_HOSTNAME?: string;
+  /** "development" in .dev.vars only: test Turnstile secret, codes shown instead of sent. */
+  VAULT_MODE?: string;
+}
+
+/** Keys are imported once per isolate. */
+let imported: Promise<{ keys: VaultKeys; signingKey: CryptoKey }> | null = null;
+const importKeys = (env: Env) =>
+  (imported ??= Promise.all([importVaultKeys(env), importVaultKey(env.VAULT_SIGNING_KEY, "sign")]).then(
+    ([keys, signingKey]) => ({ keys, signingKey }),
+  ));
+
+const BodySchema = z.object({ telefone: z.unknown(), token: z.unknown(), codigo: z.unknown() }).partial();
+
+const STATUS = { invalid: 400, robot: 403, rate: 429, send: 503 } satisfies Record<string, number>;
+
+const json = (body: unknown, status = 200) =>
+  Response.json(body, { status, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
+
+/**
+ * The identity vault (DECISIONS round 18, Q29). Over HTTP, the auth gateway: a route sends
+ * /api/identidade/* on the instance's domain here, so the phone never passes through the app. Over
+ * RPC (the app's service binding), only what the app may ask: that an account signed in.
+ */
+export default class Vault extends WorkerEntrypoint<Env> {
+  async fetch(request: Request): Promise<Response> {
+    const url = new URL(request.url);
+    const development = this.env.VAULT_MODE === "development";
+
+    if (request.method === "GET" && url.pathname === "/api/identidade/dev/codigo") {
+      const phone = url.searchParams.get("telefone") ?? "";
+      if (!development || !isBrazilianMobileE164(phone)) return json({ codigo: null }, 404);
+      return json({ codigo: peekDevCode(phone) });
+    }
+    if (request.method !== "POST") return json({ ok: false }, 404);
+
+    const action =
+      url.pathname === "/api/identidade/codigo"
+        ? "send"
+        : url.pathname === "/api/identidade/verificar"
+          ? "verify"
+          : null;
+    if (!action) return json({ ok: false }, 404);
+    const body = BodySchema.safeParse(await request.json().catch(() => null));
+    const input = body.success ? body.data : {};
+    const ip = request.headers.get("cf-connecting-ip");
+    const now = new Date();
+
+    const { keys, signingKey } = await importKeys(this.env);
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      const g: Gateway = {
+        store: db.store,
+        keys,
+        signingKey,
+        outbox: outbox(development),
+        human: turnstile(this.env, development),
+      };
+      if (action === "send") {
+        const r = await sendCode(g, { phone: input.telefone, token: input.token, ip, now });
+        return r.ok ? json({ ok: true }) : json(r, STATUS[r.error]);
+      }
+      const r = await verifyCode(g, { phone: input.telefone, code: input.codigo, ip, now });
+      return r.ok ? json({ ok: true, assertion: r.assertion }) : json(r, STATUS[r.error]);
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  /** RPC: the account signed in some other way (a passkey); it counts against the 180-day rule. */
+  async signedIn(accountId: string): Promise<void> {
+    if (!z.uuid().safeParse(accountId).success) return;
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      await db.touchAccount(accountId, new Date());
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+}

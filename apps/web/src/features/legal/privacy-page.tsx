@@ -32,8 +32,8 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
       </header>
 
       <p className="rounded-xl border border-dashed border-hairline-strong px-4 py-3 text-caption text-ink-2">
-        Protótipo: contas, registros e fotos ficam só na memória de um servidor de teste e somem quando ele reinicia.
-        Nenhum resumo é enviado à Prefeitura.
+        Protótipo: contas, registros e fotos ficam num banco de dados de teste, em São Paulo, e podem ser apagados a
+        qualquer momento. Nenhum resumo é enviado à Prefeitura.
       </p>
 
       <Part title="Quem cuida dos dados">
@@ -54,8 +54,9 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
       <Part title="O que fica guardado e não aparece">
         <ul className="grid list-disc gap-1.5 pl-5">
           <li>
-            Seu celular, para você entrar. Ele também serve para colaborar com a identificação de quem publicou, quando
-            houver requisição legalmente válida, sem garantia de que essa identificação seja sempre possível.
+            Seu celular, para você entrar. Ele fica cifrado, num cofre separado do resto do Fala. Também serve para
+            colaborar com a identificação de quem publicou, quando houver requisição legalmente válida, sem garantia de
+            que essa identificação seja sempre possível.
           </li>
           <li>
             Que você declarou ter 18 anos ou mais e confirmou ter lido este aviso, com a versão do aviso e a data.

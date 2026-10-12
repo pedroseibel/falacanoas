@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // The identity vault (DECISIONS round 18, Q29): its own Worker with its own secrets. In production a
+  // route sends /api/identidade/* on the instance's domain straight here, so the app Worker never sees
+  // a phone number; the app reaches the vault's narrow RPC through a service binding.
+  "name": "falacanoas-vault",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "src/index.ts",
+  "observability": { "enabled": true }
+}

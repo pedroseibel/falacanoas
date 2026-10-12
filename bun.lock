@@ -11,6 +11,23 @@
         "typescript": "7.0.2",
       },
     },
+    "apps/vault": {
+      "name": "@fala/vault",
+      "version": "0.1.0",
+      "dependencies": {
+        "@fala/core": "workspace:*",
+        "drizzle-orm": "0.45.4",
+        "pg": "8.23.1",
+        "zod": "^4.6.7",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "@types/pg": "^8.23.1",
+        "drizzle-kit": "0.31.11",
+        "typescript": "7.0.2",
+        "wrangler": "^4.149.0",
+      },
+    },
     "apps/web": {
       "name": "@fala/web",
       "version": "0.1.0",
@@ -260,6 +277,8 @@
     "@fala/core": ["@fala/core@workspace:packages/core"],
 
     "@fala/instance-canoas": ["@fala/instance-canoas@workspace:instances/canoas"],
+
+    "@fala/vault": ["@fala/vault@workspace:apps/vault"],
 
     "@fala/web": ["@fala/web@workspace:apps/web"],
 

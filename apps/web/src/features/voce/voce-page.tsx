@@ -182,10 +182,10 @@ export function VocePage({
             </>
           )}
           <p className="text-xs leading-relaxed text-muted-foreground">
-            Protótipo: registros, apelidos, respostas e números do mapa são fictícios. Contas ficam só na memória do
-            servidor até o banco de dados entrar. Fotos: Nilce Bravo (CC BY-SA 3.0), Yeuxpapilon (CC BY-SA 4.0), Myke
-            Sena/DPU (CC0), via Wikimedia Commons. Mapa: OpenFreeMap, © OpenMapTiles, © colaboradores do OpenStreetMap.
-            Bairros: IBGE, Censo 2022.
+            Protótipo: registros, apelidos, respostas e números marcados como exemplo são fictícios. Contas e registros
+            ficam num banco de dados de teste e podem ser apagados. Fotos: Nilce Bravo (CC BY-SA 3.0), Yeuxpapilon (CC
+            BY-SA 4.0), Myke Sena/DPU (CC0), via Wikimedia Commons. Mapa: OpenFreeMap, © OpenMapTiles, © colaboradores
+            do OpenStreetMap. Bairros: IBGE, Censo 2022.
           </p>
         </div>
       </div>

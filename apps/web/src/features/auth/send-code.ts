@@ -1,5 +1,4 @@
-/** The Turnstile action the sign-in page declares; the server refuses a token minted for another one. */
-export const SEND_CODE_ACTION = "enviar-codigo";
+export { SEND_CODE_ACTION } from "@fala/core";
 
 export type SendFailure = "rate" | "robot" | "send";
 

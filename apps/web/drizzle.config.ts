@@ -1,5 +1,5 @@
 import { defineConfig } from "drizzle-kit";
-import { databaseUrl } from "./src/server/db/dev-env";
+import { adminDatabaseUrl } from "./src/server/db/dev-env";
 
 /** Migrations for the app schema only: Supabase's own schemas (auth, storage, vault…) are never touched. */
 export default defineConfig({
@@ -8,7 +8,7 @@ export default defineConfig({
   out: "./drizzle",
   schemaFilter: ["fala"],
   casing: "snake_case",
-  dbCredentials: { url: databaseUrl() },
+  dbCredentials: { url: adminDatabaseUrl() },
   strict: true,
   verbose: true,
 });

@@ -29,10 +29,9 @@ function byItem<T extends { itemId: string }>(rows: T[]): Map<string, T[]> {
 
 /** Every item, newest first, with photos; histories load with the item page. */
 export async function listItems(now = new Date()): Promise<Item[]> {
-  const d = await db();
   const [rows, photos] = await Promise.all([
-    d.select().from(items).orderBy(desc(items.createdAt)),
-    d.select(photoColumns).from(itemPhotos).orderBy(asc(itemPhotos.position)),
+    db.select().from(items).orderBy(desc(items.createdAt)),
+    db.select(photoColumns).from(itemPhotos).orderBy(asc(itemPhotos.position)),
   ]);
   const photosOf = byItem(photos);
   return rows.map((row) => itemFromRows(row, { photos: photosOf.get(row.id) ?? [] }, now, tz));
@@ -54,19 +53,17 @@ async function readItem(q: Db | Tx, id: string, now: Date): Promise<Item | null>
 
 /** One item with its whole history. */
 export async function findItem(id: string, now = new Date()): Promise<Item | null> {
-  return readItem(await db(), id, now);
+  return readItem(db, id, now);
 }
 
 export async function itemExists(id: string): Promise<boolean> {
-  const d = await db();
-  const [row] = await d.select({ id: items.id }).from(items).where(eq(items.id, id));
+  const [row] = await db.select({ id: items.id }).from(items).where(eq(items.id, id));
   return Boolean(row);
 }
 
 /** How many items this account created in the last `ms`. */
 export async function createdSince(accountId: string, ms: number, now = new Date()): Promise<number> {
-  const d = await db();
-  const [row] = await d
+  const [row] = await db
     .select({ n: count() })
     .from(itemAuthors)
     .innerJoin(items, eq(items.id, itemAuthors.itemId))
@@ -77,8 +74,7 @@ export async function createdSince(accountId: string, ms: number, now = new Date
 /** A new report, its first event and photos, and who is behind it, all or nothing. */
 export async function insertItem(item: Item, accountId: string, now: Date): Promise<void> {
   const rows = rowsForNewItem(item, now);
-  const d = await db();
-  await d.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
     await tx.insert(items).values(rows.row);
     await tx.insert(itemAuthors).values({ itemId: item.id, accountId });
     if (rows.events.length) await tx.insert(itemEvents).values(rows.events);
@@ -108,8 +104,7 @@ export async function joinItem({
   phoneVerifiedAt: Date | null;
   now: Date;
 }): Promise<JoinOutcome> {
-  const d = await db();
-  const outcome = await d.transaction(async (tx) => {
+  const outcome = await db.transaction(async (tx) => {
     const [locked] = await tx.select({ id: items.id }).from(items).where(eq(items.id, id)).for("update");
     if (!locked) return null;
     const item = await readItem(tx, id, now);

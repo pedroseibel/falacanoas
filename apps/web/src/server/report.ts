@@ -34,7 +34,7 @@ const formData = (data: FormData) => {
 
 async function reporter(): Promise<{ id: string; nick: string; phoneVerifiedAt: Date | null } | Failure> {
   const user = (await getSession())?.user;
-  if (!user || user.isAnonymous || !user.phoneNumberVerified)
+  if (!user || user.isAnonymous || !user.phoneVerifiedAt)
     return { ok: false, error: "Entre com o seu celular para registrar." };
   if (!user.nick) return { ok: false, error: "Escolha um apelido antes de registrar." };
   return { id: user.id, nick: user.nick, phoneVerifiedAt: user.phoneVerifiedAt ?? null };
@@ -76,7 +76,7 @@ export const createReport = createServerFn({ method: "POST" })
       await removePhotos(photos.keys);
       throw e;
     }
-    if (parsed.data.visibility === "pseudonymous") markNickPublished(who.id);
+    if (parsed.data.visibility === "pseudonymous") await markNickPublished(who.id);
     return { ok: true, item, digest: digestDay(now, canoas) };
   });
 
@@ -107,6 +107,6 @@ export const joinReport = createServerFn({ method: "POST" })
       return { ok: false, error: "Esse registro não está mais aberto. Publique o seu." };
     }
     if (parsed.data.visibility === "pseudonymous" && (joined.confirmation === "counts" || photos.srcs.length))
-      markNickPublished(who.id);
+      await markNickPublished(who.id);
     return { ok: true, ...joined };
   });

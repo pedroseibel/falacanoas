@@ -22,6 +22,27 @@
       "when": 1791842999262,
       "tag": "0002_items",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791844563983,
+      "tag": "0003_roles",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791844740205,
+      "tag": "0004_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791845010270,
+      "tag": "0005_auth_ids",
+      "breakpoints": true
     }
   ]
 }

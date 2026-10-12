@@ -1,16 +1,13 @@
-import { maskedPhone } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import { ProfileSchema } from "@/features/auth/profile-schema";
 import { PRIVACY_NOTICE_VERSION } from "@/features/legal/privacy";
 import { auth } from "./auth";
 import { claimNick } from "./nicks";
-import { peekDevCode } from "./otp-outbox";
 import { getSession as session } from "./session";
 
 const iso = (d: Date | null | undefined) => (d ? d.toISOString() : null);
 
-/** The signed-in person as the app sees them. The phone is only ever returned masked. */
+/** The signed-in person as the app sees them. The app never has the phone, only the vault's masked hint. */
 export const getAccount = createServerFn({ method: "GET" }).handler(async () => {
   const s = await session();
   if (!s) return null;
@@ -20,8 +17,8 @@ export const getAccount = createServerFn({ method: "GET" }).handler(async () => 
     nick: u.nick ?? null,
     neighborhood: u.neighborhood ?? null,
     guest: Boolean(u.isAnonymous),
-    phone: u.phoneNumber ? maskedPhone(u.phoneNumber) : null,
-    phoneVerified: Boolean(u.phoneNumberVerified),
+    phone: u.phoneHint ?? null,
+    phoneVerified: Boolean(u.phoneVerifiedAt) && !u.isAnonymous,
     phoneVerifiedAt: iso(u.phoneVerifiedAt),
     identityVerified: Boolean(u.identityVerified),
     /** Both declarations made, against the current version of the privacy notice. */
@@ -42,7 +39,7 @@ export const saveProfile = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SaveResult> => {
     const s = await session();
     if (!s || s.user.isAnonymous) throw new Error("Entre com seu telefone para escolher um apelido.");
-    if (!claimNick(data.nick, s.user.id))
+    if (!(await claimNick(data.nick, s.user.id)))
       return { ok: false, error: "Esse apelido, ou um muito parecido, já tem dono. Tente outro." };
     const ctx = await auth.$context;
     const now = new Date();
@@ -65,8 +62,3 @@ export const saveProfile = createServerFn({ method: "POST" })
 export const getAuthConfig = createServerFn({ method: "GET" }).handler(async () => ({
   turnstileSiteKey: process.env.TURNSTILE_SITE_KEY ?? (import.meta.env.DEV ? "1x00000000000000000000AA" : null),
 }));
-
-/** Development only: the code that would have gone to WhatsApp. Returns null in production. */
-export const getDevCode = createServerFn({ method: "POST" })
-  .inputValidator(z.string().regex(/^\+55\d{10,11}$/))
-  .handler(async ({ data }) => peekDevCode(data));

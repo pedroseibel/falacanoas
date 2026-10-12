@@ -13,5 +13,11 @@ export default defineConfig({
     host: "127.0.0.1",
     allowedHosts: [".ts.net"],
   },
-  plugins: [cloudflare({ viteEnvironment: { name: "ssr" } }), tailwindcss(), tanstackStart(), viteReact()],
+  plugins: [
+    // The identity vault runs beside the app in development, reached through the VAULT service binding.
+    cloudflare({ viteEnvironment: { name: "ssr" }, auxiliaryWorkers: [{ configPath: "../vault/wrangler.jsonc" }] }),
+    tailwindcss(),
+    tanstackStart(),
+    viteReact(),
+  ],
 });

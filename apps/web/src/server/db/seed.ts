@@ -3,7 +3,7 @@ import { fixtures } from "@fala/instance-canoas/fixtures";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
-import { databaseUrl } from "./dev-env";
+import { adminDatabaseUrl } from "./dev-env";
 import * as schema from "./schema";
 import { seedRows } from "./seed-model";
 
@@ -12,8 +12,8 @@ import { seedRows } from "./seed-model";
  * the fixtures' own clock. Real reports are never touched; anything people added to a demo item
  * (confirmations, photos) goes with it.
  */
-const url = databaseUrl();
-if (!url) throw new Error("DATABASE_URL não configurada: veja apps/web/.dev.vars.example.");
+const url = adminDatabaseUrl();
+if (!url) throw new Error("DATABASE_ADMIN_URL não configurada: veja apps/web/.dev.vars.example.");
 
 const client = new Client({ connectionString: url });
 await client.connect();

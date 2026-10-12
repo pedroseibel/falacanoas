@@ -1,6 +1,7 @@
 import type { Scope } from "@fala/core";
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   check,
   doublePrecision,
@@ -147,7 +148,10 @@ export const itemAuthors = fala
     itemId: text()
       .primaryKey()
       .references(() => items.id, { onDelete: "cascade" }),
-    accountId: uuid().notNull(),
+    /** Closing the account deletes this row: the item stays, unlinked from who posted it (Q26). */
+    accountId: uuid()
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
   })
   .enableRLS();
 
@@ -203,9 +207,158 @@ export const itemConfirmations = fala
       itemId: text()
         .notNull()
         .references(() => items.id, { onDelete: "cascade" }),
-      accountId: uuid().notNull(),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [primaryKey({ columns: [t.itemId, t.accountId] })],
+  )
+  .enableRLS();
+
+/* ---------- Accounts (Better Auth; rounds 17 and 18) ---------- */
+/*
+ * The phone is not here: it lives in the identity vault (apps/vault), which tells the app only which
+ * account signed in. Better Auth reads these through its Drizzle adapter (src/server/auth.ts). With
+ * UUID ids on Postgres it leaves the id to the database, hence the defaults; the vault's account ids
+ * are passed in explicitly.
+ */
+
+const at = () => timestamp({ withTimezone: true });
+
+export const users = fala
+  .table("users", {
+    id: uuid().primaryKey().defaultRandom(),
+    /** Better Auth requires a name and an e-mail; the name is the apelido, the e-mail a placeholder. */
+    name: text().notNull(),
+    email: text().notNull().unique(),
+    emailVerified: boolean().notNull().default(false),
+    image: text(),
+    createdAt: at().notNull().defaultNow(),
+    updatedAt: at().notNull().defaultNow(),
+    /** A guest session (round 2): reads and drops guest pins, nothing else. */
+    isAnonymous: boolean().default(false),
+    nick: text(),
+    neighborhood: text(),
+    /** Room for nível 2, optional civil identity (round 18, Q12): no flow sets it yet. */
+    identityVerified: boolean().default(false),
+    /** First verification of the phone now linked: confirmations count 72 h after it (Q17). */
+    phoneVerifiedAt: at(),
+    /** "(51) 9…4567", from the vault: enough to recognise the number, not to call it. */
+    phoneHint: text(),
+    ageConfirmedAt: at(),
+    privacyNoticeVersion: text(),
+    privacyNoticeReadAt: at(),
+  })
+  .enableRLS();
+
+export const sessions = fala
+  .table(
+    "sessions",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      userId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      token: text().notNull().unique(),
+      expiresAt: at().notNull(),
+      ipAddress: text(),
+      userAgent: text(),
+      createdAt: at().notNull().defaultNow(),
+      updatedAt: at().notNull().defaultNow(),
+    },
+    (t) => [index().on(t.userId)],
+  )
+  .enableRLS();
+
+/** Better Auth's credential links. With phone sign-in through the vault, nothing writes here yet. */
+export const accounts = fala
+  .table(
+    "accounts",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      accountId: text().notNull(),
+      providerId: text().notNull(),
+      userId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      accessToken: text(),
+      refreshToken: text(),
+      idToken: text(),
+      accessTokenExpiresAt: at(),
+      refreshTokenExpiresAt: at(),
+      scope: text(),
+      password: text(),
+      createdAt: at().notNull().defaultNow(),
+      updatedAt: at().notNull().defaultNow(),
+    },
+    (t) => [index().on(t.userId)],
+  )
+  .enableRLS();
+
+/** Short-lived values: passkey challenges, and the ids of vault assertions already used. */
+export const verifications = fala
+  .table(
+    "verifications",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      identifier: text().notNull(),
+      value: text().notNull(),
+      expiresAt: at().notNull(),
+      createdAt: at().notNull().defaultNow(),
+      updatedAt: at().notNull().defaultNow(),
+    },
+    (t) => [index().on(t.identifier)],
+  )
+  .enableRLS();
+
+export const passkeys = fala
+  .table(
+    "passkeys",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      name: text(),
+      publicKey: text().notNull(),
+      userId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      credentialID: text("credential_id").notNull(),
+      counter: integer().notNull(),
+      deviceType: text().notNull(),
+      backedUp: boolean().notNull(),
+      transports: text(),
+      createdAt: at(),
+      aaguid: text(),
+    },
+    (t) => [index().on(t.userId), index().on(t.credentialID)],
+  )
+  .enableRLS();
+
+/** Better Auth's per-IP limits, shared by every Worker isolate. */
+export const rateLimits = fala
+  .table("rate_limits", {
+    id: uuid().primaryKey().defaultRandom(),
+    key: text().notNull().unique(),
+    count: integer().notNull(),
+    lastRequest: bigint({ mode: "number" }).notNull(),
+  })
+  .enableRLS();
+
+/**
+ * Apelido reservations (round 18, Q28), keyed by the normalized name so look-alike variants collide.
+ * Holds account ids only, never civil identity. A name that signed anything public is never reused;
+ * one that never did is released 90 days after its owner moves on.
+ */
+export const nickReservations = fala
+  .table(
+    "nick_reservations",
+    {
+      key: text().primaryKey(),
+      ownerId: uuid(),
+      lastOwnerId: uuid().notNull(),
+      published: boolean().notNull().default(false),
+      releasedAt: at(),
+    },
+    (t) => [index().on(t.ownerId)],
   )
   .enableRLS();

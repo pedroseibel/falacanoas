@@ -11,9 +11,7 @@ import { queueSignups } from "./db/schema";
  * delivered: the sign-up is kept, and the done screen says the confirmation message comes later.
  */
 export const getQueue = createServerFn({ method: "GET" }).handler(async () => {
-  const rows = await (
-    await db()
-  )
+  const rows = await db
     .select({ neighborhood: queueSignups.neighborhood, confirmed: count() })
     .from(queueSignups)
     .where(isNotNull(queueSignups.confirmedAt))
@@ -33,10 +31,9 @@ export const joinQueue = createServerFn({ method: "POST" })
       help: data.help,
       code: confirmationCode(crypto.getRandomValues(new Uint32Array(4))),
     };
-    const d = await db();
     // A repeat sign-up updates the row only while it is unconfirmed: nobody can move someone else's
     // confirmed sign-up to another bairro by typing their contact.
-    await d
+    await db
       .insert(queueSignups)
       .values({ ...fresh, contact })
       .onConflictDoUpdate({
@@ -44,7 +41,7 @@ export const joinQueue = createServerFn({ method: "POST" })
         set: { ...fresh, updatedAt: sql`now()` },
         setWhere: isNull(queueSignups.confirmedAt),
       });
-    const [row] = await d
+    const [row] = await db
       .select({ code: queueSignups.code, confirmedAt: queueSignups.confirmedAt })
       .from(queueSignups)
       .where(eq(queueSignups.contact, contact));

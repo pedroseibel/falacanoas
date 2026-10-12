@@ -3,15 +3,19 @@ BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=http://127.0.0.1:3100
 # Extra origins allowed to call /api/auth (tailnet, previews), comma-separated.
 BETTER_AUTH_TRUSTED_ORIGINS=http://127.0.0.1:3100,http://localhost:3100
-# Turnstile (round 18, Q16). Optional in development: Cloudflare's always-pass test keys are used when unset.
-# Required in production; without them, sign-in codes are not sent.
+# Turnstile site key (round 18, Q16), public. Optional in development: Cloudflare's always-pass test key
+# is used when unset. The secret key lives in the vault (apps/vault/.dev.vars), which checks the token.
 TURNSTILE_SITE_KEY=
-TURNSTILE_SECRET_KEY=
 # Passkeys are bound to a domain, never an IP: in development use the tailnet host and its HTTPS origin.
 PASSKEY_RP_ID=
 PASSKEY_ORIGINS=
 # Supabase Postgres (São Paulo), the session pooler string from Connect in the dashboard. Server-side only.
+# Start with the `postgres` string in DATABASE_URL; `bun run db:roles` (after `bun run db:migrate`) moves it
+# to DATABASE_ADMIN_URL and gives the app its own role, fala_app, which can't read the vault's schema.
 DATABASE_URL=
+DATABASE_ADMIN_URL=
+# The vault's public key, written by `bun run vault:keys`. Not secret: it verifies, it can't sign.
+VAULT_VERIFY_KEY=
 # Supabase API, server-side only (Storage). The secret key never reaches the browser.
 SUPABASE_URL=
 SUPABASE_SECRET_KEY=

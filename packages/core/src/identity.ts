@@ -15,6 +15,9 @@ export function toE164BR(value: string): string | null {
 /** Sign-in codes go to WhatsApp or SMS, so only mobiles: +55, area code, 9 and eight digits. */
 export const isBrazilianMobileE164 = (v: string) => /^\+55[1-9]{2}9\d{8}$/.test(v);
 
+/** The Turnstile action the sign-in page declares; the vault refuses a token minted for another one. */
+export const SEND_CODE_ACTION = "enviar-codigo";
+
 /** "+5551999998888" → "(51) 9…8888": enough to recognise your own number, nothing more. */
 export const maskedPhone = (e164: string) => {
   const d = e164.replace(/^\+55/, "");

@@ -13,10 +13,11 @@ import { accountQuery } from "@/lib/city";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
-import { getAccount, getDevCode, type Account } from "@/server/account";
+import { getAccount, type Account } from "@/server/account";
 import { AuthFrame, AuthHead, type BackLink } from "./auth-frame";
 import { usePasskeySupport } from "./passkey-support";
-import { SEND_CODE_ACTION, SEND_FAILURE_MESSAGE, sendFailure, type SendFailure } from "./send-code";
+import { devCode, requestCode, SendError, signInWithCode } from "./identity-api";
+import { SEND_CODE_ACTION, SEND_FAILURE_MESSAGE } from "./send-code";
 import { StepRuler } from "./step-ruler";
 import { TurnstileUnavailable, useTurnstile } from "./turnstile";
 
@@ -26,24 +27,14 @@ const RESEND_AFTER = 30;
 /** How long the ruler takes to run to the end before the page hands back. */
 const FINISH_MS = 700;
 
-class SendError extends Error {
-  constructor(readonly failure: SendFailure) {
-    super(failure);
-  }
-}
-
 type GetToken = () => Promise<string>;
 
-/** Asks Turnstile for a fresh token, then asks for the code with it (checked server-side with Siteverify). */
+/** Asks Turnstile for a fresh token, then asks the vault for the code with it (checked there with Siteverify). */
 async function sendCode(e164: string, token: GetToken) {
   const captcha = await token().catch((e: unknown) => {
     throw new SendError(e instanceof TurnstileUnavailable ? "robot" : "send");
   });
-  const r = await authClient.phoneNumber.sendOtp({
-    phoneNumber: e164,
-    fetchOptions: { headers: { "x-captcha-response": captcha } },
-  });
-  if (r.error) throw new SendError(sendFailure(r.error.status));
+  await requestCode(e164, captcha);
   return e164;
 }
 
@@ -255,7 +246,7 @@ function CodeStep({
   const now = useNow();
   const wait = Math.max(0, RESEND_AFTER - Math.floor((now - sentAt) / 1000));
 
-  const devCode = useMutation({ mutationFn: () => getDevCode({ data: to }) });
+  const shownCode = useMutation({ mutationFn: () => devCode(to) });
   const resend = useMutation({
     mutationFn: (e164: string) => sendCode(e164, token),
     onSuccess: () => {
@@ -266,8 +257,7 @@ function CodeStep({
   });
   const verify = useMutation({
     mutationFn: async (c: string) => {
-      const r = await authClient.phoneNumber.verify({ phoneNumber: to, code: c });
-      if (r.error) throw new Error(r.error.message);
+      await signInWithCode(to, c);
       const account = await getAccount();
       if (!account) throw new Error("Sem sessão depois de verificar.");
       return account;
@@ -329,20 +319,20 @@ function CodeStep({
         </p>
         {import.meta.env.DEV && (
           <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-hairline-strong px-3.5 py-2.5 text-caption text-ink-2">
-            {devCode.data ? (
+            {shownCode.data ? (
               <>
                 <span>
                   Ambiente de teste, nenhum WhatsApp foi enviado. Código:{" "}
-                  <b className="font-mono text-foreground">{devCode.data}</b>
+                  <b className="font-mono text-foreground">{shownCode.data}</b>
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={busy}
                   onClick={() => {
-                    if (!devCode.data) return;
-                    setCode(devCode.data);
-                    verify.mutate(devCode.data);
+                    if (!shownCode.data) return;
+                    setCode(shownCode.data);
+                    verify.mutate(shownCode.data);
                   }}
                 >
                   Usar
@@ -351,7 +341,7 @@ function CodeStep({
             ) : (
               <>
                 <span>Ambiente de teste: nenhum WhatsApp é enviado.</span>
-                <Button size="sm" variant="outline" onClick={() => devCode.mutate()}>
+                <Button size="sm" variant="outline" onClick={() => shownCode.mutate()}>
                   Ver código
                 </Button>
               </>

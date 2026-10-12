@@ -4,5 +4,7 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "@tanstack/react-start/server-entry",
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // The identity vault (apps/vault): the only way the app reaches it.
+  "services": [{ "binding": "VAULT", "service": "falacanoas-vault" }]
 }

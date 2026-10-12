@@ -15,8 +15,10 @@
     "lint": "oxlint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "bun --filter @fala/web db:generate",
-    "db:migrate": "bun --filter @fala/web db:migrate",
-    "db:seed": "bun --filter @fala/web db:seed"
+    "db:migrate": "bun --filter @fala/web db:migrate && bun --filter @fala/vault db:migrate",
+    "db:seed": "bun --filter @fala/web db:seed",
+    "db:roles": "bun --filter @fala/web db:roles",
+    "vault:keys": "bun --filter @fala/vault keys"
   },
   "workspaces": [
     "apps/*",

@@ -6,3 +6,5 @@ export * from "./signup";
 export * from "./identity";
 export * from "./report";
 export * from "./media";
+export * from "./limits";
+export * from "./vault-assertion";

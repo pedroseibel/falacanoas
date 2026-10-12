@@ -23,20 +23,22 @@ Blocked items are built behind an interface with a development fallback where th
 
 The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every access is server-side; the browser never talks to Supabase.
 
-- [x] **1.1 Connection.** Done 2026-10-12: `db()` in `src/server/db/client.ts`, with `bun run db:generate` and `bun run db:migrate`; the Hyperdrive binding comes at deploy (4.5).
+- [x] **1.1 Connection.** Done 2026-10-12: `db` in `src/server/db/client.ts`, with `bun run db:generate` and `bun run db:migrate`; the Hyperdrive binding comes at deploy (4.5).
   - Drizzle on node-postgres, with a client per request: Workers can't share sockets between requests.
   - Development uses `DATABASE_URL` (the Supabase pooler); production uses a Hyperdrive binding.
   - Migrations live in `apps/web/drizzle/`, managed with drizzle-kit.
 - [x] **1.2 Locked down by default.** Verified: `anon` and `authenticated` have no rights in `fala`, and the Data API answers "Invalid schema: fala". App tables live in a schema that the Data API doesn't expose, with RLS on and no anon or authenticated grants.
-- [ ] **1.3 Better Auth on Postgres:**
-  - Drizzle adapter, with its tables in the app schema;
-  - rate-limit storage in the database;
-  - the passkey table.
-- [ ] **1.4 The vault** (round 18, Q5 and Q29):
-  - a separate schema and database role;
-  - the phone stored as AES-GCM ciphertext plus a keyed HMAC, with keys in the environment, versioned;
-  - narrow operations only (look up an account by phone, send a code, record evidence);
-  - the phone plugin keeps working through an adapter layer, never by swapping in a token and hoping.
+- [x] **1.3 Better Auth on Postgres.** Done 2026-10-12. Sessions survive a server restart.
+  - Drizzle adapter over `fala.users`, `sessions`, `accounts`, `verifications`, `passkeys` and `rate_limits`;
+  - rate limits stored in the database, so every isolate shares them;
+  - `db` stands for the current request's connection, so the adapter can be built once.
+- [x] **1.4 The vault** (round 18, Q5 and Q29). Done 2026-10-12, verified end to end: no row in either schema holds a number.
+  - `apps/vault`, its own Worker; the `fala_cofre` schema, reached only by the `fala_cofre` role. The app's `fala_app` role can't read it; anon and authenticated reach neither;
+  - the phone as AES-256-GCM ciphertext plus an HMAC-SHA256 lookup, with versioned keys in the Worker's secrets. A link found under an old key is rewritten under the current one;
+  - the gateway sends and checks codes (Turnstile, limits per number and per IP, 3 tries, 5 minutes) and answers the same for every number;
+  - it hands the app an Ed25519-signed, single-use assertion naming the account. Better Auth's phone plugin is gone: a `/sign-in/vault` endpoint turns a valid assertion into a session;
+  - the only RPC is "this account signed in" (passkeys count against dormancy);
+  - in production a route must send `/api/identidade/*` to the vault (4.5); in development the app forwards it.
 - [x] **1.5 Items in the database.** Done 2026-10-12, verified end to end in the browser (report, confirm with a photo, reload).
   - `fala.items` with `item_events` (append-only; updates are `update_added` events), `item_photos`, `item_confirmations`, and `item_authors`, kept apart so it can move into the vault (1.4); follows come with 2.4;
   - rows store instants; "43 dias", "há 38 min" and "hoje · 13:42" are computed when read, on the municipality's calendar;
@@ -47,11 +49,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - sign-ups stored with an unconfirmed status;
   - per-bairro counts from confirmed sign-ups only;
   - the confirmation screen stops saying "nothing is stored".
-- [ ] **1.8 Round 18 tables:**
-  - apelido reservations (Q28);
-  - `AccessEvidence` (Q21);
-  - 6-month deletion with preservation holds (Q23);
-  - room reserved for nível 2 (Q12).
+- [~] **1.8 Round 18 tables:**
+  - [x] apelido reservations (Q28): `fala.nick_reservations`, claimed under a row lock;
+  - [ ] `AccessEvidence` (Q21), in the vault;
+  - [ ] 6-month deletion with preservation holds (Q23);
+  - [x] room reserved for nível 2 (Q12): `identityVerified` on the account, no flow.
 
 ## 2. Product loop
 
@@ -78,10 +80,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - an opaque id per item;
   - the election-period rule;
   - contestation.
-- [ ] **2.8 Account lifecycle** (Q20, Q25, Q26, Q32):
+- [~] **2.8 Account lifecycle** (Q20, Q25, Q26, Q32):
   - closing an account;
   - changing number with recent re-authentication;
-  - 180-day dormancy;
+  - [x] 180-day dormancy: in the vault, which opens a new account and unlinks the old one atomically; passkey sign-ins count;
   - the data-subject request channel, including people without an account.
 - [ ] **2.9 Share previews** (rounds 11, 15): a generated share card for `/o/$id` and the bairro pages (photo, days, category), so links read well in WhatsApp.
 - [x] **2.10 Emergency notice in the app** (round 11): "Em emergência: Defesa Civil 199 / Bombeiros 193". It now sits at the foot of the report form, with tappable numbers.
@@ -114,7 +116,8 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - [ ] **4.3 Icons to a signage norm** (round 16): CONTRAN, ISO 7001, AIGA/DOT or NBR 9050, kept behind `<Icon>`.
 - [ ] **4.4 CARTO basemap** (round 14). ⛔ Needs the key.
 - [ ] **4.5 Cloudflare deploy:**
-  - Hyperdrive;
+  - Hyperdrive, one config per role (fala_app, fala_cofre);
+  - the vault: its secrets (`wrangler secret put`), and a route sending `/api/identidade/*` on the domain to it;
   - the Transform Rule for the client port;
   - the blocking capture test (Q21, Q22).
 

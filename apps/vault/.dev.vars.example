@@ -1,0 +1,15 @@
+# The identity vault's secrets (DECISIONS round 18, Q29). `bun run vault:keys` writes the keys below and
+# the app's VAULT_VERIFY_KEY; `bun run db:roles` writes VAULT_DATABASE_URL. Nothing here enters git.
+# "development": Cloudflare's always-pass Turnstile secret, and codes shown on the page instead of sent.
+VAULT_MODE=development
+# Key version in use, and every version still held, as JSON { "<version>": "<base64 32 bytes>" }.
+VAULT_KEY_VERSION=1
+VAULT_SEAL_KEYS=
+VAULT_MAC_KEYS=
+# Ed25519 private JWK that signs assertions for the app.
+VAULT_SIGNING_KEY=
+# The vault's own database role (fala_cofre): its schema and nothing else.
+VAULT_DATABASE_URL=
+# Production only: the Turnstile secret, and the host real tokens must name.
+TURNSTILE_SECRET_KEY=
+TURNSTILE_HOSTNAME=
