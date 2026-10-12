@@ -8,6 +8,7 @@ import { items, postReports, posts, threads } from "./db/schema";
 import { boardThreads, pinThread } from "./forum-store";
 import { member, type Failure } from "./member";
 import { isModerator, moderatorOf } from "./moderation-store";
+import { markNickPublished } from "./nicks";
 import { getSession } from "./session";
 import { recordEvidence } from "./vault";
 
@@ -45,6 +46,7 @@ export const startThread = createServerFn({ method: "POST" })
     await db
       .insert(threads)
       .values({ neighborhood: data.neighborhood, title: data.title, authorNick: who.nick, accountId: who.id });
+    await markNickPublished(who.id);
     await recordEvidence("comment", who.id, null);
     return { ok: true, threads: await boardThreads(data.neighborhood) };
   });
@@ -86,6 +88,7 @@ export const replyToThread = createServerFn({ method: "POST" })
       .insert(posts)
       .values({ threadId, text: data.text, authorNick: who.nick, accountId: who.id, createdAt: now });
     await db.update(threads).set({ lastPostAt: now }).where(eq(threads.id, threadId));
+    await markNickPublished(who.id);
     await recordEvidence("comment", who.id, "itemId" in data ? data.itemId.toUpperCase() : null);
     const [row] = await db.select().from(threads).where(eq(threads.id, threadId));
     const thread = row?.itemId
