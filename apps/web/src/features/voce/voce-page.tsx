@@ -1,28 +1,40 @@
-import { initials, type Item, type Municipality } from "@fala/core";
+import { CONFIRMATION_MIN_HOURS, initials, localStamp, type Item, type Municipality } from "@fala/core";
 import { Check, LogOut, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ItemCard } from "@/features/map/item-card";
+import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
+import { Passkeys } from "./passkeys";
 import { ThemeSchema, setTheme, useTheme, type Theme } from "./theme";
 
 const THEME_LABEL: Record<Theme, string> = { auto: "Sistema", light: "Claro", dark: "Escuro" };
 const panel = "overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft";
 
-function Levels({ account }: { account: Account }) {
+/** When this account's confirmations start counting (round 18, Q17), or null if they already do. */
+function confirmationsFrom(account: Account, now: number, timezone: string): string | null {
+  if (!account.phoneVerifiedAt || now === 0) return null;
+  const from = new Date(new Date(account.phoneVerifiedAt).getTime() + CONFIRMATION_MIN_HOURS * 36e5);
+  return from.getTime() > now ? localStamp(from, timezone).replace(" · ", ", às ") : null;
+}
+
+function Levels({ account, timezone }: { account: Account; timezone: string }) {
+  const from = confirmationsFrom(account, useNow(60_000), timezone);
   const rows = [
     {
       level: 1,
       done: account.phoneVerified,
-      label: "Telefone confirmado",
-      detail: account.phone ? `${account.phone} · pode registrar problemas` : "Pode registrar problemas",
+      label: "Celular confirmado",
+      detail: [account.phone, "registra, confirma e comenta", from && `suas confirmações contam a partir de ${from}`]
+        .filter(Boolean)
+        .join(" · "),
     },
     {
       level: 2,
       done: account.identityVerified,
       label: "Identidade verificada",
-      detail: "Pode confirmar consertos e conversar no bairro",
+      detail: "Opcional e ainda não disponível. Não muda o que você pode fazer.",
     },
   ];
   return (
@@ -91,7 +103,8 @@ export function VocePage({
                   </Button>
                 )}
               </div>
-              <Levels account={account} />
+              <Levels account={account} timezone={muni.timezone} />
+              <Passkeys nick={nick} timezone={muni.timezone} />
               <Button variant="ghost" size="sm" className="justify-self-start" onClick={onSignOut}>
                 <LogOut data-icon="inline-start" />
                 Sair

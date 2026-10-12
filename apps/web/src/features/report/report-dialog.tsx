@@ -12,6 +12,7 @@ import { cityQuery, itemQuery } from "@/lib/city";
 import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { Header, ReportForm, type Author, type Created, type Head } from "./report-form";
+import { joinMessage } from "./report-model";
 import { closeReport, reportStore } from "./report-store";
 
 export interface ReportDialogProps {
@@ -91,9 +92,7 @@ function ReportFlow({
         remember(r.item);
         closeReport();
         onView(r.item.id);
-        toast(
-          r.counted ? "Somado ao registro que já existia. Obrigado." : "Sua foto entrou no registro que já existia.",
-        );
+        toast(joinMessage(r.confirmation, r.withPhoto));
       }}
     />
   );

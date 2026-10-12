@@ -5,10 +5,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
+import { textLink } from "@/features/landing/bits";
+import { PRIVACY_NOTICE_PATH } from "@/features/legal/privacy";
 import { accountQuery } from "@/lib/city";
+import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 import { getAccount, saveProfile, type Account } from "@/server/account";
 import { AuthFrame, AuthHead, type BackLink } from "./auth-frame";
@@ -28,11 +32,16 @@ export function WelcomePage({
   onDone: (nick: string) => void;
 }) {
   const queryClient = useQueryClient();
+  const hydrated = useHydrated();
   const [suggestions] = useState(() => suggestNicks());
   const [taken, setTaken] = useState<string | null>(null);
+  // Declarations already made against the current notice aren't asked again.
+  const declared = account.declarationsCurrent;
   const defaultValues: Profile = {
     nick: account.nick ?? suggestions[0] ?? "",
     neighborhood: account.neighborhood ?? "",
+    adult: declared,
+    privacyRead: declared,
   };
   const form = useForm({
     defaultValues,
@@ -164,9 +173,66 @@ export function WelcomePage({
           </div>
         </section>
 
+        {!declared && (
+          <fieldset className="grid gap-3 border-t border-hairline pt-5">
+            <legend className="sr-only">Declarações</legend>
+            <form.Field name="adult">
+              {(field) => {
+                const errors = show(field.state.meta.errors);
+                return (
+                  <Field orientation="horizontal" data-invalid={errors.length > 0}>
+                    <Checkbox
+                      id="bv-maior"
+                      size="lg"
+                      checked={field.state.value}
+                      aria-invalid={errors.length > 0}
+                      aria-describedby={errors.length > 0 ? "bv-maior-erro" : undefined}
+                      onCheckedChange={(on) => field.handleChange(on)}
+                    />
+                    <FieldContent>
+                      <FieldLabel htmlFor="bv-maior" variant="option">
+                        Declaro que tenho 18 anos ou mais.
+                      </FieldLabel>
+                      <FieldError id="bv-maior-erro" errors={errors} />
+                    </FieldContent>
+                  </Field>
+                );
+              }}
+            </form.Field>
+            <form.Field name="privacyRead">
+              {(field) => {
+                const errors = show(field.state.meta.errors);
+                return (
+                  <Field orientation="horizontal" data-invalid={errors.length > 0}>
+                    <Checkbox
+                      id="bv-aviso"
+                      size="lg"
+                      checked={field.state.value}
+                      aria-invalid={errors.length > 0}
+                      aria-describedby={errors.length > 0 ? "bv-aviso-erro" : undefined}
+                      onCheckedChange={(on) => field.handleChange(on)}
+                    />
+                    <FieldContent>
+                      <FieldLabel htmlFor="bv-aviso" variant="option" className="block">
+                        Confirmo que li o{" "}
+                        <a href={PRIVACY_NOTICE_PATH} target="_blank" rel="noopener" className={textLink}>
+                          aviso de privacidade
+                          <span className="sr-only"> (abre em outra aba)</span>
+                        </a>
+                        .
+                      </FieldLabel>
+                      <FieldError id="bv-aviso-erro" errors={errors} />
+                    </FieldContent>
+                  </Field>
+                );
+              }}
+            </form.Field>
+          </fieldset>
+        )}
+
         <form.Subscribe selector={(s) => s.isSubmitting}>
           {(busy) => (
-            <Button type="submit" variant="signal" size="xl" disabled={busy}>
+            <Button type="submit" variant="signal" size="xl" disabled={!hydrated || busy}>
               {busy && <Loader2 className="animate-spin" aria-hidden="true" />}
               Pronto
             </Button>

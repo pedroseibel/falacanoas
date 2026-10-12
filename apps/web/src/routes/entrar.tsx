@@ -4,6 +4,7 @@ import { AuthSearchSchema, REASON, returnPath } from "@/features/auth/auth-searc
 import { SignInPage } from "@/features/auth/sign-in-page";
 import { openReport } from "@/features/report/report-store";
 import { accountQuery } from "@/lib/city";
+import { getAuthConfig } from "@/server/account";
 import { useBackLink } from "./-auth-links";
 
 export const Route = createFileRoute("/entrar")({
@@ -15,18 +16,21 @@ export const Route = createFileRoute("/entrar")({
     if (!account.nick) throw redirect({ to: "/bem-vindo", search, replace: true });
     throw redirect({ href: returnPath(search), replace: true });
   },
+  loader: () => getAuthConfig(),
   head: () => ({ meta: [{ title: "Entrar · Fala, Canoas" }, { name: "robots", content: "noindex" }] }),
   component: EntrarRoute,
 });
 
 function EntrarRoute() {
   const search = Route.useSearch();
+  const { turnstileSiteKey } = Route.useLoaderData();
   const navigate = useNavigate();
   const back = useBackLink(returnPath(search));
   return (
     <SignInPage
       reason={search.depois ? REASON[search.depois] : null}
       back={back}
+      turnstileSiteKey={turnstileSiteKey}
       onDone={(account) => {
         if (!account.nick) return void navigate({ to: "/bem-vindo", search, replace: true });
         if (search.depois === "registrar") openReport();

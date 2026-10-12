@@ -4,6 +4,8 @@ import {
   dateAgo,
   deriveEvents,
   isOpen,
+  legalDeadline,
+  localStamp,
   relativeTime,
   type CommunityStatus,
   type Item,
@@ -66,6 +68,46 @@ const COMMUNITY_LABEL: Record<CommunityStatus, string> = {
   apparently_resolved: "Parece resolvido",
   resolved: "Resolvido",
 };
+
+const day = (d: Date, timezone: string) => localStamp(d, timezone).split(" · ")[0];
+
+/**
+ * The Ouvidoria's legal deadline (Lei 13.460, art. 16), counted from the protocol. It sits apart from
+ * the public clock, which keeps counting from the send date (DECISIONS rounds 5 and 18).
+ */
+function LegalDeadline({
+  protocol,
+  now,
+  timezone,
+}: {
+  protocol: { number: string; at: string };
+  now: Date;
+  timezone: string;
+}) {
+  const at = new Date(protocol.at);
+  const { due, daysLeft, overdue } = legalDeadline(at, now);
+  const status = overdue
+    ? `vencido há ${-daysLeft} ${-daysLeft === 1 ? "dia" : "dias"}`
+    : daysLeft === 0
+      ? "vence hoje"
+      : `faltam ${daysLeft} ${daysLeft === 1 ? "dia" : "dias"}`;
+  return (
+    <div className="grid gap-1 border-t border-hairline pt-2.5 text-xs">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          Prazo legal da Ouvidoria <Badge variant="outline">exemplo</Badge>
+        </span>
+        <span className={cn("font-medium tabular-nums", overdue ? "text-signal-text" : "text-foreground")}>
+          {status}
+        </span>
+      </p>
+      <p className="text-muted-foreground">
+        Protocolo <span className="text-ink-2 tabular-nums">{protocol.number}</span>, recebido em {day(at, timezone)}.
+        Até {day(due, timezone)}, prorrogável uma vez por mais 30 dias (Lei 13.460, art. 16).
+      </p>
+    </div>
+  );
+}
 
 /** Local, optimistic interactions until the write path (Supabase) exists. */
 function useLocalActions(it: Item, viewer: Viewer) {
@@ -200,9 +242,10 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
             {awaitingDigest(it)
               ? `Ainda não foi enviado. Entra no próximo resumo diário, às ${muni.digestHour}h, e o relógio começa no envio.`
               : open
-                ? `Enviado à Prefeitura em ${dateAgo(now, it.days)}, às ${muni.digestHour}:00. O relógio conta desde então.`
+                ? `Enviado à Prefeitura em ${it.sentAt ? localStamp(new Date(it.sentAt), muni.timezone).replace(" · ", ", às ") : `${dateAgo(now, it.days)}, às ${muni.digestHour}:00`}. O relógio conta desde então.`
                 : `Fechado pelos vizinhos em ${dateAgo(now, 0)}.`}
           </p>
+          {open && it.protocol && <LegalDeadline protocol={it.protocol} now={now} timezone={muni.timezone} />}
         </section>
 
         <section className="grid grid-cols-2 gap-2" aria-label="Situação">

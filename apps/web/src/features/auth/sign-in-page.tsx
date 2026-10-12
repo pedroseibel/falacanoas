@@ -1,7 +1,7 @@
 import { isBrazilianMobileE164, maskPhoneBR, maskedPhone, toE164BR } from "@fala/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { Loader2, MessageCircle } from "lucide-react";
+import { KeyRound, Loader2, MessageCircle } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,15 @@ import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/in
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { authClient } from "@/lib/auth-client";
 import { accountQuery } from "@/lib/city";
+import { useHydrated } from "@/lib/use-hydrated";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { getAccount, getDevCode, type Account } from "@/server/account";
 import { AuthFrame, AuthHead, type BackLink } from "./auth-frame";
+import { usePasskeySupport } from "./passkey-support";
+import { SEND_CODE_ACTION, SEND_FAILURE_MESSAGE, sendFailure, type SendFailure } from "./send-code";
 import { StepRuler } from "./step-ruler";
+import { TurnstileUnavailable, useTurnstile } from "./turnstile";
 
 const SLOTS = [0, 1, 2, 3, 4, 5];
 /** Seconds before "Mandar de novo" unlocks. */
@@ -22,11 +26,28 @@ const RESEND_AFTER = 30;
 /** How long the ruler takes to run to the end before the page hands back. */
 const FINISH_MS = 700;
 
-async function sendCode(e164: string) {
-  const r = await authClient.phoneNumber.sendOtp({ phoneNumber: e164 });
-  if (r.error) throw new Error(r.error.message);
+class SendError extends Error {
+  constructor(readonly failure: SendFailure) {
+    super(failure);
+  }
+}
+
+type GetToken = () => Promise<string>;
+
+/** Asks Turnstile for a fresh token, then asks for the code with it (checked server-side with Siteverify). */
+async function sendCode(e164: string, token: GetToken) {
+  const captcha = await token().catch((e: unknown) => {
+    throw new SendError(e instanceof TurnstileUnavailable ? "robot" : "send");
+  });
+  const r = await authClient.phoneNumber.sendOtp({
+    phoneNumber: e164,
+    fetchOptions: { headers: { "x-captcha-response": captcha } },
+  });
+  if (r.error) throw new SendError(sendFailure(r.error.status));
   return e164;
 }
+
+const failureOf = (e: Error | null) => (e instanceof SendError ? e.failure : "send");
 
 const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
@@ -37,12 +58,16 @@ const clock = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2,
 export function SignInPage({
   reason,
   back,
+  turnstileSiteKey,
   onDone,
 }: {
   reason: string | null;
   back: BackLink;
+  /** Null when no key is configured (production without Turnstile): codes can't be sent. */
+  turnstileSiteKey: string | null;
   onDone: (account: Account) => void;
 }) {
+  const { mount: mountTurnstile, token } = useTurnstile(turnstileSiteKey ?? "", SEND_CODE_ACTION);
   const [phone, setPhone] = useState("");
   const [sent, setSent] = useState<{ to: string; at: number } | null>(null);
   const [finished, setFinished] = useState(false);
@@ -64,13 +89,24 @@ export function SignInPage({
           to={sent.to}
           sentAt={sent.at}
           finished={finished}
+          token={token}
           onResent={() => setSent({ to: sent.to, at: Date.now() })}
           onChangeNumber={() => setSent(null)}
           onVerified={finish}
         />
       ) : (
-        <PhoneStep reason={reason} value={phone} onChange={setPhone} onSent={(to) => setSent({ to, at: Date.now() })} />
+        <PhoneStep
+          reason={reason}
+          value={phone}
+          available={Boolean(turnstileSiteKey)}
+          token={token}
+          onChange={setPhone}
+          onSent={(to) => setSent({ to, at: Date.now() })}
+          onPasskey={finish}
+        />
       )}
+      {/* Turnstile's widget: invisible unless Cloudflare asks for an interaction. */}
+      {turnstileSiteKey && <div ref={mountTurnstile} className="empty:hidden" />}
     </AuthFrame>
   );
 }
@@ -78,16 +114,38 @@ export function SignInPage({
 function PhoneStep({
   reason,
   value,
+  available,
+  token,
   onChange,
   onSent,
+  onPasskey,
 }: {
   reason: string | null;
   value: string;
+  available: boolean;
+  token: GetToken;
   onChange: (v: string) => void;
   onSent: (e164: string) => void;
+  onPasskey: (account: Account) => void;
 }) {
+  const queryClient = useQueryClient();
+  const passkeys = usePasskeySupport();
+  const hydrated = useHydrated();
   const [invalid, setInvalid] = useState(false);
-  const send = useMutation({ mutationFn: sendCode, onSuccess: onSent });
+  const send = useMutation({ mutationFn: (e164: string) => sendCode(e164, token), onSuccess: onSent });
+  const withPasskey = useMutation({
+    mutationFn: async () => {
+      const r = await authClient.signIn.passkey();
+      if (r?.error) throw new Error(r.error.message);
+      const account = await getAccount();
+      if (!account) throw new Error("Sem sessão depois da passkey.");
+      return account;
+    },
+    onSuccess: (account) => {
+      queryClient.setQueryData(accountQuery.queryKey, account);
+      onPasskey(account);
+    },
+  });
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const e164 = toE164BR(value);
@@ -128,19 +186,47 @@ function PhoneStep({
             <FieldDescription id="entrar-celular-nota">Seu número nunca aparece em público.</FieldDescription>
           )}
         </Field>
-        {send.isError && (
+        {!available && (
           <p role="alert" className="text-sm text-signal-text">
-            Não deu para mandar o código agora. Tente de novo em instantes.
+            Entrar com o celular está indisponível nesta versão: falta configurar a verificação anti-robô.
           </p>
         )}
-        <Button type="submit" variant="signal" size="xl" disabled={send.isPending}>
-          {send.isPending ? (
-            <Loader2 className="animate-spin" aria-hidden="true" />
-          ) : (
-            <MessageCircle aria-hidden="true" />
+        {send.isError && (
+          <p role="alert" className="text-sm text-signal-text">
+            {SEND_FAILURE_MESSAGE[failureOf(send.error)]}
+          </p>
+        )}
+        {withPasskey.isError && (
+          <p role="alert" className="text-sm text-signal-text">
+            Não deu para entrar com a passkey. Tente de novo, ou entre com o celular.
+          </p>
+        )}
+        <div className="grid gap-2.5">
+          <Button type="submit" variant="signal" size="xl" disabled={!hydrated || !available || send.isPending}>
+            {send.isPending ? (
+              <Loader2 className="animate-spin" aria-hidden="true" />
+            ) : (
+              <MessageCircle aria-hidden="true" />
+            )}
+            Receber código no WhatsApp
+          </Button>
+          {passkeys && (
+            <Button
+              type="button"
+              variant="outline"
+              size="xl"
+              disabled={withPasskey.isPending}
+              onClick={() => withPasskey.mutate()}
+            >
+              {withPasskey.isPending ? (
+                <Loader2 className="animate-spin" aria-hidden="true" />
+              ) : (
+                <KeyRound aria-hidden="true" />
+              )}
+              Entrar com passkey
+            </Button>
           )}
-          Receber código no WhatsApp
-        </Button>
+        </div>
         <p className="text-caption text-muted-foreground">Em público, você aparece só com um apelido e o seu bairro.</p>
       </form>
     </>
@@ -151,6 +237,7 @@ function CodeStep({
   to,
   sentAt,
   finished,
+  token,
   onResent,
   onChangeNumber,
   onVerified,
@@ -158,6 +245,7 @@ function CodeStep({
   to: string;
   sentAt: number;
   finished: boolean;
+  token: GetToken;
   onResent: () => void;
   onChangeNumber: () => void;
   onVerified: (account: Account) => void;
@@ -169,11 +257,12 @@ function CodeStep({
 
   const devCode = useMutation({ mutationFn: () => getDevCode({ data: to }) });
   const resend = useMutation({
-    mutationFn: sendCode,
+    mutationFn: (e164: string) => sendCode(e164, token),
     onSuccess: () => {
       toast("Mandamos outro código.");
       onResent();
     },
+    onError: (e) => toast(SEND_FAILURE_MESSAGE[failureOf(e)]),
   });
   const verify = useMutation({
     mutationFn: async (c: string) => {

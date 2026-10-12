@@ -4,6 +4,7 @@ import { canoas } from "@fala/instance-canoas";
 import {
   JoinSchema,
   fitWithin,
+  joinMessage,
   listPt,
   missingParts,
   nearLabel,
@@ -85,6 +86,21 @@ describe("pickerStart", () => {
       niteroi?.center ?? [0, 0],
     );
     expect(pickerStart({ value: null, mapView: null, home: null, muni }).center).toEqual(muni.center);
+  });
+});
+
+describe("joinMessage", () => {
+  test("a counted confirmation thanks the neighbour", () =>
+    expect(joinMessage("counts", true)).toBe("Somado ao registro que já existia. Obrigado."));
+  test("a phone verified less than 72 h ago says when it will count", () => {
+    expect(joinMessage("too-new", false)).toBe(
+      "Sua confirmação passa a contar 72 horas depois de você confirmar o celular.",
+    );
+    expect(joinMessage("too-new", true)).toStartWith("Sua foto entrou no registro que já existia. ");
+  });
+  test("a repeat confirmation says so, unless a photo was added", () => {
+    expect(joinMessage("already", false)).toBe("Você já tinha confirmado este registro.");
+    expect(joinMessage("already", true)).toBe("Sua foto entrou no registro que já existia.");
   });
 });
 

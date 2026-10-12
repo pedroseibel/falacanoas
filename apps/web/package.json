@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
+    "@better-auth/passkey": "1.7.7",
     "@fala/core": "workspace:*",
     "@fala/instance-canoas": "workspace:*",
     "@tanstack/charts": "^1.1.0",

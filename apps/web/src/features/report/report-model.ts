@@ -101,5 +101,13 @@ export function pickerStart({
   return { center: muni.center, zoom: 12.5 };
 }
 
+/** What happened when a neighbour joined an existing problem, in the toast's words. */
+export function joinMessage(confirmation: "counts" | "already" | "too-new", withPhoto: boolean): string {
+  if (confirmation === "counts") return "Somado ao registro que já existia. Obrigado.";
+  const photo = withPhoto ? "Sua foto entrou no registro que já existia. " : "";
+  if (confirmation === "already") return withPhoto ? photo.trim() : "Você já tinha confirmado este registro.";
+  return `${photo}Sua confirmação passa a contar 72 horas depois de você confirmar o celular.`;
+}
+
 /** "a 35 m": duplicates are close by definition, so round to 5 m and never say 0. */
 export const nearLabel = (meters: number) => `${Math.max(5, Math.round(meters / 5) * 5)} m`;

@@ -3,3 +3,10 @@ BETTER_AUTH_SECRET=
 BETTER_AUTH_URL=http://127.0.0.1:3100
 # Extra origins allowed to call /api/auth (tailnet, previews), comma-separated.
 BETTER_AUTH_TRUSTED_ORIGINS=http://127.0.0.1:3100,http://localhost:3100
+# Turnstile (round 18, Q16). Optional in development: Cloudflare's always-pass test keys are used when unset.
+# Required in production; without them, sign-in codes are not sent.
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+# Passkeys are bound to a domain, never an IP: in development use the tailnet host and its HTTPS origin.
+PASSKEY_RP_ID=
+PASSKEY_ORIGINS=

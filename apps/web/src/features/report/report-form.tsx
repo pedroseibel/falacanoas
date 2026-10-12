@@ -63,7 +63,7 @@ export interface Head {
 }
 
 export type Created = Extract<ReportResult, { ok: true }>;
-export type Joined = Extract<JoinResult, { ok: true }>;
+export type Joined = Extract<JoinResult, { ok: true }> & { withPhoto: boolean };
 
 const asKind = (v: unknown) => ItemKindSchema.safeParse(v).data;
 const asReach = (v: unknown) => ReachSchema.safeParse(v).data;
@@ -193,7 +193,7 @@ export function ReportForm({
     const r = await join.mutateAsync({ itemId: d.item.id, visibility, photos }).catch(() => null);
     if (!r) return setProblem("Não deu para confirmar agora. Confira a conexão e tente de novo.");
     if (!r.ok) return setProblem(r.error);
-    onJoined(r);
+    onJoined({ ...r, withPhoto: photos.length > 0 });
   }
 
   const busy = useStore(form.store, (s) => s.isSubmitting) || join.isPending;
@@ -553,8 +553,8 @@ export function ReportForm({
                   <Field orientation="horizontal">
                     <RadioGroupItem value="anonymous" id="r-como-anonimo" />
                     <FieldContent>
-                      <FieldTitle>Anônimo</FieldTitle>
-                      <FieldDescription>Sem apelido</FieldDescription>
+                      <FieldTitle>Anônimo em público</FieldTitle>
+                      <FieldDescription>Sem apelido no registro</FieldDescription>
                     </FieldContent>
                   </Field>
                 </FieldLabel>

@@ -1,4 +1,5 @@
 import {
+  confirmationStatus,
   confirmItem,
   dateAgo,
   digestDay,
@@ -13,6 +14,7 @@ import { canoas } from "@fala/instance-canoas";
 import { fixtures } from "@fala/instance-canoas/fixtures";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
+import { markNickPublished } from "./nicks";
 import { getSession } from "./session";
 import * as store from "./store";
 
@@ -29,19 +31,26 @@ type Failure = { ok: false; error: string };
 export type ReportResult =
   | Failure
   | { ok: true; item: Item; digest: "hoje" | "amanhã"; /** False until the database exists. */ persisted: boolean };
-export type JoinResult = Failure | { ok: true; item: Item; counted: boolean };
+export type JoinResult =
+  | Failure
+  | {
+      ok: true;
+      item: Item;
+      /** "counts", or why it doesn't (yet): an earlier confirmation, or a phone verified less than 72 h ago. */
+      confirmation: "counts" | "already" | "too-new";
+    };
 
 const formData = (data: FormData) => {
   if (!(data instanceof FormData)) throw new Error("Envio inválido.");
   return data;
 };
 
-async function reporter(): Promise<{ id: string; nick: string } | Failure> {
+async function reporter(): Promise<{ id: string; nick: string; phoneVerifiedAt: Date | null } | Failure> {
   const user = (await getSession())?.user;
   if (!user || user.isAnonymous || !user.phoneNumberVerified)
     return { ok: false, error: "Entre com o seu celular para registrar." };
   if (!user.nick) return { ok: false, error: "Escolha um apelido antes de registrar." };
-  return { id: user.id, nick: user.nick };
+  return { id: user.id, nick: user.nick, phoneVerifiedAt: user.phoneVerifiedAt ?? null };
 }
 
 /** Strips metadata from every photo, then stores them, but only if all of them are images. */
@@ -77,6 +86,7 @@ export const createReport = createServerFn({ method: "POST" })
     store.addItem(item, who.id);
     // The author's own report never counts as a neighbour's confirmation.
     store.markConfirmed(item.id, who.id);
+    if (parsed.data.visibility === "pseudonymous") markNickPublished(who.id);
     return { ok: true, item, digest: digestDay(now, canoas), persisted: false };
   });
 
@@ -93,16 +103,24 @@ export const joinReport = createServerFn({ method: "POST" })
       return { ok: false, error: "Esse registro não está mais aberto. Publique o seu." };
     const photos = await keepPhotos(parsed.data.photos);
     if (!photos) return { ok: false, error: PHOTO_ERROR };
-    const counted = store.markConfirmed(item.id, who.id);
+    const now = new Date();
+    // Independent confirmations only (round 18, Q17): one per account, phone verified ≥72 h ago.
+    const confirmation = confirmationStatus({
+      alreadyConfirmed: store.hasConfirmed(item.id, who.id),
+      phoneVerifiedAt: who.phoneVerifiedAt,
+      now,
+    });
+    if (confirmation === "counts") store.markConfirmed(item.id, who.id);
     // Derived histories are dated against the fixtures' clock, like the item page.
     const fixturesNow = new Date(fixtures.now);
     const next = confirmItem(item, canoas, {
       by: parsed.data.visibility === "anonymous" ? "Anônimo" : who.nick,
       photos,
-      now: new Date(),
-      counts: counted,
+      now,
+      counts: confirmation === "counts",
       dateAgo: (days) => dateAgo(fixturesNow, days),
     });
     store.replaceItem(next);
-    return { ok: true, item: next, counted };
+    if (parsed.data.visibility === "pseudonymous" && next !== item) markNickPublished(who.id);
+    return { ok: true, item: next, confirmation };
   });

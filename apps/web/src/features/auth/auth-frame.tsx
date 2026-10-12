@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 /** The way out of the sign-in pages: a real link, navigated by the route adapter. */
 export interface BackLink {
@@ -12,7 +13,16 @@ export interface BackLink {
  * The sign-in pages stand alone (no app header, search or tab bar): the wordmark, one way back,
  * a single column in the upper third, and the independence facts at the foot.
  */
-export function AuthFrame({ back, children }: { back: BackLink; children: ReactNode }) {
+export function AuthFrame({
+  back,
+  width = "form",
+  children,
+}: {
+  back: BackLink;
+  /** form: the sign-in column; read: a measure for running text (the privacy notice). */
+  width?: "form" | "read";
+  children: ReactNode;
+}) {
   return (
     <div className="flex min-h-dvh flex-col bg-background">
       <header className="pt-safe">
@@ -34,7 +44,9 @@ export function AuthFrame({ back, children }: { back: BackLink; children: ReactN
         </div>
       </header>
       <main className="flex flex-1 justify-center px-gutter pt-head pb-section-sm max-compact:pt-8">
-        <div className="grid w-full max-w-auth content-start gap-8">{children}</div>
+        <div className={cn("grid w-full content-start gap-8", width === "read" ? "max-w-note" : "max-w-auth")}>
+          {children}
+        </div>
       </main>
       <footer className="pb-safe border-t border-hairline">
         <p className="mx-auto flex w-full max-w-wrap flex-wrap justify-between gap-x-6 gap-y-1 px-gutter py-4 text-caption text-muted-foreground max-compact:justify-center max-compact:text-center">

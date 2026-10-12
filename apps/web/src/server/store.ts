@@ -44,6 +44,8 @@ export function addItem(item: Item, accountId: string) {
   entries.set(item.id, { item, accountId, touchedAt: now, createdAt: now, confirmedBy: new Set() });
 }
 
+export const hasConfirmed = (id: string, accountId: string) => entries.get(id)?.confirmedBy.has(accountId) ?? false;
+
 /** Records one person's confirmation; false if they had already confirmed this item. */
 export function markConfirmed(id: string, accountId: string): boolean {
   const e = entries.get(id);
