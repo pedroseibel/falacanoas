@@ -26,17 +26,24 @@ export function median(values: number[]): number | null {
   return a.length % 2 ? mid : Math.round(((a[m - 1] ?? mid) + mid) / 2);
 }
 
+const says = (n: number) => `${n} ${n === 1 ? "diz" : "dizem"}`;
+
 /** One line a neighbour can read at a glance. Community voice first; official disagreement made explicit. */
 export function communityLine(it: Item, confirmations = it.confirmations): string {
-  if (it.kind === "public_issue") return `${confirmations} dizem: me afeta`;
+  if (it.kind === "public_issue") return `${says(confirmations)}: me afeta`;
   if (it.official?.status === "resolved" && it.community === "ongoing")
-    return `Prefeitura: resolvido · ${it.disagreeing ?? confirmations} dizem que continua`;
+    return `Prefeitura: resolvido · ${says(it.disagreeing ?? confirmations)} que continua`;
   switch (it.community) {
-    case "reported": return "aguardando confirmação";
-    case "confirmed": return `${confirmations} confirmam`;
-    case "ongoing": return `${confirmations} dizem que continua`;
-    case "apparently_resolved": return "parece resolvido";
-    case "resolved": return "resolvido e confirmado";
+    case "reported":
+      return "aguardando confirmação";
+    case "confirmed":
+      return `${confirmations} ${confirmations === 1 ? "confirma" : "confirmam"}`;
+    case "ongoing":
+      return `${says(confirmations)} que continua`;
+    case "apparently_resolved":
+      return "parece resolvido";
+    case "resolved":
+      return "resolvido e confirmado";
   }
 }
 
@@ -50,7 +57,12 @@ export interface GroupStat {
   fixedWithinDeadlinePct: number;
 }
 
-export function groupStats(items: Item[], keyOf: (it: Item) => string | null, deadline: number, minSample = 3): GroupStat[] {
+export function groupStats(
+  items: Item[],
+  keyOf: (it: Item) => string | null,
+  deadline: number,
+  minSample = 3,
+): GroupStat[] {
   const g = new Map<string, { open: number; over: number; fixed: number[]; total: number }>();
   for (const it of items) {
     if (it.kind !== "occurrence") continue;
@@ -58,7 +70,10 @@ export function groupStats(items: Item[], keyOf: (it: Item) => string | null, de
     if (!k) continue;
     const x = g.get(k) ?? { open: 0, over: 0, fixed: [], total: 0 };
     x.total++;
-    if (isOpen(it)) { x.open++; if (it.days > deadline) x.over++; } else x.fixed.push(it.days);
+    if (isOpen(it)) {
+      x.open++;
+      if (it.days > deadline) x.over++;
+    } else x.fixed.push(it.days);
     g.set(k, x);
   }
   return [...g].map(([key, x]) => ({
@@ -72,22 +87,51 @@ export function groupStats(items: Item[], keyOf: (it: Item) => string | null, de
 }
 
 export function categoryOf(m: Municipality, key: string): Category {
-  return m.categories.find((c) => c.key === key) ?? { key, label: key, group: "outros", agency: null, kind: "occurrence" };
+  return (
+    m.categories.find((c) => c.key === key) ?? { key, label: key, group: "outros", agency: null, kind: "occurrence" }
+  );
 }
 
 /** Derive a readable history when an item has no stored events (fixtures, legacy). */
 export function deriveEvents(it: Item, dateAgo: (days: number) => string): ItemEvent[] {
   if (it.events?.length) return it.events;
-  const who = it.visibility === "anonymous" ? "Anônimo" : it.author ?? "Anônimo";
+  const who = it.visibility === "anonymous" ? "Anônimo" : (it.author ?? "Anônimo");
   const ev: ItemEvent[] = [
-    { at: dateAgo(it.days), actor: who, kind: "created", text: it.photos.length ? "Registrou com foto." : "Registrou." },
-    { at: `${dateAgo(it.days)} · 18:00`, actor: "Fala", kind: "sent_to_authority", text: "Enviado à Prefeitura no resumo diário. O relógio começou." },
+    {
+      at: dateAgo(it.days),
+      actor: who,
+      kind: "created",
+      text: it.photos.length ? "Registrou com foto." : "Registrou.",
+    },
+    {
+      at: `${dateAgo(it.days)} · 18:00`,
+      actor: "Fala",
+      kind: "sent_to_authority",
+      text: "Enviado à Prefeitura no resumo diário. O relógio começou.",
+    },
   ];
   if (it.confirmations > 0)
-    ev.push({ at: dateAgo(Math.max(it.days - 2, 0)), actor: `${it.confirmations} ${it.confirmations === 1 ? "morador" : "moradores"}`, kind: "confirmed", text: it.kind === "public_issue" ? "Disseram que isso também os afeta." : "Confirmaram que está acontecendo." });
+    ev.push({
+      at: dateAgo(Math.max(it.days - 2, 0)),
+      actor: `${it.confirmations} ${it.confirmations === 1 ? "morador" : "moradores"}`,
+      kind: "confirmed",
+      text: it.kind === "public_issue" ? "Disseram que isso também os afeta." : "Confirmaram que está acontecendo.",
+    });
   if (it.official)
-    ev.push({ at: dateAgo(it.official.daysAgo), actor: it.official.agency, kind: it.official.status === "resolved" ? "official_status_changed" : "official_response", text: it.official.status === "resolved" ? "Marcou como resolvido." : "“Demanda recebida e encaminhada.”" });
-  if (it.disagreeing) ev.push({ at: "hoje", actor: `${it.disagreeing} moradores`, kind: "confirmed", text: "Dizem que continua." });
-  if (it.community === "resolved") ev.push({ at: dateAgo(0), actor: "2 vizinhos", kind: "community_resolved", text: `Confirmaram o conserto. Fechado em ${it.days} dias.` });
+    ev.push({
+      at: dateAgo(it.official.daysAgo),
+      actor: it.official.agency,
+      kind: it.official.status === "resolved" ? "official_status_changed" : "official_response",
+      text: it.official.status === "resolved" ? "Marcou como resolvido." : "“Demanda recebida e encaminhada.”",
+    });
+  if (it.disagreeing)
+    ev.push({ at: "hoje", actor: `${it.disagreeing} moradores`, kind: "confirmed", text: "Dizem que continua." });
+  if (it.community === "resolved")
+    ev.push({
+      at: dateAgo(0),
+      actor: "2 vizinhos",
+      kind: "community_resolved",
+      text: `Confirmaram o conserto. Fechado em ${it.days} dias.`,
+    });
   return ev;
 }

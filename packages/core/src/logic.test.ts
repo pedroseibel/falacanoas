@@ -31,6 +31,11 @@ describe("median", () => {
 
 describe("communityLine", () => {
   test("confirmed counts confirmations", () => expect(communityLine(base)).toBe("4 confirmam"));
+  test("singular verbs for one neighbour", () => {
+    expect(communityLine(base, 1)).toBe("1 confirma");
+    expect(communityLine(item({ community: "ongoing" }), 1)).toBe("1 diz que continua");
+    expect(communityLine(item({ kind: "public_issue" }), 1)).toBe("1 diz: me afeta");
+  });
   test("reported waits for confirmation", () =>
     expect(communityLine(item({ community: "reported" }))).toBe("aguardando confirmação"));
   test("public issues speak of being affected", () =>
@@ -38,7 +43,11 @@ describe("communityLine", () => {
   test("official 'resolved' against an ongoing community is stated, not hidden", () =>
     expect(
       communityLine(
-        item({ community: "ongoing", disagreeing: 7, official: { status: "resolved", agency: "Iluminação pública", daysAgo: 5 } }),
+        item({
+          community: "ongoing",
+          disagreeing: 7,
+          official: { status: "resolved", agency: "Iluminação pública", daysAgo: 5 },
+        }),
       ),
     ).toBe("Prefeitura: resolvido · 7 dizem que continua"));
 });
@@ -47,7 +56,8 @@ describe("deadline and position", () => {
   test("open items past the deadline are flagged", () => expect(isOverDeadline(item({ days: 31 }), 30)).toBeTrue());
   test("resolved items are never over the deadline", () =>
     expect(isOverDeadline(item({ days: 90, community: "resolved" }), 30)).toBeFalse());
-  test("city-wide issues have no point", () => expect(itemLngLat(item({ scope: { type: "municipality" } }))).toBeNull());
+  test("city-wide issues have no point", () =>
+    expect(itemLngLat(item({ scope: { type: "municipality" } }))).toBeNull());
   test("a place with coordinates has a point", () =>
     expect(itemLngLat(item({ scope: { type: "place", label: "UBS", lng: -51, lat: -29 } }))).toEqual([-51, -29]));
 });
@@ -78,9 +88,15 @@ const dateAgo = (d: number) => `${d}d`;
 
 describe("deriveEvents", () => {
   test("stored events win", () =>
-    expect(deriveEvents(item({ events: [{ at: "x", actor: "y", kind: "created", text: "z" }] }), dateAgo)).toHaveLength(1));
+    expect(deriveEvents(item({ events: [{ at: "x", actor: "y", kind: "created", text: "z" }] }), dateAgo)).toHaveLength(
+      1,
+    ));
   test("anonymous authors stay anonymous", () =>
     expect(deriveEvents(item({ visibility: "anonymous" }), dateAgo)[0]?.actor).toBe("Anônimo"));
   test("every derived history starts the clock with the digest", () =>
-    expect(deriveEvents(base, dateAgo).map((e) => e.kind).slice(0, 2)).toEqual(["created", "sent_to_authority"]));
+    expect(
+      deriveEvents(base, dateAgo)
+        .map((e) => e.kind)
+        .slice(0, 2),
+    ).toEqual(["created", "sent_to_authority"]));
 });

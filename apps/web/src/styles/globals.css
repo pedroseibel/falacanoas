@@ -112,6 +112,11 @@
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+/* TanStack Charts reads its palette from --ts-chart-*. One series → ink (dataviz: single series, one color). */
+@utility chart-ink {
+  --ts-chart-1: var(--ink);
+  color: var(--ink-3);
+}
 @utility scrollbar-none {
   scrollbar-width: none;
 }

@@ -11,10 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppMapRouteImport } from './routes/_app/_map'
-import { Route as AppBairroRouteImport } from './routes/_app/bairro'
 import { Route as AppPlacarRouteImport } from './routes/_app/placar'
 import { Route as AppVoceRouteImport } from './routes/_app/voce'
 import { Route as AppMapIndexRouteImport } from './routes/_app/_map/index'
+import { Route as AppBairroIndexRouteImport } from './routes/_app/bairro.index'
+import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
 import { Route as AppMapOIdRouteImport } from './routes/_app/_map/o.$id'
 
 const AppRoute = AppRouteImport.update({
@@ -23,11 +24,6 @@ const AppRoute = AppRouteImport.update({
 } as any)
 const AppMapRoute = AppMapRouteImport.update({
   id: '/_map',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppBairroRoute = AppBairroRouteImport.update({
-  id: '/bairro',
-  path: '/bairro',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPlacarRoute = AppPlacarRouteImport.update({
@@ -45,6 +41,16 @@ const AppMapIndexRoute = AppMapIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppMapRoute,
 } as any)
+const AppBairroIndexRoute = AppBairroIndexRouteImport.update({
+  id: '/bairro/',
+  path: '/bairro/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBairroSlugRoute = AppBairroSlugRouteImport.update({
+  id: '/bairro/$slug',
+  path: '/bairro/$slug',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppMapOIdRoute = AppMapOIdRouteImport.update({
   id: '/o/$id',
   path: '/o/$id',
@@ -53,41 +59,45 @@ const AppMapOIdRoute = AppMapOIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppMapIndexRoute
-  '/bairro': typeof AppBairroRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
+  '/bairro/$slug': typeof AppBairroSlugRoute
+  '/bairro/': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppMapIndexRoute
-  '/bairro': typeof AppBairroRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
+  '/bairro/$slug': typeof AppBairroSlugRoute
+  '/bairro': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/_map': typeof AppMapRouteWithChildren
-  '/_app/bairro': typeof AppBairroRoute
   '/_app/placar': typeof AppPlacarRoute
   '/_app/voce': typeof AppVoceRoute
+  '/_app/bairro/$slug': typeof AppBairroSlugRoute
   '/_app/_map/': typeof AppMapIndexRoute
+  '/_app/bairro/': typeof AppBairroIndexRoute
   '/_app/_map/o/$id': typeof AppMapOIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/bairro' | '/placar' | '/voce' | '/o/$id'
+  fullPaths: '/' | '/placar' | '/voce' | '/bairro/$slug' | '/bairro/' | '/o/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/bairro' | '/placar' | '/voce' | '/o/$id'
+  to: '/' | '/placar' | '/voce' | '/bairro/$slug' | '/bairro' | '/o/$id'
   id:
     | '__root__'
     | '/_app'
     | '/_app/_map'
-    | '/_app/bairro'
     | '/_app/placar'
     | '/_app/voce'
+    | '/_app/bairro/$slug'
     | '/_app/_map/'
+    | '/_app/bairro/'
     | '/_app/_map/o/$id'
   fileRoutesById: FileRoutesById
 }
@@ -111,13 +121,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMapRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/bairro': {
-      id: '/_app/bairro'
-      path: '/bairro'
-      fullPath: '/bairro'
-      preLoaderRoute: typeof AppBairroRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/placar': {
       id: '/_app/placar'
       path: '/placar'
@@ -138,6 +141,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppMapIndexRouteImport
       parentRoute: typeof AppMapRoute
+    }
+    '/_app/bairro/': {
+      id: '/_app/bairro/'
+      path: '/bairro'
+      fullPath: '/bairro/'
+      preLoaderRoute: typeof AppBairroIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/bairro/$slug': {
+      id: '/_app/bairro/$slug'
+      path: '/bairro/$slug'
+      fullPath: '/bairro/$slug'
+      preLoaderRoute: typeof AppBairroSlugRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/_map/o/$id': {
       id: '/_app/_map/o/$id'
@@ -164,16 +181,18 @@ const AppMapRouteWithChildren =
 
 interface AppRouteChildren {
   AppMapRoute: typeof AppMapRouteWithChildren
-  AppBairroRoute: typeof AppBairroRoute
   AppPlacarRoute: typeof AppPlacarRoute
   AppVoceRoute: typeof AppVoceRoute
+  AppBairroSlugRoute: typeof AppBairroSlugRoute
+  AppBairroIndexRoute: typeof AppBairroIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppMapRoute: AppMapRouteWithChildren,
-  AppBairroRoute: AppBairroRoute,
   AppPlacarRoute: AppPlacarRoute,
   AppVoceRoute: AppVoceRoute,
+  AppBairroSlugRoute: AppBairroSlugRoute,
+  AppBairroIndexRoute: AppBairroIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
