@@ -1,12 +1,10 @@
 import { maskedPhone } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
-import { getRequestHeaders } from "@tanstack/react-start/server";
 import { z } from "zod";
 import { ProfileSchema } from "@/features/auth/profile-schema";
 import { auth } from "./auth";
 import { peekDevCode } from "./otp-outbox";
-
-const session = () => auth.api.getSession({ headers: getRequestHeaders() });
+import { getSession as session } from "./session";
 
 /** The signed-in person as the app sees them. The phone is only ever returned masked. */
 export const getAccount = createServerFn({ method: "GET" }).handler(async () => {

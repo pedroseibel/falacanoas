@@ -18,6 +18,7 @@ import { Route as AppMapMapaRouteImport } from './routes/_app/_map/mapa'
 import { Route as AppBairroIndexRouteImport } from './routes/_app/bairro.index'
 import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiFotosKeyRouteImport } from './routes/api/fotos/$key'
 import { Route as AppMapOIdRouteImport } from './routes/_app/_map/o.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -63,6 +64,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiFotosKeyRoute = ApiFotosKeyRouteImport.update({
+  id: '/api/fotos/$key',
+  path: '/api/fotos/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppMapOIdRoute = AppMapOIdRouteImport.update({
   id: '/o/$id',
   path: '/o/$id',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/bairro/': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
@@ -86,6 +93,7 @@ export interface FileRoutesByTo {
   '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/bairro': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   '/_app/_map/mapa': typeof AppMapMapaRoute
   '/_app/bairro/$slug': typeof AppBairroSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/_app/bairro/': typeof AppBairroIndexRoute
   '/_app/_map/o/$id': typeof AppMapOIdRoute
 }
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/bairro/$slug'
     | '/api/auth/$'
+    | '/api/fotos/$key'
     | '/bairro/'
     | '/o/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/mapa'
     | '/bairro/$slug'
     | '/api/auth/$'
+    | '/api/fotos/$key'
     | '/bairro'
     | '/o/$id'
   id:
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/_app/_map/mapa'
     | '/_app/bairro/$slug'
     | '/api/auth/$'
+    | '/api/fotos/$key'
     | '/_app/bairro/'
     | '/_app/_map/o/$id'
   fileRoutesById: FileRoutesById
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiFotosKeyRoute: typeof ApiFotosKeyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/fotos/$key': {
+      id: '/api/fotos/$key'
+      path: '/api/fotos/$key'
+      fullPath: '/api/fotos/$key'
+      preLoaderRoute: typeof ApiFotosKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/_map/o/$id': {
       id: '/_app/_map/o/$id'
       path: '/o/$id'
@@ -253,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiFotosKeyRoute: ApiFotosKeyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

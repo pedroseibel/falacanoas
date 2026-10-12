@@ -2,7 +2,7 @@ import type { Municipality, Viewer } from "@fala/core";
 import { useRef } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { PHONE_QUERY } from "@/lib/use-media-query";
-import { mountMap } from "./map-engine";
+import { mountMap, prefersDark } from "./map-engine";
 import { setMapState, type MapState } from "./map-store";
 
 /** The map is an imperative island: mounted once, then driven by mapStore (see map-engine.ts). */
@@ -20,8 +20,7 @@ export function MapView({
   const host = useRef<HTMLDivElement>(null);
   useMountEffect(() => {
     // Route lifecycle hooks don't run on hydration: seed the store from the server-rendered state.
-    const theme = document.documentElement.getAttribute("data-theme");
-    setMapState({ ...initial, dark: theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches });
+    setMapState({ ...initial, dark: prefersDark() });
     let dispose: (() => void) | null = null;
     let cancelled = false;
     void Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl-worker.mjs?url")]).then(

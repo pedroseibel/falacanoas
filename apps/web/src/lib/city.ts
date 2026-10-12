@@ -22,6 +22,8 @@ export const queueQuery = queryOptions({
   staleTime: 60_000,
 });
 
+export type AccountData = Awaited<ReturnType<typeof getAccount>>;
+
 /** The signed-in person, or null. Invalidate after signing in or out. */
 export const accountQuery = queryOptions({
   queryKey: ["account"],

@@ -18,7 +18,7 @@ import { accountQuery } from "@/lib/city";
 import { authClient } from "@/lib/auth-client";
 import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { getAccount, getDevCode, saveProfile } from "@/server/account";
-import { closeSignIn, setSignInStep, signInStore, type SignInStep } from "./auth-store";
+import { closeSignIn, finishSignIn, setSignInStep, signInStore, type SignInStep } from "./auth-store";
 import { ProfileSchema, type Profile } from "./profile-schema";
 
 type Step = SignInStep;
@@ -155,7 +155,7 @@ function CodeStep({ to, onBack, onNeedsProfile }: { to: string; onBack: () => vo
     onSuccess: (account) => {
       queryClient.setQueryData(accountQuery.queryKey, account);
       if (!account?.nick) return onNeedsProfile();
-      closeSignIn();
+      finishSignIn();
       toast(`Que bom te ver, ${account.nick}.`);
     },
     onError: () => setCode(""),
@@ -237,7 +237,7 @@ function ProfileStep() {
       if (!r.ok) return setTaken(r.error);
       const account = await getAccount();
       queryClient.setQueryData(accountQuery.queryKey, account);
-      closeSignIn();
+      finishSignIn();
       toast(`Pronto. Você aparece como ${value.nick}.`);
     },
   });

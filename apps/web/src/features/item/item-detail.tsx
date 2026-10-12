@@ -1,4 +1,5 @@
 import {
+  awaitingDigest,
   communityLine,
   dateAgo,
   deriveEvents,
@@ -196,9 +197,11 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           </p>
           <DaysMeter days={it.days} deadline={muni.deadlineDays} size="lg" />
           <p className="text-xs text-muted-foreground">
-            {open
-              ? `Enviado à Prefeitura em ${dateAgo(now, it.days)}, às ${muni.digestHour}:00. O relógio conta desde então.`
-              : `Fechado pelos vizinhos em ${dateAgo(now, 0)}.`}
+            {awaitingDigest(it)
+              ? `Ainda não foi enviado. Entra no próximo resumo diário, às ${muni.digestHour}h, e o relógio começa no envio.`
+              : open
+                ? `Enviado à Prefeitura em ${dateAgo(now, it.days)}, às ${muni.digestHour}:00. O relógio conta desde então.`
+                : `Fechado pelos vizinhos em ${dateAgo(now, 0)}.`}
           </p>
         </section>
 

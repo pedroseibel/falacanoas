@@ -52,4 +52,28 @@ function RadioGroupSegment({ className, ...props }: RadioPrimitive.Root.Props) {
   );
 }
 
-export { RadioGroup, RadioGroupItem, RadioGroupSegment, RadioGroupSegmented };
+/** A grid of choices, each a pictogram and a label (the report flow's category picker). The checked tile inverts to ink. */
+function RadioGroupTiles({ className, ...props }: RadioGroupPrimitive.Props) {
+  return (
+    <RadioGroupPrimitive
+      data-slot="radio-group-tiles"
+      className={cn("grid grid-cols-2 gap-2 compact:grid-cols-3", className)}
+      {...props}
+    />
+  );
+}
+
+function RadioGroupTile({ className, ...props }: RadioPrimitive.Root.Props) {
+  return (
+    <RadioPrimitive.Root
+      data-slot="radio-group-tile"
+      className={cn(
+        "flex min-h-12 cursor-pointer items-center gap-2.5 rounded-lg border border-hairline bg-card px-3 py-2 text-left text-sm leading-tight font-medium text-ink-2 transition-colors outline-none hover:border-hairline-strong hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-signal-text data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground [&_svg]:shrink-0",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+export { RadioGroup, RadioGroupItem, RadioGroupSegment, RadioGroupSegmented, RadioGroupTile, RadioGroupTiles };

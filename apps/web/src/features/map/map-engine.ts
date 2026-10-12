@@ -10,8 +10,23 @@ const STYLE_URL = {
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
 // CARTO: `https://basemaps.cartocdn.com/gl/${dark ? "dark-matter" : "positron"}-nolabels-gl-style/style.json?key=${KEY}`
+export const styleUrl = (dark: boolean) => STYLE_URL[dark ? "dark" : "light"];
 
-const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+export const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/** The saved theme, or the system's. */
+export function prefersDark(): boolean {
+  const theme = document.documentElement.getAttribute("data-theme");
+  return theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+/** Paints the basemap's background with our ground and hides points of interest, transit and house numbers. */
+export function quietBasemap(map: MapLibreMap) {
+  for (const l of map.getStyle().layers) {
+    if (l.type === "background") map.setPaintProperty(l.id, "background-color", cssVar("--ground"));
+    if (/poi|housenumber|aeroway|transit/i.test(l.id)) map.setLayoutProperty(l.id, "visibility", "none");
+  }
+}
 
 function featureCollection(items: Item[]) {
   return {
@@ -46,7 +61,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
   let ready = false;
   const map: MapLibreMap = new ml.Map({
     container: host,
-    style: STYLE_URL[state.dark ? "dark" : "light"],
+    style: styleUrl(state.dark),
     center: muni.center,
     zoom: opts.isPhone() ? 11.4 : 12.1,
     minZoom: 10.4,
@@ -81,10 +96,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     const paper = cssVar("--panel");
     const ink3 = cssVar("--ink-3");
     const signal = cssVar("--signal");
-    for (const l of map.getStyle().layers) {
-      if (l.type === "background") map.setPaintProperty(l.id, "background-color", cssVar("--ground"));
-      if (/poi|housenumber|aeroway|transit/i.test(l.id)) map.setLayoutProperty(l.id, "visibility", "none");
-    }
+    quietBasemap(map);
     const hasGlyphs = Boolean(map.getStyle().glyphs);
     map.addSource("bairros", { type: "geojson", data: muni.geo.neighborhoods, promoteId: "slug" });
     map.addSource("limite", { type: "geojson", data: muni.geo.boundary });
@@ -285,7 +297,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     state = next;
     if (next.dark !== prev.dark) {
       ready = false;
-      map.setStyle(STYLE_URL[next.dark ? "dark" : "light"]);
+      map.setStyle(styleUrl(next.dark));
       return;
     }
     if (next.visible !== prev.visible && ready) itemsSource()?.setData(featureCollection(next.visible));
@@ -295,9 +307,13 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     if (next.hoveredId !== prev.hoveredId) applyHover(next);
   });
 
-  const api = {
+  const api: MapControls = {
     zoomBy: (d: number) => map.zoomTo(map.getZoom() + d, { duration: 300 }),
     locate: () => map.easeTo({ center: viewer.location, zoom: 15, duration: 700 }),
+    view: () => {
+      const c = map.getCenter();
+      return { center: [c.lng, c.lat], zoom: map.getZoom() };
+    },
   };
   mapControls.current = api;
 
@@ -308,5 +324,12 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
   };
 }
 
-/** Imperative controls for buttons outside the map (zoom, locate). Set while a map is mounted. */
-export const mapControls: { current: { zoomBy: (d: number) => void; locate: () => void } | null } = { current: null };
+export interface MapControls {
+  zoomBy: (d: number) => void;
+  locate: () => void;
+  /** Where the map is looking (the report flow opens its picker there). */
+  view: () => { center: [number, number]; zoom: number };
+}
+
+/** Imperative controls for things outside the map (buttons, the report flow). Set while a map is mounted. */
+export const mapControls: { current: MapControls | null } = { current: null };
