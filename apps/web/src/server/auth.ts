@@ -104,7 +104,11 @@ export const auth = betterAuth({
   rateLimit: {
     enabled: true,
     storage: "database",
-    customRules: { "/sign-in/vault": { window: 15 * 60, max: 30 } },
+    customRules: {
+      "/sign-in/vault": { window: 15 * 60, max: 30 },
+      // Guest sessions (round 2) are cheap to open; each guest pin also needs a robot check.
+      "/sign-in/anonymous": { window: 15 * 60, max: 5 },
+    },
   },
   user: {
     additionalFields: {

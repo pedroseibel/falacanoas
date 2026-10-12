@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getCity, getItem, getThreads } from "@/server/data";
-import { getAccount } from "@/server/account";
+import { getAccount, getAuthConfig } from "@/server/account";
 import { getFollowing } from "@/server/follows";
 import { getItemViewer } from "@/server/item-actions";
 import { getQueue } from "@/server/queue";
@@ -12,8 +12,9 @@ export const cityQuery = queryOptions({
   staleTime: 60_000,
 });
 
-export const itemQuery = (id: string) =>
-  queryOptions({ queryKey: ["item", id], queryFn: () => getItem({ data: id }), staleTime: 60_000 });
+/** One item; `key` opens a guest pin still in moderation (its tracking link). */
+export const itemQuery = (id: string, key: string | null = null) =>
+  queryOptions({ queryKey: ["item", id], queryFn: () => getItem({ data: { id, key } }), staleTime: 60_000 });
 
 export const threadsQuery = (slug: string) =>
   queryOptions({ queryKey: ["threads", slug], queryFn: () => getThreads({ data: slug }), staleTime: 60_000 });
@@ -49,4 +50,11 @@ export const followingQuery = queryOptions({
   queryKey: ["following"],
   queryFn: () => getFollowing(),
   staleTime: 30_000,
+});
+
+/** Public sign-in settings (the Turnstile site key), shared by /entrar and the guest report form. */
+export const authConfigQuery = queryOptions({
+  queryKey: ["auth-config"],
+  queryFn: () => getAuthConfig(),
+  staleTime: Infinity,
 });

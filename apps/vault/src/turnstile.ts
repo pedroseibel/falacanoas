@@ -20,6 +20,7 @@ const ReplySchema = z.object({
 export function turnstile(
   env: { TURNSTILE_SECRET_KEY?: string; TURNSTILE_HOSTNAME?: string },
   development: boolean,
+  action = SEND_CODE_ACTION,
 ): Human {
   const secret = env.TURNSTILE_SECRET_KEY ?? (development ? TEST_SECRET : "");
   return async (token, ip) => {
@@ -32,6 +33,6 @@ export function turnstile(
     const reply = ReplySchema.safeParse(await res.json().catch(() => null));
     if (!reply.success || !reply.data.success) return false;
     if (secret === TEST_SECRET) return true;
-    return reply.data.action === SEND_CODE_ACTION && reply.data.hostname === env.TURNSTILE_HOSTNAME;
+    return reply.data.action === action && reply.data.hostname === env.TURNSTILE_HOSTNAME;
   };
 }

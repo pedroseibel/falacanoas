@@ -9,12 +9,12 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useDebouncedCallback } from "@tanstack/react-pacer";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { ReportDialog } from "@/features/report/report-dialog";
 import { openReport } from "@/features/report/report-store";
 import { AppShell, type Section } from "@/features/shell/app-shell";
-import { accountQuery, cityQuery, memberGate } from "@/lib/city";
+import { accountQuery, authConfigQuery, cityQuery, memberGate } from "@/lib/city";
 
 export const Route = createFileRoute("/_app")({
   loader: ({ context }) =>
@@ -49,6 +49,7 @@ function AppLayout() {
   );
   const { data: account } = useSuspenseQuery(accountQuery);
   const { data: city } = useSuspenseQuery(cityQuery);
+  const { data: authConfig } = useQuery(authConfigQuery);
   return (
     <AppShell
       section={section}
@@ -59,7 +60,8 @@ function AppLayout() {
       onSignIn={() => void navigate({ to: "/entrar", search: { volta: here } })}
       onReport={() => {
         const gate = memberGate(account);
-        if (!gate) return openReport();
+        // A guest already chose to report without an account (round 2): straight to the form.
+        if (!gate || account?.guest) return openReport();
         void navigate({ to: gate, search: { volta: here, depois: "registrar" } });
       }}
       link={(to, children, className, current) => (
@@ -73,10 +75,15 @@ function AppLayout() {
         muni={canoas}
         items={city.items}
         author={
-          account?.phoneVerified && account.nick ? { nick: account.nick, neighborhood: account.neighborhood } : null
+          account?.phoneVerified && account.nick
+            ? { nick: account.nick, neighborhood: account.neighborhood }
+            : account?.guest
+              ? "guest"
+              : null
         }
+        turnstileSiteKey={authConfig?.turnstileSiteKey ?? null}
         onChanged={() => void router.invalidate()}
-        onView={(id) => void navigate({ to: "/o/$id", params: { id } })}
+        onView={(id, key) => void navigate({ to: "/o/$id", params: { id }, search: key ? { chave: key } : {} })}
       />
     </AppShell>
   );

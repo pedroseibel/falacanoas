@@ -25,6 +25,8 @@ import { itemFromRows, newPhotoRows, rowsForNewItem, type PhotoRow } from "./ite
  */
 
 const tz = canoas.timezone;
+
+const has = async (q: Promise<unknown[]>) => (await q).length > 0;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 const photoColumns = {
@@ -41,10 +43,10 @@ function byItem<T extends { itemId: string }>(rows: T[]): Map<string, T[]> {
   return out;
 }
 
-/** Every item, newest first, with photos; histories load with the item page. */
+/** Every published item, newest first, with photos; histories load with the item page. */
 export async function listItems(now = new Date()): Promise<Item[]> {
   const [rows, photos] = await Promise.all([
-    db.select().from(items).orderBy(desc(items.createdAt)),
+    db.select().from(items).where(eq(items.moderation, "published")).orderBy(desc(items.createdAt)),
     db.select(photoColumns).from(itemPhotos).orderBy(asc(itemPhotos.position)),
   ]);
   const photosOf = byItem(photos);
@@ -65,8 +67,40 @@ async function readItem(q: Db | Tx, id: string, now: Date): Promise<Item | null>
   return itemFromRows(row, { events, photos: photos satisfies PhotoRow[] }, now, tz);
 }
 
-/** One item with its whole history. */
+/** One item with its whole history. Server-side callers that already decided access use this. */
 export async function findItem(id: string, now = new Date()): Promise<Item | null> {
+  return readItem(db, id, now);
+}
+
+export const hashKey = async (key: string) =>
+  Buffer.from(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key))).toString("hex");
+
+/**
+ * One item for a reader. A pin still in moderation opens only with its tracking key, or for the
+ * session that dropped it; otherwise it doesn't exist, as far as anyone can tell.
+ */
+export async function findVisibleItem(
+  id: string,
+  { key, accountId }: { key: string | null; accountId: string | null },
+  now = new Date(),
+): Promise<Item | null> {
+  const [row] = await db
+    .select({ moderation: items.moderation, trackingKeyHash: items.trackingKeyHash })
+    .from(items)
+    .where(eq(items.id, id));
+  if (!row) return null;
+  if (row.moderation !== "published") {
+    const byKey = Boolean(key && row.trackingKeyHash && (await hashKey(key)) === row.trackingKeyHash);
+    const own =
+      accountId !== null &&
+      (await has(
+        db
+          .select({ id: itemAuthors.itemId })
+          .from(itemAuthors)
+          .where(and(eq(itemAuthors.itemId, id), eq(itemAuthors.accountId, accountId))),
+      ));
+    if (!byKey && !own) return null;
+  }
   return readItem(db, id, now);
 }
 
@@ -86,10 +120,15 @@ export async function createdSince(accountId: string, ms: number, now = new Date
 }
 
 /** A new report, its first event and photos, and who is behind it, all or nothing. */
-export async function insertItem(item: Item, accountId: string, now: Date): Promise<void> {
+export async function insertItem(
+  item: Item,
+  accountId: string,
+  now: Date,
+  trackingKeyHash: string | null = null,
+): Promise<void> {
   const rows = rowsForNewItem(item, now);
   await db.transaction(async (tx) => {
-    await tx.insert(items).values(rows.row);
+    await tx.insert(items).values({ ...rows.row, trackingKeyHash });
     await tx.insert(itemAuthors).values({ itemId: item.id, accountId });
     if (rows.events.length) await tx.insert(itemEvents).values(rows.events);
     if (rows.photos.length) await tx.insert(itemPhotos).values(rows.photos);
@@ -122,7 +161,7 @@ export async function joinItem({
     const [locked] = await tx.select({ id: items.id }).from(items).where(eq(items.id, id)).for("update");
     if (!locked) return null;
     const item = await readItem(tx, id, now);
-    if (!item || item.kind !== "occurrence" || !isOpen(item)) return null;
+    if (!item || item.kind !== "occurrence" || !isOpen(item) || item.moderation) return null;
     const [authored, confirmed] = await Promise.all([
       tx
         .select({ id: itemAuthors.itemId })
@@ -173,8 +212,6 @@ const today = (now: Date) => {
   const t = localTime(now, tz);
   return `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
 };
-
-const has = async (q: Promise<unknown[]>) => (await q).length > 0;
 
 /** What this account has already done with this item, and whether its word moves the status yet. */
 export interface ViewerState {
@@ -249,7 +286,8 @@ export async function actOnItem(input: {
   const result = await db.transaction(async (tx): Promise<ActOutcome> => {
     const [locked] = await tx.select({ round: items.round }).from(items).where(eq(items.id, id)).for("update");
     const item = locked ? await readItem(tx, id, now) : null;
-    if (!locked || !item) return { ok: false, reason: "gone" };
+    // A pin in moderation takes no actions until it's published.
+    if (!locked || !item || item.moderation) return { ok: false, reason: "gone" };
     const viewer = await viewerIn(tx, id, accountId, locked.round, phoneVerifiedAt, now);
     const already =
       action.type === "confirm"

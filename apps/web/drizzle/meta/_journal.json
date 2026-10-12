@@ -57,6 +57,13 @@
       "when": 1791846644144,
       "tag": "0007_follows",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791846851069,
+      "tag": "0008_guest_pins",
+      "breakpoints": true
     }
   ]
 }

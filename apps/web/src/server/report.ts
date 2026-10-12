@@ -1,24 +1,38 @@
-import { digestDay, itemFromReport, newItemId, reportSchema, type Item } from "@fala/core";
+import { digestDay, itemFromReport, newItemId, reportSchema, type Item, type ReportFields } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
-import { createdSince, insertItem, itemExists, joinItem } from "./items";
+import { createdSince, hashKey, insertItem, itemExists, joinItem } from "./items";
 import { markNickPublished } from "./nicks";
 import { member, type Failure } from "./member";
 import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
 import { removePhotos } from "./photos";
-import { recordEvidence } from "./vault";
+import { getSession } from "./session";
+import { isHuman, recordEvidence } from "./vault";
 
 /**
- * The report flow's writes (research/DECISIONS.md, rounds 3, 4, 6 and 15). Posting needs a
- * phone-verified account with an apelido; guest pins held for moderation come later.
+ * The report flow's writes (research/DECISIONS.md, rounds 2, 3, 4, 6, 15 and 18). Posting needs a
+ * phone-verified account with an apelido, or, as a guest, a photo and a robot check: a guest pin is
+ * held for moderation and followed through a secret link.
  */
 
 const schema = reportSchema(canoas);
 const HOUR = 3_600_000;
 const PER_HOUR = 10;
 
-export type ReportResult = Failure | { ok: true; item: Item; digest: "hoje" | "amanhã" };
+export type ReportResult =
+  | Failure
+  | {
+      ok: true;
+      item: Item;
+      digest: "hoje" | "amanhã";
+      /** A guest pin's secret link: the only way back to it until moderation publishes it. */
+      tracking?: string;
+    };
+
+/** Guest pins per guest session per day: enough for a neighbour, too few to flood moderation. */
+const GUEST_PER_DAY = 3;
+const DAY = 86_400_000;
 export type JoinResult =
   | Failure
   | {
@@ -36,6 +50,8 @@ async function uniqueId(): Promise<string> {
 export const createReport = createServerFn({ method: "POST" })
   .inputValidator(formData)
   .handler(async ({ data }): Promise<ReportResult> => {
+    const session = (await getSession())?.user;
+    if (session?.isAnonymous) return createGuestPin(data, session.id);
     const who = await member();
     if ("error" in who) return who;
     const parsed = schema.safeParse(readReportFormData(data));
@@ -89,3 +105,42 @@ export const joinReport = createServerFn({ method: "POST" })
     await recordEvidence("confirmation", who.id, joined.item.id);
     return { ok: true, ...joined };
   });
+
+/**
+ * A guest pin (round 2, round 18 Q4): an anonymous session, a photo, a robot check; it appears as
+ * Anônimo, waits for moderation before it shows on the map, and needs two independent confirmations
+ * to count. Traceable within the limits of the access logs, never identified.
+ */
+async function createGuestPin(data: FormData, guestId: string): Promise<ReportResult> {
+  const parsed = schema.safeParse(readReportFormData(data));
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." };
+  if (parsed.data.kind !== "occurrence")
+    return { ok: false, error: "Sem conta, dá para registrar um problema num lugar. Questões públicas pedem celular." };
+  const token = data.get("turnstile");
+  if (!(await isHuman(typeof token === "string" ? token : null)))
+    return {
+      ok: false,
+      error: "Não conseguimos confirmar que é uma pessoa enviando. Recarregue a página e tente de novo.",
+    };
+  if ((await createdSince(guestId, DAY)) >= GUEST_PER_DAY)
+    return { ok: false, error: "Sem conta, são até 3 registros por dia. Entre com o celular para registrar mais." };
+  const photos = await keepPhotos(parsed.data.photos);
+  if (!photos) return { ok: false, error: PHOTO_ERROR };
+  const now = new Date();
+  const id = await uniqueId();
+  const fields: ReportFields = { ...parsed.data, visibility: "anonymous" };
+  const item: Item = {
+    ...itemFromReport(fields, canoas, { id, nick: "Anônimo", photos: photos.srcs, now }),
+    guest: true,
+    moderation: "pending",
+  };
+  const key = Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64url");
+  try {
+    await insertItem(item, guestId, now, await hashKey(key));
+  } catch (e) {
+    await removePhotos(photos.keys);
+    throw e;
+  }
+  await recordEvidence("guest_pin", guestId, id);
+  return { ok: true, item, digest: digestDay(now, canoas), tracking: `/o/${id}?chave=${key}` };
+}

@@ -1,4 +1,10 @@
-import { ConnectionSchema, EvidenceActionSchema, importVaultKey, isBrazilianMobileE164 } from "@fala/core";
+import {
+  ConnectionSchema,
+  EvidenceActionSchema,
+  GUEST_PIN_ACTION,
+  importVaultKey,
+  isBrazilianMobileE164,
+} from "@fala/core";
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
 import { importVaultKeys, type VaultKeys } from "./crypto";
@@ -109,6 +115,13 @@ export default class Vault extends WorkerEntrypoint<Env> {
     } finally {
       this.ctx.waitUntil(db.close());
     }
+  }
+
+  /** RPC: a guest pin's Turnstile token, checked with the vault's secret, which the app never holds. */
+  async human(token: unknown, ip: unknown): Promise<boolean> {
+    if (typeof token !== "string" || !token || token.length > 4096) return false;
+    const check = turnstile(this.env, this.env.VAULT_MODE === "development", GUEST_PIN_ACTION);
+    return check(token, typeof ip === "string" ? ip : null);
   }
 
   /** Daily: 6-month deletion, sparing what preservation holds cover (round 18, Q23). */

@@ -279,7 +279,23 @@ export function ItemDetail({
           )}
         </section>
 
-        <ItemActions it={it} muni={muni} actions={a} now={now} onWrite={write} />
+        {it.moderation ? (
+          <section
+            aria-labelledby="analise"
+            className="grid gap-1 rounded-xl border border-dashed border-hairline-strong p-3.5"
+          >
+            <h3 id="analise" className="text-sm font-semibold">
+              {it.moderation === "pending" ? "Em análise" : "Não publicado"}
+            </h3>
+            <p className="text-sm text-ink-2">
+              {it.moderation === "pending"
+                ? "Registros sem conta passam pela moderação antes de aparecer no mapa. Guarde o link desta página: é o jeito de acompanhar."
+                : "A moderação não publicou este registro. O histórico abaixo diz o motivo."}
+            </p>
+          </section>
+        ) : (
+          <ItemActions it={it} muni={muni} actions={a} now={now} onWrite={write} />
+        )}
 
         <p className="text-sm leading-relaxed text-ink-2">{it.text}</p>
 
@@ -324,31 +340,35 @@ export function ItemDetail({
           </p>
         </section>
 
-        <form
-          className="flex items-center gap-2"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const text = draft.trim();
-            if (!member) return onSignIn();
-            if (text) a.run({ type: "update", text }, () => setDraft(""));
-          }}
-        >
-          <label className="sr-only" htmlFor="composer">
-            Adicionar atualização
-          </label>
-          <Input
-            id="composer"
-            value={draft}
-            maxLength={UPDATE_MAX}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Ex.: choveu ontem e a água chegou ao banco"
-            autoComplete="off"
-          />
-          <Button type="submit" disabled={a.pending === "update"}>
-            {a.pending === "update" && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
-            Enviar
-          </Button>
-        </form>
+        {!it.moderation && (
+          <form
+            className="flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const text = draft.trim();
+              if (!member) return onSignIn();
+              if (text) a.run({ type: "update", text }, () => setDraft(""));
+            }}
+          >
+            <label className="sr-only" htmlFor="composer">
+              Adicionar atualização
+            </label>
+            <Input
+              id="composer"
+              value={draft}
+              maxLength={UPDATE_MAX}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="Ex.: choveu ontem e a água chegou ao banco"
+              autoComplete="off"
+            />
+            <Button type="submit" disabled={a.pending === "update"}>
+              {a.pending === "update" && (
+                <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+              )}
+              Enviar
+            </Button>
+          </form>
+        )}
       </div>
     </article>
   );

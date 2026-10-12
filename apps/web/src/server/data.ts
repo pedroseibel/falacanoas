@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { fixtures } from "@fala/instance-canoas/fixtures";
-import { findItem, listItems } from "./items";
+import { z } from "zod";
+import { findVisibleItem, listItems } from "./items";
+import { getSession } from "./session";
 
 /**
  * Data access. Items live in Postgres (Supabase, São Paulo); the fictional demo items are seeded rows
@@ -12,9 +14,13 @@ export const getCity = createServerFn({ method: "GET" }).handler(async () => {
   return { now: now.toISOString(), viewer: fixtures.viewer, items: await listItems(now) };
 });
 
+/** One item. A guest pin still in moderation needs its tracking key, or the session that dropped it. */
 export const getItem = createServerFn({ method: "GET" })
-  .inputValidator((id: string) => id.toUpperCase().slice(0, 12))
-  .handler(async ({ data }) => findItem(data));
+  .inputValidator(z.object({ id: z.string().min(4).max(12), key: z.string().max(64).nullable() }))
+  .handler(async ({ data }) => {
+    const user = (await getSession())?.user;
+    return findVisibleItem(data.id.toUpperCase(), { key: data.key, accountId: user?.id ?? null });
+  });
 
 export const getThreads = createServerFn({ method: "GET" })
   .inputValidator((slug: string) => slug.slice(0, 60))

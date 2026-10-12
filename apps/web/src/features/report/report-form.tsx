@@ -1,4 +1,5 @@
 import {
+  GUEST_PIN_ACTION,
   ItemKindSchema,
   REPORT,
   ReachSchema,
@@ -40,6 +41,7 @@ import { cn } from "@/lib/utils";
 import { createReport, joinReport, type JoinResult, type ReportResult } from "@/server/report";
 import { LocationPicker } from "./location-picker";
 import { Thumb } from "./photo-thumb";
+import { useTurnstile } from "@/features/auth/turnstile";
 import { preparePhoto } from "./photo";
 import {
   listPt,
@@ -100,6 +102,7 @@ export function ReportForm({
   head,
   onCreated,
   onJoined,
+  guest,
 }: {
   muni: Municipality;
   /** Everything on the map, for the duplicate check and the picker's dots. */
@@ -109,6 +112,11 @@ export function ReportForm({
   head: Head;
   onCreated: (result: Created) => void;
   onJoined: (result: Joined) => void;
+  /**
+   * A guest pin (round 2): no account, so a robot check instead, occurrences only, shown as Anônimo
+   * and held for moderation. Null for a signed-in neighbour.
+   */
+  guest: { turnstileSiteKey: string | null } | null;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [schema] = useState(() => reportSchema(muni));
@@ -117,7 +125,14 @@ export function ReportForm({
   const [pending, setPending] = useState(0);
   const [problem, setProblem] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState<string[]>([]);
-  const create = useMutation({ mutationFn: (v: ReportFields) => createReport({ data: toReportFormData(v) }) });
+  const { mount: mountRobot, token: robotToken } = useTurnstile(guest?.turnstileSiteKey ?? "", GUEST_PIN_ACTION);
+  const create = useMutation({
+    mutationFn: ({ v, token }: { v: ReportFields; token: string | null }) => {
+      const fd = toReportFormData(v);
+      if (token) fd.set("turnstile", token);
+      return createReport({ data: fd });
+    },
+  });
   const join = useMutation({ mutationFn: (v: Join) => joinReport({ data: toJoinFormData(v) }) });
   const occurrences = muni.categories.filter((c) => c.kind === "occurrence");
   const bairros = muni.neighborhoods.toSorted((a, b) => a.name.localeCompare(b.name, "pt-BR"));
@@ -139,7 +154,10 @@ export function ReportForm({
     validators: { onChange: schema, onSubmit: schema },
     onSubmit: async ({ value }) => {
       setProblem(null);
-      const r = await create.mutateAsync(value).catch(() => null);
+      const token = guest ? await robotToken().catch(() => null) : null;
+      if (guest && !token)
+        return setProblem("Não conseguimos confirmar que é uma pessoa enviando. Recarregue a página e tente de novo.");
+      const r = await create.mutateAsync({ v: value, token }).catch(() => null);
       if (!r) return setProblem("Não deu para publicar agora. Confira a conexão e tente de novo.");
       if (!r.ok) return setProblem(r.error);
       onCreated(r);
@@ -201,7 +219,9 @@ export function ReportForm({
     ? "Preparando as fotos…"
     : missing
       ? `Falta: ${missing}.`
-      : `Entra no resumo de ${digest}, às ${muni.digestHour}h.`;
+      : guest
+        ? "Vai para a moderação antes de aparecer no mapa."
+        : `Entra no resumo de ${digest}, às ${muni.digestHour}h.`;
 
   return (
     <form
@@ -216,34 +236,39 @@ export function ReportForm({
         void form.handleSubmit();
       }}
     >
-      <Header head={head} title="Registrar">
-        {issue
-          ? "Uma questão que pesa no bairro ou na cidade, em uma frase."
-          : "Foto, tipo e lugar bastam. O resto é opcional."}
+      <Header head={head} title={guest ? "Registrar sem conta" : "Registrar"}>
+        {guest
+          ? "Foto, tipo e lugar. Sem conta, o registro passa pela moderação antes de aparecer no mapa."
+          : issue
+            ? "Uma questão que pesa no bairro ou na cidade, em uma frase."
+            : "Foto, tipo e lugar bastam. O resto é opcional."}
       </Header>
 
       <div className="grid min-h-0 flex-1 content-start gap-6 overflow-y-auto overscroll-contain px-5 py-5">
-        <form.Field name="kind">
-          {(field) => (
-            <RadioGroupSegmented
-              aria-label="Tipo de registro"
-              value={field.state.value}
-              onValueChange={(v) => {
-                const next = asKind(v);
-                if (next) field.handleChange(next);
-              }}
-            >
-              <RadioGroupSegment value="occurrence">
-                <MapPin />
-                Problema num lugar
-              </RadioGroupSegment>
-              <RadioGroupSegment value="public_issue">
-                <Users />
-                Questão pública
-              </RadioGroupSegment>
-            </RadioGroupSegmented>
-          )}
-        </form.Field>
+        {guest?.turnstileSiteKey && <div ref={mountRobot} className="empty:hidden" />}
+        {!guest && (
+          <form.Field name="kind">
+            {(field) => (
+              <RadioGroupSegmented
+                aria-label="Tipo de registro"
+                value={field.state.value}
+                onValueChange={(v) => {
+                  const next = asKind(v);
+                  if (next) field.handleChange(next);
+                }}
+              >
+                <RadioGroupSegment value="occurrence">
+                  <MapPin />
+                  Problema num lugar
+                </RadioGroupSegment>
+                <RadioGroupSegment value="public_issue">
+                  <Users />
+                  Questão pública
+                </RadioGroupSegment>
+              </RadioGroupSegmented>
+            )}
+          </form.Field>
+        )}
 
         <form.Field name="photos" mode="array">
           {(field) => {
@@ -471,19 +496,22 @@ export function ReportForm({
               {plural(duplicate.item.days, "dia", "dias")} · {communityLine(duplicate.item)}.
             </AlertDescription>
             <div className="col-start-2 mt-2 flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                disabled={busy || pending > 0}
-                onClick={() => void joinDuplicate(duplicate)}
-              >
-                {join.isPending ? (
-                  <Loader2 className="animate-spin" data-icon="inline-start" />
-                ) : (
-                  <Check data-icon="inline-start" />
-                )}
-                {photoCount ? "Confirmar e adicionar sua foto" : "Confirmar"}
-              </Button>
+              {/* Confirming takes an account (round 18, Q17); a guest can still say it's another problem. */}
+              {!guest && (
+                <Button
+                  type="button"
+                  size="sm"
+                  disabled={busy || pending > 0}
+                  onClick={() => void joinDuplicate(duplicate)}
+                >
+                  {join.isPending ? (
+                    <Loader2 className="animate-spin" data-icon="inline-start" />
+                  ) : (
+                    <Check data-icon="inline-start" />
+                  )}
+                  {photoCount ? "Confirmar e adicionar sua foto" : "Confirmar"}
+                </Button>
+              )}
               <Button
                 type="button"
                 size="sm"
@@ -524,51 +552,61 @@ export function ReportForm({
           }}
         </form.Field>
 
-        <form.Field name="visibility">
-          {(field) => (
-            <Part id="r-como" title="Publicar como">
-              <RadioGroup
-                aria-labelledby="r-como"
-                className="grid-cols-2"
-                value={field.state.value}
-                onValueChange={(v) => {
-                  const next = asVisibility(v);
-                  if (next) field.handleChange(next);
-                }}
-              >
-                <FieldLabel htmlFor="r-como-apelido">
-                  <Field orientation="horizontal">
-                    <RadioGroupItem value="pseudonymous" id="r-como-apelido" />
-                    <FieldContent className="min-w-0">
-                      <FieldTitle className="max-w-full">
-                        <span className="truncate">{author.nick}</span>
-                      </FieldTitle>
-                      <FieldDescription>
-                        {muni.neighborhoods.find((n) => n.slug === author.neighborhood)?.name ?? "Seu apelido"}
-                      </FieldDescription>
-                    </FieldContent>
-                  </Field>
-                </FieldLabel>
-                <FieldLabel htmlFor="r-como-anonimo">
-                  <Field orientation="horizontal">
-                    <RadioGroupItem value="anonymous" id="r-como-anonimo" />
-                    <FieldContent>
-                      <FieldTitle>Anônimo em público</FieldTitle>
-                      <FieldDescription>Sem apelido no registro</FieldDescription>
-                    </FieldContent>
-                  </Field>
-                </FieldLabel>
-              </RadioGroup>
-              {field.state.value === "anonymous" && (
-                <p className="flex gap-2 text-caption text-ink-2">
-                  <EyeOff className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  Seu apelido não aparece neste registro. O Fala ainda liga o registro à sua conta, para evitar abuso e
-                  permitir moderação. Nenhum outro dado seu aparece.
-                </p>
-              )}
-            </Part>
-          )}
-        </form.Field>
+        {guest ? (
+          <Part id="r-como" title="Publicar como">
+            <p className="flex gap-2 text-caption text-ink-2">
+              <EyeOff className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              Anônimo. Sem conta, o registro fica em análise até a moderação aprovar, e você recebe um link para
+              acompanhar. O Fala guarda o registro de acesso desta conexão, como pede a lei, e nada mais.
+            </p>
+          </Part>
+        ) : (
+          <form.Field name="visibility">
+            {(field) => (
+              <Part id="r-como" title="Publicar como">
+                <RadioGroup
+                  aria-labelledby="r-como"
+                  className="grid-cols-2"
+                  value={field.state.value}
+                  onValueChange={(v) => {
+                    const next = asVisibility(v);
+                    if (next) field.handleChange(next);
+                  }}
+                >
+                  <FieldLabel htmlFor="r-como-apelido">
+                    <Field orientation="horizontal">
+                      <RadioGroupItem value="pseudonymous" id="r-como-apelido" />
+                      <FieldContent className="min-w-0">
+                        <FieldTitle className="max-w-full">
+                          <span className="truncate">{author.nick}</span>
+                        </FieldTitle>
+                        <FieldDescription>
+                          {muni.neighborhoods.find((n) => n.slug === author.neighborhood)?.name ?? "Seu apelido"}
+                        </FieldDescription>
+                      </FieldContent>
+                    </Field>
+                  </FieldLabel>
+                  <FieldLabel htmlFor="r-como-anonimo">
+                    <Field orientation="horizontal">
+                      <RadioGroupItem value="anonymous" id="r-como-anonimo" />
+                      <FieldContent>
+                        <FieldTitle>Anônimo em público</FieldTitle>
+                        <FieldDescription>Sem apelido no registro</FieldDescription>
+                      </FieldContent>
+                    </Field>
+                  </FieldLabel>
+                </RadioGroup>
+                {field.state.value === "anonymous" && (
+                  <p className="flex gap-2 text-caption text-ink-2">
+                    <EyeOff className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                    Seu apelido não aparece neste registro. O Fala ainda liga o registro à sua conta, para evitar abuso
+                    e permitir moderação. Nenhum outro dado seu aparece.
+                  </p>
+                )}
+              </Part>
+            )}
+          </form.Field>
+        )}
 
         {problem && (
           <p role="alert" className="text-sm text-signal-text">

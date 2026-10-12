@@ -18,6 +18,7 @@ import { AuthFrame, AuthHead, type BackLink } from "./auth-frame";
 import { usePasskeySupport } from "./passkey-support";
 import { devCode, requestCode, SendError, signInWithCode } from "./identity-api";
 import { SEND_CODE_ACTION, SEND_FAILURE_MESSAGE } from "./send-code";
+import { textLink } from "@/features/landing/bits";
 import { StepRuler } from "./step-ruler";
 import { TurnstileUnavailable, useTurnstile } from "./turnstile";
 
@@ -51,12 +52,15 @@ export function SignInPage({
   back,
   turnstileSiteKey,
   onDone,
+  onGuest,
 }: {
   reason: string | null;
   back: BackLink;
   /** Null when no key is configured (production without Turnstile): codes can't be sent. */
   turnstileSiteKey: string | null;
   onDone: (account: Account) => void;
+  /** Reporting without an account (round 2), offered only when the person came to report. */
+  onGuest?: () => Promise<void>;
 }) {
   const { mount: mountTurnstile, token } = useTurnstile(turnstileSiteKey ?? "", SEND_CODE_ACTION);
   const [phone, setPhone] = useState("");
@@ -94,6 +98,7 @@ export function SignInPage({
           onChange={setPhone}
           onSent={(to) => setSent({ to, at: Date.now() })}
           onPasskey={finish}
+          onGuest={onGuest}
         />
       )}
       {/* Turnstile's widget: invisible unless Cloudflare asks for an interaction. */}
@@ -110,6 +115,7 @@ function PhoneStep({
   onChange,
   onSent,
   onPasskey,
+  onGuest,
 }: {
   reason: string | null;
   value: string;
@@ -118,8 +124,10 @@ function PhoneStep({
   onChange: (v: string) => void;
   onSent: (e164: string) => void;
   onPasskey: (account: Account) => void;
+  onGuest?: () => Promise<void>;
 }) {
   const queryClient = useQueryClient();
+  const guest = useMutation({ mutationFn: () => onGuest?.() ?? Promise.resolve() });
   const passkeys = usePasskeySupport();
   const hydrated = useHydrated();
   const [invalid, setInvalid] = useState(false);
@@ -219,6 +227,25 @@ function PhoneStep({
           )}
         </div>
         <p className="text-caption text-muted-foreground">Em público, você aparece só com um apelido e o seu bairro.</p>
+        {onGuest && (
+          <p className="border-t border-hairline pt-4 text-sm text-ink-2">
+            Sem celular agora?{" "}
+            <button
+              type="button"
+              className={cn(textLink, "font-medium text-foreground")}
+              disabled={!hydrated || guest.isPending}
+              onClick={() => guest.mutate()}
+            >
+              Registrar sem conta
+            </button>
+            . O registro passa pela moderação antes de aparecer no mapa, e você não pode confirmar outros.
+          </p>
+        )}
+        {guest.isError && (
+          <p role="alert" className="text-sm text-signal-text">
+            Não deu para continuar sem conta agora. Tente de novo, ou entre com o celular.
+          </p>
+        )}
       </form>
     </>
   );

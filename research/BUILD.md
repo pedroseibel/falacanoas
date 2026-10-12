@@ -74,12 +74,13 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - a home (a point and a radius of 300 m, 500 m or 1 km), bairros and a route (two ends, a 400 m corridor along the line between them), in `fala.follows`; core's `covers` decides what each one holds;
   - Você lists them with how many problems are open in each, adds and removes them, and says plainly that no notice is sent yet: delivery comes with 3.2 and 4.2;
   - "Meus registros" now comes from the server by authorship, so "Anônimo em público" reports show to their owner.
-- [ ] **2.5 Guest pins** (round 2, Q4):
-  - an anonymous session;
-  - photo required;
-  - held for moderation;
-  - access evidence recorded;
-  - a secret link to track the pin.
+- [x] **2.5 Guest pins** (round 2, Q4). Done 2026-10-12, verified in the browser.
+  - "Registrar sem conta" on /entrar, below the phone sign-in, opens an anonymous session (limited per IP);
+  - the guest form: occurrences only, photo required, a Turnstile check made by the vault (which holds the secret), up to 3 a day, shown as Anônimo;
+  - held for moderation (`moderation = pending`): off the map and the lists, no actions, `noindex`, until 2.7 publishes it;
+  - access evidence recorded (`guest_pin`);
+  - a secret link `/o/ID?chave=…` (only its SHA-256 is stored) is the guest's way back; without it the pin answers 404;
+  - published guest pins count in the Placar after two independent confirmations (2.1).
 - [ ] **2.6 Forum** (round 5): threads under each pin and one board per bairro, persisted and moderated.
 - [ ] **2.7 Moderation** (round 5, Q19, Q31):
   - an automatic pre-screen flags insults, personal names, CPF or phone numbers and children in photos;

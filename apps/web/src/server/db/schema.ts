@@ -74,6 +74,7 @@ export const officialStatus = fala.enum("official_status", [
   "resolved",
 ]);
 export const visibility = fala.enum("visibility", ["pseudonymous", "anonymous"]);
+export const moderationState = fala.enum("moderation_state", ["published", "pending", "rejected"]);
 export const eventKind = fala.enum("event_kind", [
   "created",
   "sent_to_authority",
@@ -123,6 +124,10 @@ export const items = fala
       disagreeing: integer(),
       /** Dropped by a guest: held for moderation, two confirmations to count. */
       guest: boolean().notNull().default(false),
+      /** Guest pins start pending: only their tracking link opens them until moderation publishes them. */
+      moderation: moderationState().notNull().default("published"),
+      /** SHA-256 of a guest pin's secret tracking key (round 2): the link is the guest's only way back. */
+      trackingKeyHash: text(),
       /** Fictional demonstration data, always labelled "exemplo". */
       demo: boolean().notNull().default(false),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),

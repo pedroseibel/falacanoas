@@ -70,6 +70,7 @@ export function itemFromRows(
     resolvedVotes: row.resolvedVotes,
     resolvingSince: row.resolvingSince?.toISOString() ?? null,
     ...(row.guest ? { guest: true } : {}),
+    ...(row.moderation !== "published" ? { moderation: row.moderation } : {}),
     ...(row.demo ? { demo: true } : {}),
     ...(events ? { events: events.map((e): ItemEvent => ({ ...e, at: stamp(e.at) })) } : {}),
   };
@@ -105,6 +106,7 @@ export function rowsForNewItem(
       followers: item.followers,
       updates: item.updates,
       guest: item.guest ?? false,
+      moderation: item.moderation ?? "published",
       demo: false,
       createdAt: now,
       updatedAt: now,

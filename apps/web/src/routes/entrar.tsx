@@ -1,10 +1,12 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AuthSearchSchema, REASON, returnPath } from "@/features/auth/auth-search";
 import { SignInPage } from "@/features/auth/sign-in-page";
 import { openReport } from "@/features/report/report-store";
 import { accountQuery } from "@/lib/city";
-import { getAuthConfig } from "@/server/account";
+import { authClient } from "@/lib/auth-client";
+import { getAccount, getAuthConfig } from "@/server/account";
 import { useBackLink } from "./-auth-links";
 
 export const Route = createFileRoute("/entrar")({
@@ -25,12 +27,27 @@ function EntrarRoute() {
   const search = Route.useSearch();
   const { turnstileSiteKey } = Route.useLoaderData();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const back = useBackLink(returnPath(search));
   return (
     <SignInPage
       reason={search.depois ? REASON[search.depois] : null}
       back={back}
       turnstileSiteKey={turnstileSiteKey}
+      onGuest={
+        search.depois === "registrar"
+          ? async () => {
+              // A guest session already open (an earlier guest pin) is reused; Better Auth won't open a second.
+              if (!queryClient.getQueryData(accountQuery.queryKey)?.guest) {
+                const r = await authClient.signIn.anonymous();
+                if (r.error) throw new Error(r.error.message);
+              }
+              queryClient.setQueryData(accountQuery.queryKey, await getAccount());
+              openReport();
+              void navigate({ href: returnPath(search), replace: true });
+            }
+          : undefined
+      }
       onDone={(account) => {
         if (!account.nick) return void navigate({ to: "/bem-vindo", search, replace: true });
         if (search.depois === "registrar") openReport();

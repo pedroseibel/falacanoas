@@ -125,6 +125,8 @@ export const ItemSchema = z.object({
   closedAt: z.string().nullable().optional(),
   /** Dropped by a guest (no account): held for moderation and needs two independent confirmations to count. */
   guest: z.boolean().optional(),
+  /** Absent once published. A guest pin waits for moderation before it shows on the map (round 2). */
+  moderation: z.enum(["pending", "rejected"]).optional(),
   /** Fictional demonstration data: always labelled "exemplo" wherever it shows. */
   demo: z.boolean().optional(),
   events: z.array(ItemEventSchema).optional(),

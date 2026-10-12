@@ -19,5 +19,5 @@ export const returnPath = (s: AuthSearch) => s.volta ?? "/mapa";
 /** Why we're asking, in the page's first line. */
 export const REASON: Record<NonNullable<AuthSearch["depois"]>, string> = {
   registrar:
-    "Registrar pede um celular confirmado, para cada problema ter um vizinho de verdade por trás. Ler o mapa nunca pede conta.",
+    "Com o celular confirmado, seu registro entra no mapa na hora e você pode confirmar os dos vizinhos. Ler o mapa nunca pede conta.",
 };

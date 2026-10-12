@@ -33,6 +33,13 @@ export async function noteSignIn(accountId: string, headers: Headers | null): Pr
   await env.VAULT?.signedIn(accountId, connection).catch((e: unknown) => console.error("cofre: signedIn falhou", e));
 }
 
+/** A guest pin's robot check, through the vault, which holds the Turnstile secret. Fails closed. */
+export async function isHuman(token: string | null): Promise<boolean> {
+  if (!token || !env.VAULT) return false;
+  const ip = connectionFromHeaders(new Headers(getRequestHeaders())).clientIp;
+  return env.VAULT.human(token, ip).catch(() => false);
+}
+
 /**
  * Access evidence for an action this request performed (round 18, Q21): the connection as
  * Cloudflare saw it, kept by the vault for 6 months. Logged on failure, so the person's report still
