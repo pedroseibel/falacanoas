@@ -80,6 +80,87 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Layout, type and motion tokens. The fluid values come from the landing page (DESIGN.md). */
+@theme {
+  --breakpoint-narrow: 26.25rem;
+  --breakpoint-compact: 43.75rem;
+  --breakpoint-phone: 56.25rem;
+  --breakpoint-split: 67.5rem;
+
+  --container-wrap: 77.5rem;
+  --container-headline: 12ch;
+  --container-lede: 33ch;
+  --container-coda: 34ch;
+  --container-claim: 40ch;
+  --container-copy: 44ch;
+  --container-foot: 46ch;
+  --container-note: 62ch;
+  --container-long: 72ch;
+
+  --spacing-gutter: clamp(1.25rem, 4.2vw, 2.75rem);
+  --spacing-section: clamp(5.5rem, 11vw, 9.5rem);
+  --spacing-section-sm: clamp(3.5rem, 7vw, 6rem);
+  --spacing-head: clamp(3rem, 6vw, 5rem);
+  --spacing-pair: clamp(4.5rem, 9vw, 8rem);
+  --spacing-split: clamp(2rem, 5vw, 5.5rem);
+  --spacing-hero: clamp(2rem, 4vw, 4rem);
+  --spacing-hero-top: clamp(2rem, 4vw, 3.5rem);
+  --spacing-hero-bottom: clamp(2.5rem, 6vw, 4.5rem);
+  --spacing-proof: clamp(1.25rem, 3.4vw, 2.75rem);
+  --spacing-card: clamp(1.25rem, 3vw, 2rem);
+  --spacing-rule: clamp(1rem, 3vw, 3rem);
+  --spacing-bleed: clamp(20rem, 52vw, 40rem);
+  --spacing-fact: clamp(1.75rem, 3vw, 2.5rem);
+  --spacing-coda: clamp(2.5rem, 5vw, 4rem);
+  --spacing-stage-phone: min(33.75rem, 128vw);
+
+  --aspect-stage: 1 / 0.86;
+  --aspect-stage-split: 1 / 0.82;
+
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1.35;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.45;
+  --text-ui: 0.9375rem;
+  --text-ui--line-height: 1.5;
+  --text-body: 1.0625rem;
+  --text-body--line-height: 1.6;
+  --text-wordmark: 1.1875rem;
+  --text-wordmark--line-height: 1;
+  --text-wordmark--letter-spacing: -0.035em;
+  --text-lede: clamp(1.125rem, 1.02rem + 0.42vw, 1.3125rem);
+  --text-lede--line-height: 1.5;
+  --text-coda: clamp(1.25rem, 1.05rem + 0.7vw, 1.625rem);
+  --text-coda--line-height: 1.35;
+  --text-coda--letter-spacing: -0.02em;
+  --text-heading: clamp(1.375rem, 1.2rem + 0.6vw, 1.625rem);
+  --text-heading--line-height: 1.15;
+  --text-heading--letter-spacing: -0.025em;
+  --text-title: clamp(2.125rem, 1.35rem + 2.5vw, 3.375rem);
+  --text-title--line-height: 1.02;
+  --text-title--letter-spacing: -0.035em;
+  --text-display: clamp(2.75rem, 1.75rem + 2.3vw, 3.5rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.04em;
+  --text-counter: clamp(3.5rem, 2.4rem + 3vw, 4.75rem);
+  --text-counter--line-height: 0.9;
+  --text-counter--letter-spacing: -0.05em;
+
+  --ease-fluid: cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-breathe: breathe 3.2s ease-in-out 1.6s 3 both;
+  @keyframes breathe {
+    0%,
+    100% {
+      transform: scale(1);
+      opacity: 0.55;
+    }
+    50% {
+      transform: scale(1.9);
+      opacity: 0;
+    }
+  }
+}
+
 /* shadcn roles mapped onto DESIGN.md tokens (defined in app.css, light and dark).
    Ink is primary. Orange is "signal": the main action, the clock, the selected place. */
 :root {
@@ -120,6 +201,54 @@
 @utility scrollbar-none {
   scrollbar-width: none;
 }
+/* The landing page's "stage": a soft lit ground with film grain behind product shots. */
+@utility bg-stage {
+  background: radial-gradient(110% 85% at 62% 18%, var(--panel) 0%, var(--ground) 62%, var(--ground) 100%);
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: var(--noise);
+    opacity: 0.05;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+  }
+  @variant dark {
+    background: radial-gradient(110% 85% at 62% 18%, #1d1d21 0%, var(--ground) 60%, #0f0f11 100%);
+    &::before {
+      opacity: 0.035;
+      mix-blend-mode: screen;
+    }
+  }
+}
+/* Two-column splits from the landing page grid (minmax(0, n fr) keeps long words from widening a column). */
+@utility grid-cols-pair {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 7fr);
+}
+@utility grid-cols-pair-flip {
+  grid-template-columns: minmax(0, 7fr) minmax(0, 4fr);
+}
+@utility grid-cols-pair-wide {
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+}
+@utility grid-cols-lead {
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+}
+@utility grid-cols-join {
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+}
+@utility grid-cols-aside {
+  grid-template-columns: minmax(0, 4fr) minmax(0, 8fr);
+}
+/* The full-bleed photo keeps the bus stop and the flooded street in frame at every width. */
+@utility object-bleed {
+  object-position: 28% 55%;
+}
+/* Bleeds an element to the right edge of the viewport from inside the centred wrap. */
+@utility bleed-right {
+  margin-right: calc(-1 * max(var(--spacing-gutter), (100vw - var(--container-wrap)) / 2 + var(--spacing-gutter)));
+}
 
 @layer base {
   * {
@@ -127,5 +256,27 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  /* The landing page scrolls the document; anchors clear the sticky header. */
+  html:has([data-landing]) {
+    scroll-padding-top: 5.25rem;
+    scrollbar-color: var(--ink-4) transparent;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html:has([data-landing]) {
+      scroll-behavior: smooth;
+    }
+  }
+  [data-landing] :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 3px;
+    border-radius: 6px;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  [data-landing] ::selection {
+    background: var(--ink);
+    color: var(--paper);
   }
 }

@@ -41,15 +41,15 @@ export function VocePage({
   const mine = items.filter((i) => i.author === viewer.nick && i.visibility === "pseudonymous").slice(0, 6);
   const bairro = muni.neighborhoods.find((n) => n.slug === viewer.neighborhood)?.name ?? "";
   return (
-    <div className="mx-auto grid max-w-295 gap-5 px-7 pt-8 pb-16 max-[900px]:px-4 max-[900px]:pt-5 max-[900px]:pb-24">
+    <div className="mx-auto grid max-w-295 gap-5 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
         <h1 className="text-3xl font-semibold tracking-tight">Você</h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
           Seu apelido aparece nos registros. Seu telefone e sua identidade, nunca.
         </p>
       </header>
-      <div className="grid grid-cols-12 items-start gap-5 max-[1100px]:grid-cols-1">
-        <div className="col-span-5 grid gap-5 max-[1100px]:col-span-1">
+      <div className="grid grid-cols-12 items-start gap-5 max-split:grid-cols-1">
+        <div className="col-span-5 grid gap-5 max-split:col-span-1">
           <section className="grid gap-4 rounded-2xl border border-hairline bg-card p-5 shadow-soft">
             <div className="flex items-center gap-3.5">
               <span className="grid size-14 place-items-center rounded-full bg-panel-3 text-lg font-semibold uppercase">
@@ -103,7 +103,7 @@ export function VocePage({
             </ToggleGroup>
           </section>
         </div>
-        <div className="col-span-7 grid gap-5 max-[1100px]:col-span-1">
+        <div className="col-span-7 grid gap-5 max-split:col-span-1">
           <section
             className="overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft"
             aria-labelledby="ac-t"

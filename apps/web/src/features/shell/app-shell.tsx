@@ -26,7 +26,7 @@ const NAV: { to: Section; label: string; Icon: typeof MapIcon }[] = [
 export function AppShell({ section, query, onQuery, onReport, link, children }: ShellProps) {
   return (
     <div className="flex h-dvh flex-col">
-      <header className="relative z-30 flex h-14 items-center gap-5 border-b border-hairline bg-background pr-4 pl-5 max-[900px]:hidden">
+      <header className="relative z-30 flex h-14 items-center gap-5 border-b border-hairline bg-background pr-4 pl-5 max-phone:hidden">
         {link(
           "mapa",
           <>
@@ -82,7 +82,7 @@ export function AppShell({ section, query, onQuery, onReport, link, children }: 
 
       <nav
         aria-label="Seções"
-        className="pb-safe z-30 hidden grid-cols-5 items-center border-t border-hairline bg-background px-1.5 max-[900px]:grid"
+        className="pb-safe z-30 hidden grid-cols-5 items-center border-t border-hairline bg-background px-1.5 max-phone:grid"
       >
         {link(
           "mapa",

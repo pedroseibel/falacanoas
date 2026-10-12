@@ -72,7 +72,7 @@ function MapSettings() {
 
 function MapControls() {
   return (
-    <div className="absolute top-3.5 right-3.5 z-10 grid gap-2 max-[900px]:top-32">
+    <div className="absolute top-3.5 right-3.5 z-10 grid gap-2 max-phone:top-32">
       <div className="grid overflow-hidden rounded-xl border border-hairline bg-card shadow-soft">
         <Button variant="ghost" size="icon" aria-label="Aproximar" onClick={() => mapControls.current?.zoomBy(1)}>
           <Plus />
@@ -96,7 +96,7 @@ function MapControls() {
 function Legend() {
   return (
     <div
-      className="absolute bottom-3.5 left-3.5 z-10 flex items-center gap-3.5 rounded-xl border border-hairline bg-card/90 px-3 py-2 text-xs text-muted-foreground shadow-soft max-[900px]:hidden"
+      className="absolute bottom-3.5 left-3.5 z-10 flex items-center gap-3.5 rounded-xl border border-hairline bg-card/90 px-3 py-2 text-xs text-muted-foreground shadow-soft max-phone:hidden"
       aria-hidden="true"
     >
       <span className="inline-flex items-center gap-1.5">

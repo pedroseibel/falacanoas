@@ -128,7 +128,7 @@ export function PlacarPage({
   );
 
   return (
-    <div className="mx-auto grid max-w-295 gap-6 px-7 pt-8 pb-16 max-[900px]:px-4 max-[900px]:pt-5 max-[900px]:pb-24">
+    <div className="mx-auto grid max-w-295 gap-6 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Placar</h1>
@@ -140,7 +140,7 @@ export function PlacarPage({
       </header>
 
       <section
-        className="grid grid-cols-4 divide-x divide-hairline overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-[900px]:grid-cols-2"
+        className="grid grid-cols-4 divide-x divide-hairline overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-phone:grid-cols-2"
         aria-label="Resumo"
       >
         <StatTile value={kpi.open} label="abertos" />
@@ -149,9 +149,9 @@ export function PlacarPage({
         <StatTile value={kpi.fixed} label="resolvidos e confirmados" />
       </section>
 
-      <div className="grid grid-cols-12 items-start gap-5 max-[1100px]:grid-cols-1">
+      <div className="grid grid-cols-12 items-start gap-5 max-split:grid-cols-1">
         <section
-          className="col-span-7 overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-[1100px]:col-span-1"
+          className="col-span-7 overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-split:col-span-1"
           aria-label="Leituras do placar"
         >
           <div className="border-b border-hairline p-2.5">
@@ -247,7 +247,7 @@ export function PlacarPage({
           </p>
         </section>
 
-        <div className="col-span-5 grid gap-5 max-[1100px]:col-span-1">
+        <div className="col-span-5 grid gap-5 max-split:col-span-1">
           <section
             className="overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft"
             aria-labelledby="choro-t"

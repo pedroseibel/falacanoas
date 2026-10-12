@@ -9,15 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppMapRouteImport } from './routes/_app/_map'
 import { Route as AppPlacarRouteImport } from './routes/_app/placar'
 import { Route as AppVoceRouteImport } from './routes/_app/voce'
-import { Route as AppMapIndexRouteImport } from './routes/_app/_map/index'
+import { Route as AppMapMapaRouteImport } from './routes/_app/_map/mapa'
 import { Route as AppBairroIndexRouteImport } from './routes/_app/bairro.index'
 import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
 import { Route as AppMapOIdRouteImport } from './routes/_app/_map/o.$id'
 
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -36,9 +42,9 @@ const AppVoceRoute = AppVoceRouteImport.update({
   path: '/voce',
   getParentRoute: () => AppRoute,
 } as any)
-const AppMapIndexRoute = AppMapIndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AppMapMapaRoute = AppMapMapaRouteImport.update({
+  id: '/mapa',
+  path: '/mapa',
   getParentRoute: () => AppMapRoute,
 } as any)
 const AppBairroIndexRoute = AppBairroIndexRouteImport.update({
@@ -58,55 +64,75 @@ const AppMapOIdRoute = AppMapOIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AppMapIndexRoute
+  '/': typeof IndexRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
+  '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
   '/bairro/': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof AppMapIndexRoute
+  '/': typeof IndexRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
+  '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
   '/bairro': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/_app/_map': typeof AppMapRouteWithChildren
   '/_app/placar': typeof AppPlacarRoute
   '/_app/voce': typeof AppVoceRoute
+  '/_app/_map/mapa': typeof AppMapMapaRoute
   '/_app/bairro/$slug': typeof AppBairroSlugRoute
-  '/_app/_map/': typeof AppMapIndexRoute
   '/_app/bairro/': typeof AppBairroIndexRoute
   '/_app/_map/o/$id': typeof AppMapOIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/placar' | '/voce' | '/bairro/$slug' | '/bairro/' | '/o/$id'
+  fullPaths:
+    | '/'
+    | '/placar'
+    | '/voce'
+    | '/mapa'
+    | '/bairro/$slug'
+    | '/bairro/'
+    | '/o/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/placar' | '/voce' | '/bairro/$slug' | '/bairro' | '/o/$id'
+  to:
+    '/' | '/placar' | '/voce' | '/mapa' | '/bairro/$slug' | '/bairro' | '/o/$id'
   id:
     | '__root__'
+    | '/'
     | '/_app'
     | '/_app/_map'
     | '/_app/placar'
     | '/_app/voce'
+    | '/_app/_map/mapa'
     | '/_app/bairro/$slug'
-    | '/_app/_map/'
     | '/_app/bairro/'
     | '/_app/_map/o/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -135,11 +161,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVoceRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/_map/': {
-      id: '/_app/_map/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof AppMapIndexRouteImport
+    '/_app/_map/mapa': {
+      id: '/_app/_map/mapa'
+      path: '/mapa'
+      fullPath: '/mapa'
+      preLoaderRoute: typeof AppMapMapaRouteImport
       parentRoute: typeof AppMapRoute
     }
     '/_app/bairro/': {
@@ -167,12 +193,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppMapRouteChildren {
-  AppMapIndexRoute: typeof AppMapIndexRoute
+  AppMapMapaRoute: typeof AppMapMapaRoute
   AppMapOIdRoute: typeof AppMapOIdRoute
 }
 
 const AppMapRouteChildren: AppMapRouteChildren = {
-  AppMapIndexRoute: AppMapIndexRoute,
+  AppMapMapaRoute: AppMapMapaRoute,
   AppMapOIdRoute: AppMapOIdRoute,
 }
 
@@ -198,6 +224,7 @@ const AppRouteChildren: AppRouteChildren = {
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
 }
 export const routeTree = rootRouteImport

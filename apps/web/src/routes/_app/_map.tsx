@@ -44,7 +44,7 @@ function MapRoute() {
         "q" in patch ? setQuery(patch) : void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) })
       }
       onOpen={(id) => void navigate({ to: "/o/$id", params: { id }, search: (prev) => prev })}
-      onClose={() => void navigate({ to: "/", search: (prev) => prev })}
+      onClose={() => void navigate({ to: "/mapa", search: (prev) => prev })}
       detail={<Outlet />}
     />
   );

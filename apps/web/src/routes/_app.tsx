@@ -9,8 +9,8 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-const PATH: Record<Section, "/" | "/placar" | "/bairro" | "/voce"> = {
-  mapa: "/",
+const PATH: Record<Section, "/mapa" | "/placar" | "/bairro" | "/voce"> = {
+  mapa: "/mapa",
   placar: "/placar",
   bairro: "/bairro",
   voce: "/voce",
@@ -28,7 +28,7 @@ function AppLayout() {
         ? "voce"
         : "mapa";
   const onQuery = useDebouncedCallback(
-    (q: string) => void navigate({ to: "/", search: (prev) => ({ ...prev, q: q.trim() || undefined }) }),
+    (q: string) => void navigate({ to: "/mapa", search: (prev) => ({ ...prev, q: q.trim() || undefined }) }),
     { wait: 250 },
   );
   return (

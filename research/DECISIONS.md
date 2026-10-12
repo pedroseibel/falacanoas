@@ -132,6 +132,14 @@ The app draft covers both phone and desktop at equal weight: map + pin detail, r
 - **Charts:** built with the dataviz skill.
 - **Icons:** the prototype's hand-drawn glyphs are rejected. Redesign later, following a signage norm (traffic signs, public-information pictograms: candidates are CONTRAN, ISO 7001, AIGA/DOT, NBR 9050). Icons live in one swappable module until then.
 
+## Round 17: one app (2026-10-12)
+
+- **The landing page is part of the web app.** It is the `/` route of `apps/web`, ported to the app's components and tokens (shadcn on Base UI, Tailwind, the same lint rules). Its maps are drawn from the instance's bairro boundaries, not a pasted SVG.
+- **URLs:** `/` landing (`?b=` opens a bairro, `?canal=email` picks the channel); `/mapa` map; `/o/$id` item; `/placar`; `/bairro/$slug`; `/voce`.
+- **The queue sign-up** goes through a server function validated by `QueueSignupSchema` (core). Until the database exists nothing is stored, and the confirmation says so.
+- **Retired:** `apps/landing` (static page) and `apps/landing/app` (clickable prototype). Both remain in git history.
+- **Auth: open question,** asked 2026-10-12: Better Auth or Supabase Auth. See the recommendation in the thread; to be decided with the database.
+
 ## Research findings that constrain design (2026-10-12)
 
 - **Maps:** the landing page uses an inline SVG of the 18 bairros (`maps/data/web/canoas-bairros.svg`, about 4 KB gzipped) and a `<select>`, with no map library. For the eventual app: MapLibre (v6 is about 439 KB gzipped, ESM-only, and fails from `file://`; v5.24 UMD works). CARTO has required an API key since 2026-09-29; it is free up to 5M tiles/month non-commercial, and access is revocable. OpenFreeMap needs no key. Flood-extent layer: UFRGS, CC BY, 48.3% of the municipality.

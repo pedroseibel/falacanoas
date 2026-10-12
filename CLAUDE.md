@@ -3,6 +3,7 @@
 Fala Core and its first instance, **Fala, Canoas**: an independent, open-source (AGPL-3.0) civic map for Canoas, RS. Residents pin urban problems; a public clock counts the days until neighbours confirm the fix.
 
 Read before changing anything:
+
 - `PRODUCT.md` is the product truth.
 - `DESIGN.md` is the visual system.
 - `research/DECISIONS.md` holds every founder decision, by round.
@@ -20,13 +21,13 @@ bun run format         # prettier
 bun run typecheck      # tsc (TypeScript 7, native) in every workspace
 ```
 
-Static pages (no build): `apps/landing` (landing page and the clickable prototype in `apps/landing/app/`).
+The landing page is the web app's `/` route; the app's map is `/mapa`. The static landing and the clickable prototype were retired once ported (they live in git history).
 
 ## Layout
 
 - `packages/core` (`@fala/core`): domain only. Zod schemas and inferred types; the event-sourced item model; the two status axes (community vs public authority); geo and format helpers. No React, no I/O.
 - `instances/canoas` (`@fala/instance-canoas`): the municipal instance, versioned as config (`defineMunicipality`): categories, agencies, bairros, geo, branding. `./fixtures` holds fictional demo data, validated with the core schemas.
-- `apps/web` (`@fala/web`): TanStack Start on Cloudflare Workers.
+- `apps/web` (`@fala/web`): TanStack Start on Cloudflare Workers. `/` is the landing page (`features/landing`: the bairro queue sign-up); the app lives under `/mapa`, `/o/$id`, `/placar`, `/bairro/$slug`, `/voce`.
 - **Standalone backend services**, when one is needed (the WhatsApp webhook, the 18h digest job, the public open-data API): **Elysia** on Bun. Don't add them to `apps/web`.
 
 ## Hard rules (lint-enforced where possible)

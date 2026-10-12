@@ -1,54 +1,42 @@
-"use client"
+"use client";
 
-import { type ComponentProps } from "react"
-import { cn } from "@/lib/utils"
+import { type ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 
-function Table({ className, ...props }: ComponentProps<"table">) {
+/** comfortable: roomier cells and quiet column heads, for tables set inside marketing panels. */
+function Table({
+  className,
+  density = "default",
+  ...props
+}: ComponentProps<"table"> & { density?: "default" | "comfortable" }) {
   return (
-    <div
-      data-slot="table-container"
-      className="relative w-full overflow-x-auto"
-    >
+    <div data-slot="table-container" className="relative w-full overflow-x-auto">
       <table
         data-slot="table"
+        data-density={density}
         className={cn("w-full caption-bottom text-sm", className)}
         {...props}
       />
     </div>
-  )
+  );
 }
 
 function TableHeader({ className, ...props }: ComponentProps<"thead">) {
-  return (
-    <thead
-      data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
-      {...props}
-    />
-  )
+  return <thead data-slot="table-header" className={cn("[&_tr]:border-b", className)} {...props} />;
 }
 
 function TableBody({ className, ...props }: ComponentProps<"tbody">) {
-  return (
-    <tbody
-      data-slot="table-body"
-      className={cn("[&_tr:last-child]:border-0", className)}
-      {...props}
-    />
-  )
+  return <tbody data-slot="table-body" className={cn("[&_tr:last-child]:border-0", className)} {...props} />;
 }
 
 function TableFooter({ className, ...props }: ComponentProps<"tfoot">) {
   return (
     <tfoot
       data-slot="table-footer"
-      className={cn(
-        "border-t bg-muted/50 font-medium [&>tr]:last:border-b-0",
-        className
-      )}
+      className={cn("border-t bg-muted/50 font-medium [&>tr]:last:border-b-0", className)}
       {...props}
     />
-  )
+  );
 }
 
 function TableRow({ className, ...props }: ComponentProps<"tr">) {
@@ -57,11 +45,11 @@ function TableRow({ className, ...props }: ComponentProps<"tr">) {
       data-slot="table-row"
       className={cn(
         "border-b transition-colors hover:bg-muted/50 has-aria-expanded:bg-muted/50 data-[state=selected]:bg-muted",
-        className
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TableHead({ className, ...props }: ComponentProps<"th">) {
@@ -69,12 +57,12 @@ function TableHead({ className, ...props }: ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0",
-        className
+        "h-10 px-2 text-left align-middle font-medium whitespace-nowrap text-foreground [&:has([role=checkbox])]:pr-0 in-data-[density=comfortable]:h-auto in-data-[density=comfortable]:px-4.5 in-data-[density=comfortable]:pt-3 in-data-[density=comfortable]:pb-2 in-data-[density=comfortable]:text-xs in-data-[density=comfortable]:text-muted-foreground max-compact:in-data-[density=comfortable]:px-3",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
 function TableCell({ className, ...props }: ComponentProps<"td">) {
@@ -82,34 +70,18 @@ function TableCell({ className, ...props }: ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0",
-        className
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 in-data-[density=comfortable]:px-4.5 in-data-[density=comfortable]:py-2.75 in-data-[density=comfortable]:text-ink-2 max-compact:in-data-[density=comfortable]:px-3",
+        className,
       )}
       {...props}
     />
-  )
+  );
 }
 
-function TableCaption({
-  className,
-  ...props
-}: ComponentProps<"caption">) {
+function TableCaption({ className, ...props }: ComponentProps<"caption">) {
   return (
-    <caption
-      data-slot="table-caption"
-      className={cn("mt-4 text-sm text-muted-foreground", className)}
-      {...props}
-    />
-  )
+    <caption data-slot="table-caption" className={cn("mt-4 text-sm text-muted-foreground", className)} {...props} />
+  );
 }
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableFooter,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableCaption,
-}
+export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption };

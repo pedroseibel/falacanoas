@@ -42,7 +42,7 @@ export function BairroPage({
   if (!bairro) return null;
 
   return (
-    <div className="mx-auto grid max-w-295 gap-5 px-7 pt-8 pb-16 max-[900px]:px-4 max-[900px]:pt-5 max-[900px]:pb-24">
+    <div className="mx-auto grid max-w-295 gap-5 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <Select
         items={names}
         value={slug}
@@ -62,8 +62,8 @@ export function BairroPage({
         </SelectContent>
       </Select>
 
-      <div className="grid grid-cols-12 items-start gap-5 max-[1100px]:grid-cols-1">
-        <section className="col-span-7 overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-[1100px]:col-span-1">
+      <div className="grid grid-cols-12 items-start gap-5 max-split:grid-cols-1">
+        <section className="col-span-7 overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-split:col-span-1">
           <header className="flex items-center justify-between gap-4 p-4.5">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">{bairro.name}</h1>
@@ -87,7 +87,7 @@ export function BairroPage({
               </svg>
             )}
           </header>
-          <div className="grid grid-cols-4 divide-x divide-hairline border-y border-hairline max-[900px]:grid-cols-2">
+          <div className="grid grid-cols-4 divide-x divide-hairline border-y border-hairline max-phone:grid-cols-2">
             <StatTile value={open.length} label="abertos" />
             <StatTile
               value={open.filter((i) => i.days > muni.deadlineDays).length}
@@ -154,7 +154,7 @@ export function BairroPage({
         </section>
 
         <section
-          className="col-span-5 overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-[1100px]:col-span-1"
+          className="col-span-5 overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft max-split:col-span-1"
           aria-labelledby="conv-t"
         >
           <h2 id="conv-t" className="flex items-center gap-2 border-b border-hairline px-4 py-3 text-sm font-semibold">

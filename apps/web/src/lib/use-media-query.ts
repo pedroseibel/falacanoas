@@ -13,4 +13,4 @@ export function useMediaQuery(query: string): boolean {
   );
 }
 
-export const PHONE_QUERY = "(max-width: 900px)";
+export const PHONE_QUERY = "(width < 56.25rem)";
