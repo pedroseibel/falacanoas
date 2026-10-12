@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getCity, getItem, getThreads } from "@/server/data";
 import { getAccount } from "@/server/account";
+import { getFollowing } from "@/server/follows";
 import { getItemViewer } from "@/server/item-actions";
 import { getQueue } from "@/server/queue";
 
@@ -42,3 +43,10 @@ export const itemViewerQuery = (id: string) =>
  */
 export const memberGate = (account: AccountData) =>
   !account || account.guest || !account.phoneVerified ? "/entrar" : !account.nick ? "/bem-vindo" : null;
+
+/** Places and pins the signed-in neighbour follows, and what they registered; null when signed out. */
+export const followingQuery = queryOptions({
+  queryKey: ["following"],
+  queryFn: () => getFollowing(),
+  staleTime: 30_000,
+});

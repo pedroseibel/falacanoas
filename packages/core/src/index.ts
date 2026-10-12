@@ -10,3 +10,4 @@ export * from "./limits";
 export * from "./vault-assertion";
 export * from "./access-evidence";
 export * from "./actions";
+export * from "./follows";

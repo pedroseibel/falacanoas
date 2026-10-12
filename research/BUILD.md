@@ -69,10 +69,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - "Adicionar foto atual" from the photo timeline;
   - "Isso também me afeta" and "Tenho informação" for questões públicas;
   - rules in core (`applyAction`), judged under a row lock; signed out, every action sends the person to sign in and back; access evidence recorded for each.
-- [~] **2.4 Following** (round 15): home, a route, a bairro or a pin, managed in Você.
-  - [x] a single pin ("Acompanhar"), stored in `fala.item_follows`;
-  - [ ] home, route and bairro, and the list in Você;
-  - notifications for followed items come with 4.2.
+- [x] **2.4 Following** (round 15). Done 2026-10-12, verified in the browser.
+  - a single pin ("Acompanhar"), in `fala.item_follows`;
+  - a home (a point and a radius of 300 m, 500 m or 1 km), bairros and a route (two ends, a 400 m corridor along the line between them), in `fala.follows`; core's `covers` decides what each one holds;
+  - Você lists them with how many problems are open in each, adds and removes them, and says plainly that no notice is sent yet: delivery comes with 3.2 and 4.2;
+  - "Meus registros" now comes from the server by authorship, so "Anônimo em público" reports show to their owner.
 - [ ] **2.5 Guest pins** (round 2, Q4):
   - an anonymous session;
   - photo required;

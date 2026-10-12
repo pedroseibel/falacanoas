@@ -1,11 +1,14 @@
 import { CONFIRMATION_MIN_HOURS, initials, localStamp, type Item, type Municipality } from "@fala/core";
-import { Check, LogOut, Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Check, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { ItemCard } from "@/features/map/item-card";
+import { followingQuery } from "@/lib/city";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
+import { Following } from "./following";
 import { Passkeys } from "./passkeys";
 import { ThemeSchema, setTheme, useTheme, type Theme } from "./theme";
 
@@ -73,7 +76,9 @@ export function VocePage({
   const theme = useTheme();
   const nick = account?.nick ?? null;
   const bairro = muni.neighborhoods.find((n) => n.slug === account?.neighborhood)?.name ?? null;
-  const mine = nick ? items.filter((i) => i.author === nick && i.visibility === "pseudonymous").slice(0, 6) : [];
+  // From the server, by authorship: "Anônimo em público" reports included, since only their owner sees this.
+  const { data: following } = useQuery({ ...followingQuery, enabled: Boolean(account && !account.guest) });
+  const mine = following?.mine ?? [];
   return (
     <div className="mx-auto grid max-w-295 gap-5 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
@@ -153,19 +158,9 @@ export function VocePage({
             <>
               <section className={panel} aria-labelledby="ac-t">
                 <h2 id="ac-t" className="border-b border-hairline px-4 py-3 text-sm font-semibold">
-                  Acompanhando <span className="font-normal text-muted-foreground">avisos no celular</span>
+                  Acompanhando
                 </h2>
-                <div className="grid justify-items-start gap-3 px-4 py-4">
-                  <p className="text-sm text-ink-2">
-                    Você ainda não acompanha nenhum lugar. Sua casa, um trajeto, o bairro ou um registro: quando algo
-                    mudar, você recebe um aviso.
-                  </p>
-                  <Button variant="outline" size="sm" disabled>
-                    <Plus data-icon="inline-start" />
-                    Acompanhar um lugar ou trajeto
-                    <Badge variant="chip">em breve</Badge>
-                  </Button>
-                </div>
+                <Following muni={muni} items={items} home={account.neighborhood} onOpen={onOpen} />
               </section>
               <section className={panel} aria-labelledby="mr-t">
                 <h2 id="mr-t" className="border-b border-hairline px-4 py-3 text-sm font-semibold">

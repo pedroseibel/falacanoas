@@ -1,4 +1,4 @@
-import type { Scope } from "@fala/core";
+import type { FollowPlace, Scope } from "@fala/core";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -260,6 +260,23 @@ export const itemFollows = fala
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [primaryKey({ columns: [t.itemId, t.accountId] }), index().on(t.accountId)],
+  )
+  .enableRLS();
+
+/** Places followed (round 15): a home and its radius, a bairro, a route. Single pins live in item_follows. */
+export const follows = fala
+  .table(
+    "follows",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      /** core's FollowPlaceSchema, parsed on the way in and out. */
+      place: jsonb().$type<FollowPlace>().notNull(),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.accountId)],
   )
   .enableRLS();
 
