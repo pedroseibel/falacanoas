@@ -11,7 +11,15 @@ export function whereOf(it: Item, muni: Municipality): string {
   return bairro;
 }
 
-export function ItemCard({ it, muni, selected, distance, layout = "list", onOpen, onHover }: {
+export function ItemCard({
+  it,
+  muni,
+  selected,
+  distance,
+  layout = "list",
+  onOpen,
+  onHover,
+}: {
   it: Item;
   muni: Municipality;
   selected: boolean;
@@ -31,14 +39,23 @@ export function ItemCard({ it, muni, selected, distance, layout = "list", onOpen
       onPointerLeave={() => onHover?.(null)}
       className={cn(
         "flex w-full gap-3 rounded-xl border p-2.5 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
-        layout === "rail" ? "w-80 shrink-0 snap-start border-hairline bg-card shadow-float" : "border-transparent hover:bg-muted",
+        layout === "rail"
+          ? "w-80 shrink-0 snap-start border-hairline bg-card shadow-float"
+          : "border-transparent hover:bg-muted",
         selected && (layout === "rail" ? "border-foreground" : "border-border bg-card shadow-soft"),
       )}
     >
       <span className="relative grid size-21 shrink-0 place-items-center overflow-hidden rounded-lg border border-hairline bg-panel-3 text-muted-foreground">
-        {photo ? <img src={photo.src} alt="" loading="lazy" decoding="async" className="size-full object-cover" /> : <Icon name={categoryIcon(it.category)} size={28} />}
+        {photo ? (
+          <img src={photo.src} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
+        ) : (
+          <Icon name={categoryIcon(it.category)} size={28} />
+        )}
         {it.visibility === "anonymous" && (
-          <span className="absolute bottom-1 left-1 grid size-5 place-items-center rounded-md bg-card/90" title="Publicado como Anônimo">
+          <span
+            className="absolute bottom-1 left-1 grid size-5 place-items-center rounded-md bg-card/90"
+            title="Publicado como Anônimo"
+          >
             <VenetianMask className="size-3" />
           </span>
         )}
@@ -49,7 +66,14 @@ export function ItemCard({ it, muni, selected, distance, layout = "list", onOpen
         <span className="mt-0.5 flex min-w-0 items-baseline gap-2 text-xs whitespace-nowrap text-muted-foreground">
           {open ? (
             <span className="inline-flex items-baseline gap-1 text-ink-2">
-              <b className={cn("text-base font-semibold text-foreground", it.days > muni.deadlineDays && "text-signal-text")}>{it.days}</b>
+              <b
+                className={cn(
+                  "text-base font-semibold text-foreground",
+                  it.days > muni.deadlineDays && "text-signal-text",
+                )}
+              >
+                {it.days}
+              </b>
               {it.days === 1 ? "dia" : "dias"}
             </span>
           ) : (

@@ -37,7 +37,11 @@ export function distanceTo(me: LngLat, it: Item, muni: Municipality): number {
 /** Ascending comparator that tolerates infinities (Infinity - Infinity is NaN). */
 export const byDistance = (a: number, b: number) => (a === b ? 0 : a - b || (a > b ? 1 : -1));
 
-const normalize = (s: string) => s.normalize("NFKD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+const normalize = (s: string) =>
+  s
+    .normalize("NFKD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
 
 export function visibleItems(items: Item[], search: MapSearch, muni: Municipality, me: LngLat): Item[] {
   const filter = search.f ?? "tudo";
@@ -47,7 +51,9 @@ export function visibleItems(items: Item[], search: MapSearch, muni: Municipalit
     if (filter === "agora" && it.updatedMinutesAgo > NOW_WINDOW_MINUTES) return false;
     if (filter !== "tudo" && filter !== "agora" && categoryOf(muni, it.category).group !== filter) return false;
     if (q) {
-      const hay = normalize(`${it.title} ${it.id} ${categoryOf(muni, it.category).label} ${bairroName.get(it.neighborhood ?? "") ?? ""}`);
+      const hay = normalize(
+        `${it.title} ${it.id} ${categoryOf(muni, it.category).label} ${bairroName.get(it.neighborhood ?? "") ?? ""}`,
+      );
       if (!hay.includes(q)) return false;
     }
     return true;

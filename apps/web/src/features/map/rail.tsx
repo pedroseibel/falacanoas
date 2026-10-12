@@ -21,7 +21,12 @@ const hover = (id: string | null) => setMapState({ hoveredId: id });
 /** Desktop: virtualized vertical list (handles 400+ records without DOM bloat). */
 export function ListRail({ items, muni, viewer, selectedId, onOpen }: RailProps) {
   const scroller = useRef<HTMLDivElement>(null);
-  const v = useVirtualizer({ count: items.length, getScrollElement: () => scroller.current, estimateSize: () => 112, overscan: 6 });
+  const v = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => scroller.current,
+    estimateSize: () => 112,
+    overscan: 6,
+  });
   // Keep the selected card in view: on mount (deep link) and whenever the selection changes (map click).
   useMountEffect(() => {
     const reveal = (id: string | null, align: "center" | "auto") => {
@@ -37,14 +42,31 @@ export function ListRail({ items, muni, viewer, selectedId, onOpen }: RailProps)
     return () => sub.unsubscribe();
   });
   return (
-    <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6" aria-label="Registros">
+    <div
+      ref={scroller}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pt-2 pb-6"
+      aria-label="Registros"
+    >
       <div className="relative w-full" style={{ height: v.getTotalSize() }}>
         {v.getVirtualItems().map((row) => {
           const it = items[row.index];
           if (!it) return null;
           return (
-            <div key={it.id} ref={v.measureElement} data-index={row.index} className="absolute top-0 left-0 w-full pb-0.5" style={{ transform: `translateY(${row.start}px)` }}>
-              <ItemCard it={it} muni={muni} selected={it.id === selectedId} distance={distance(distanceTo(viewer.location, it, muni))} onOpen={onOpen} onHover={hover} />
+            <div
+              key={it.id}
+              ref={v.measureElement}
+              data-index={row.index}
+              className="absolute top-0 left-0 w-full pb-0.5"
+              style={{ transform: `translateY(${row.start}px)` }}
+            >
+              <ItemCard
+                it={it}
+                muni={muni}
+                selected={it.id === selectedId}
+                distance={distance(distanceTo(viewer.location, it, muni))}
+                onOpen={onOpen}
+                onHover={hover}
+              />
             </div>
           );
         })}
@@ -75,9 +97,22 @@ export function SwipeRail({ items, muni, viewer, selectedId, onOpen }: RailProps
     { wait: 140 },
   );
   return (
-    <div ref={rail} onScroll={focusNearest} data-rail className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3.5 scrollbar-none pt-0.5 pb-3">
+    <div
+      ref={rail}
+      onScroll={focusNearest}
+      data-rail
+      className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3.5 scrollbar-none pt-0.5 pb-3"
+    >
       {items.slice(0, limit).map((it) => (
-        <ItemCard key={it.id} it={it} muni={muni} layout="rail" selected={it.id === selectedId} distance={distance(distanceTo(viewer.location, it, muni))} onOpen={onOpen} />
+        <ItemCard
+          key={it.id}
+          it={it}
+          muni={muni}
+          layout="rail"
+          selected={it.id === selectedId}
+          distance={distance(distanceTo(viewer.location, it, muni))}
+          onOpen={onOpen}
+        />
       ))}
       {items.length > limit && (
         <Button variant="outline" className="shrink-0 self-center" onClick={() => setLimit((l) => l + PAGE)}>

@@ -155,7 +155,11 @@ export type NeighborhoodCollection = z.infer<typeof NeighborhoodCollectionSchema
 export const BoundaryCollectionSchema = z.object({
   type: z.literal("FeatureCollection"),
   features: z.array(
-    z.object({ type: z.literal("Feature"), properties: z.record(z.string(), z.unknown()), geometry: AreaGeometrySchema }),
+    z.object({
+      type: z.literal("Feature"),
+      properties: z.record(z.string(), z.unknown()),
+      geometry: AreaGeometrySchema,
+    }),
   ),
 });
 export type BoundaryCollection = z.infer<typeof BoundaryCollectionSchema>;

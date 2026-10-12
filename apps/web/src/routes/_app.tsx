@@ -9,14 +9,28 @@ export const Route = createFileRoute("/_app")({
   component: AppLayout,
 });
 
-const PATH: Record<Section, "/" | "/placar" | "/bairro" | "/voce"> = { mapa: "/", placar: "/placar", bairro: "/bairro", voce: "/voce" };
+const PATH: Record<Section, "/" | "/placar" | "/bairro" | "/voce"> = {
+  mapa: "/",
+  placar: "/placar",
+  bairro: "/bairro",
+  voce: "/voce",
+};
 
 function AppLayout() {
   const match = useMatchRoute();
   const navigate = useNavigate();
   const search = useSearch({ strict: false });
-  const section: Section = match({ to: "/placar" }) ? "placar" : match({ to: "/bairro", fuzzy: true }) ? "bairro" : match({ to: "/voce" }) ? "voce" : "mapa";
-  const onQuery = useDebouncedCallback((q: string) => void navigate({ to: "/", search: (prev) => ({ ...prev, q: q.trim() || undefined }) }), { wait: 250 });
+  const section: Section = match({ to: "/placar" })
+    ? "placar"
+    : match({ to: "/bairro", fuzzy: true })
+      ? "bairro"
+      : match({ to: "/voce" })
+        ? "voce"
+        : "mapa";
+  const onQuery = useDebouncedCallback(
+    (q: string) => void navigate({ to: "/", search: (prev) => ({ ...prev, q: q.trim() || undefined }) }),
+    { wait: 250 },
+  );
   return (
     <AppShell
       section={section}

@@ -4,7 +4,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { SORT_LABEL, SortSchema, type MapSearch, type Sort } from "./selectors";
 
-export function FilterChips({ muni, value, onChange }: { muni: Municipality; value: string; onChange: (f: string) => void }) {
+export function FilterChips({
+  muni,
+  value,
+  onChange,
+}: {
+  muni: Municipality;
+  value: string;
+  onChange: (f: string) => void;
+}) {
   return (
     <ToggleGroup
       aria-label="Filtrar registros"

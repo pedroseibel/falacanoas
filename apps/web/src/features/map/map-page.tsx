@@ -46,14 +46,24 @@ function MapSettings() {
       <PopoverContent align="start" className="w-72">
         <div className="grid gap-2">
           <p className="text-xs text-muted-foreground">Pinos</p>
-          <ToggleGroup variant="outline" size="sm" value={[pinMode]} onValueChange={(v) => { const m = PIN_MODES.find((p) => p.v === v[0]); if (m) setMapState({ pinMode: m.v }); }}>
+          <ToggleGroup
+            variant="outline"
+            size="sm"
+            value={[pinMode]}
+            onValueChange={(v) => {
+              const m = PIN_MODES.find((p) => p.v === v[0]);
+              if (m) setMapState({ pinMode: m.v });
+            }}
+          >
             {PIN_MODES.map((p) => (
               <ToggleGroupItem key={p.v} value={p.v}>
                 {p.label}
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
-          <p className="text-xs text-muted-foreground">Mapa: OpenFreeMap. Troca para CARTO com uma chave. Registros e números do protótipo são fictícios.</p>
+          <p className="text-xs text-muted-foreground">
+            Mapa: OpenFreeMap. Troca para CARTO com uma chave. Registros e números do protótipo são fictícios.
+          </p>
         </div>
       </PopoverContent>
     </Popover>
@@ -71,7 +81,12 @@ function MapControls() {
           <Minus />
         </Button>
       </div>
-      <Button variant="floating" size="icon" aria-label="Minha localização" onClick={() => mapControls.current?.locate()}>
+      <Button
+        variant="floating"
+        size="icon"
+        aria-label="Minha localização"
+        onClick={() => mapControls.current?.locate()}
+      >
         <Locate />
       </Button>
     </div>
@@ -80,15 +95,37 @@ function MapControls() {
 
 function Legend() {
   return (
-    <div className="absolute bottom-3.5 left-3.5 z-10 flex items-center gap-3.5 rounded-xl border border-hairline bg-card/90 px-3 py-2 text-xs text-muted-foreground shadow-soft max-[900px]:hidden" aria-hidden="true">
-      <span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-full bg-foreground" />aberto</span>
-      <span className="inline-flex items-center gap-1.5"><i className="size-3 rounded-full bg-foreground" />aberto há mais tempo</span>
-      <span className="inline-flex items-center gap-1.5"><i className="size-2 rounded-full border-2 border-muted-foreground bg-card" />resolvido</span>
+    <div
+      className="absolute bottom-3.5 left-3.5 z-10 flex items-center gap-3.5 rounded-xl border border-hairline bg-card/90 px-3 py-2 text-xs text-muted-foreground shadow-soft max-[900px]:hidden"
+      aria-hidden="true"
+    >
+      <span className="inline-flex items-center gap-1.5">
+        <i className="size-2 rounded-full bg-foreground" />
+        aberto
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <i className="size-3 rounded-full bg-foreground" />
+        aberto há mais tempo
+      </span>
+      <span className="inline-flex items-center gap-1.5">
+        <i className="size-2 rounded-full border-2 border-muted-foreground bg-card" />
+        resolvido
+      </span>
     </div>
   );
 }
 
-export function MapPage({ muni, viewer, visible, search, selectedId, onSearch, onOpen, onClose, detail }: MapPageProps) {
+export function MapPage({
+  muni,
+  viewer,
+  visible,
+  search,
+  selectedId,
+  onSearch,
+  onOpen,
+  onClose,
+  detail,
+}: MapPageProps) {
   const phone = useMediaQuery(PHONE_QUERY);
   const filter = currentFilter(search);
   const sort = currentSort(search);
@@ -98,7 +135,10 @@ export function MapPage({ muni, viewer, visible, search, selectedId, onSearch, o
   return (
     <div className="relative flex h-full min-h-0">
       {!phone && (
-        <aside className="relative z-20 flex w-100 shrink-0 flex-col border-r border-hairline bg-background" aria-label="Registros">
+        <aside
+          className="relative z-20 flex w-100 shrink-0 flex-col border-r border-hairline bg-background"
+          aria-label="Registros"
+        >
           <div className="grid gap-3 border-b border-hairline px-4 pt-4.5 pb-3">
             <h1 className="text-xl font-semibold tracking-tight">O que está acontecendo em {muni.name}?</h1>
             <FilterChips muni={muni} value={filter} onChange={setFilter} />
@@ -114,7 +154,10 @@ export function MapPage({ muni, viewer, visible, search, selectedId, onSearch, o
       )}
 
       {!phone && selectedId && detail && (
-        <section className="relative z-10 w-110 shrink-0 overflow-y-auto overscroll-contain border-r border-hairline bg-card" aria-label="Registro">
+        <section
+          className="relative z-10 w-110 shrink-0 overflow-y-auto overscroll-contain border-r border-hairline bg-card"
+          aria-label="Registro"
+        >
           {detail}
         </section>
       )}
@@ -127,7 +170,13 @@ export function MapPage({ muni, viewer, visible, search, selectedId, onSearch, o
               <InputGroupAddon>
                 <Search />
               </InputGroupAddon>
-              <InputGroupInput type="search" aria-label="Buscar" defaultValue={search.q ?? ""} onChange={(e) => onSearch({ q: e.target.value || undefined })} placeholder={`O que está acontecendo em ${muni.name}?`} />
+              <InputGroupInput
+                type="search"
+                aria-label="Buscar"
+                defaultValue={search.q ?? ""}
+                onChange={(e) => onSearch({ q: e.target.value || undefined })}
+                placeholder={`O que está acontecendo em ${muni.name}?`}
+              />
               <InputGroupAddon align="inline-end">
                 <Badge variant="outline">protótipo</Badge>
               </InputGroupAddon>
@@ -135,7 +184,9 @@ export function MapPage({ muni, viewer, visible, search, selectedId, onSearch, o
             <FilterChips muni={muni} value={filter} onChange={setFilter} />
           </div>
         ) : (
-          <div className="absolute top-3.5 left-3.5 z-10"><MapSettings /></div>
+          <div className="absolute top-3.5 left-3.5 z-10">
+            <MapSettings />
+          </div>
         )}
         <MapControls />
         <Legend />
@@ -154,7 +205,13 @@ export function MapPage({ muni, viewer, visible, search, selectedId, onSearch, o
       )}
 
       {phone && (
-        <Drawer open={Boolean(selectedId && detail)} onOpenChange={(o) => { if (!o) onClose(); }} showSwipeHandle>
+        <Drawer
+          open={Boolean(selectedId && detail)}
+          onOpenChange={(o) => {
+            if (!o) onClose();
+          }}
+          showSwipeHandle
+        >
           <DrawerContent>
             <DrawerTitle className="sr-only">Registro</DrawerTitle>
             <div className="overflow-y-auto overscroll-contain">{detail}</div>

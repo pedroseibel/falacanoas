@@ -6,7 +6,17 @@ import { mountMap } from "./map-engine";
 import { setMapState, type MapState } from "./map-store";
 
 /** The map is an imperative island: mounted once, then driven by mapStore (see map-engine.ts). */
-export function MapView({ muni, viewer, initial, onPick }: { muni: Municipality; viewer: Viewer; initial: Pick<MapState, "visible" | "selectedId">; onPick: (id: string) => void }) {
+export function MapView({
+  muni,
+  viewer,
+  initial,
+  onPick,
+}: {
+  muni: Municipality;
+  viewer: Viewer;
+  initial: Pick<MapState, "visible" | "selectedId">;
+  onPick: (id: string) => void;
+}) {
   const host = useRef<HTMLDivElement>(null);
   useMountEffect(() => {
     // Route lifecycle hooks don't run on hydration: seed the store from the server-rendered state.
@@ -14,17 +24,19 @@ export function MapView({ muni, viewer, initial, onPick }: { muni: Municipality;
     setMapState({ ...initial, dark: theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches });
     let dispose: (() => void) | null = null;
     let cancelled = false;
-    void Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl-worker.mjs?url")]).then(([ml, worker]) => {
-      if (cancelled || !host.current) return;
-      ml.setWorkerUrl(worker.default);
-      dispose = mountMap(ml, host.current, {
-        muni,
-        viewer,
-        onPick,
-        isPhone: () => matchMedia(PHONE_QUERY).matches,
-        railHeight: () => document.querySelector("[data-rail]")?.getBoundingClientRect().height ?? 170,
-      });
-    });
+    void Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl-worker.mjs?url")]).then(
+      ([ml, worker]) => {
+        if (cancelled || !host.current) return;
+        ml.setWorkerUrl(worker.default);
+        dispose = mountMap(ml, host.current, {
+          muni,
+          viewer,
+          onPick,
+          isPhone: () => matchMedia(PHONE_QUERY).matches,
+          railHeight: () => document.querySelector("[data-rail]")?.getBoundingClientRect().height ?? 170,
+        });
+      },
+    );
     return () => {
       cancelled = true;
       dispose?.();

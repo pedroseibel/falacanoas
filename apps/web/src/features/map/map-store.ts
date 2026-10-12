@@ -20,7 +20,14 @@ export interface MapState {
  * (URL → state) and event handlers; read by components with useSelector and by MapLibre via
  * subscribe(). Never written during render.
  */
-export const mapStore = createStore<MapState>({ visible: [], selectedId: null, focusId: null, hoveredId: null, pinMode: "pontos", dark: false });
+export const mapStore = createStore<MapState>({
+  visible: [],
+  selectedId: null,
+  focusId: null,
+  hoveredId: null,
+  pinMode: "pontos",
+  dark: false,
+});
 
 export const setMapState = (patch: Partial<MapState>) => {
   if (typeof window === "undefined") return;

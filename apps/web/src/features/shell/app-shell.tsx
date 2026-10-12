@@ -46,7 +46,10 @@ export function AppShell({ section, query, onQuery, onReport, link, children }: 
                 <Icon className="size-4" />
                 {label}
               </>,
-              cn("inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground", section === to && "bg-card text-foreground shadow-soft"),
+              cn(
+                "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground",
+                section === to && "bg-card text-foreground shadow-soft",
+              ),
               section === to,
             ),
           )}
@@ -55,30 +58,80 @@ export function AppShell({ section, query, onQuery, onReport, link, children }: 
           <InputGroupAddon>
             <Search />
           </InputGroupAddon>
-          <InputGroupInput type="search" aria-label="Buscar" defaultValue={query} onChange={(e) => onQuery(e.target.value)} placeholder="Buscar registro, bairro ou código" />
+          <InputGroupInput
+            type="search"
+            aria-label="Buscar"
+            defaultValue={query}
+            onChange={(e) => onQuery(e.target.value)}
+            placeholder="Buscar registro, bairro ou código"
+          />
         </InputGroup>
         <Button variant="signal" onClick={onReport}>
           <Plus data-icon="inline-start" />
           Registrar
         </Button>
-        {link("voce", <span className="text-xs font-semibold">GS</span>, "grid size-8.5 place-items-center rounded-full border border-border bg-muted", section === "voce")}
+        {link(
+          "voce",
+          <span className="text-xs font-semibold">GS</span>,
+          "grid size-8.5 place-items-center rounded-full border border-border bg-muted",
+          section === "voce",
+        )}
       </header>
 
       <main className="relative min-h-0 flex-1">{children}</main>
 
-      <nav aria-label="Seções" className="pb-safe z-30 hidden grid-cols-5 items-center border-t border-hairline bg-background px-1.5 max-[900px]:grid">
-        {link("mapa", <><MapIcon className="size-5.5" />Mapa</>, tabClass(section === "mapa"), section === "mapa")}
-        {link("placar", <><BarChart3 className="size-5.5" />Placar</>, tabClass(section === "placar"), section === "placar")}
+      <nav
+        aria-label="Seções"
+        className="pb-safe z-30 hidden grid-cols-5 items-center border-t border-hairline bg-background px-1.5 max-[900px]:grid"
+      >
+        {link(
+          "mapa",
+          <>
+            <MapIcon className="size-5.5" />
+            Mapa
+          </>,
+          tabClass(section === "mapa"),
+          section === "mapa",
+        )}
+        {link(
+          "placar",
+          <>
+            <BarChart3 className="size-5.5" />
+            Placar
+          </>,
+          tabClass(section === "placar"),
+          section === "placar",
+        )}
         <button type="button" onClick={onReport} aria-label="Registrar" className="grid justify-items-center py-2">
           <span className="grid h-11 w-13 place-items-center rounded-2xl bg-signal text-signal-foreground shadow-soft">
             <Plus className="size-6" />
           </span>
         </button>
-        {link("bairro", <><Home className="size-5.5" />Bairro</>, tabClass(section === "bairro"), section === "bairro")}
-        {link("voce", <><User className="size-5.5" />Você</>, tabClass(section === "voce"), section === "voce")}
+        {link(
+          "bairro",
+          <>
+            <Home className="size-5.5" />
+            Bairro
+          </>,
+          tabClass(section === "bairro"),
+          section === "bairro",
+        )}
+        {link(
+          "voce",
+          <>
+            <User className="size-5.5" />
+            Você
+          </>,
+          tabClass(section === "voce"),
+          section === "voce",
+        )}
       </nav>
     </div>
   );
 }
 
-const tabClass = (current: boolean) => cn("grid justify-items-center gap-0.5 py-2 text-2xs font-medium", current ? "text-foreground" : "text-muted-foreground");
+const tabClass = (current: boolean) =>
+  cn(
+    "grid justify-items-center gap-0.5 py-2 text-2xs font-medium",
+    current ? "text-foreground" : "text-muted-foreground",
+  );

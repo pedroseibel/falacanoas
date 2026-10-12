@@ -1,5 +1,30 @@
-import { communityLine, dateAgo, deriveEvents, isOpen, relativeTime, type CommunityStatus, type Item, type ItemEvent, type ItemEventKind, type Municipality, type OfficialStatus, type Viewer } from "@fala/core";
-import { BadgeCheck, Bell, Camera, Check, Info, MessageSquare, Pencil, Repeat2, Send, Users, type LucideIcon } from "lucide-react";
+import {
+  communityLine,
+  dateAgo,
+  deriveEvents,
+  isOpen,
+  relativeTime,
+  type CommunityStatus,
+  type Item,
+  type ItemEvent,
+  type ItemEventKind,
+  type Municipality,
+  type OfficialStatus,
+  type Viewer,
+} from "@fala/core";
+import {
+  BadgeCheck,
+  Bell,
+  Camera,
+  Check,
+  Info,
+  MessageSquare,
+  Pencil,
+  Repeat2,
+  Send,
+  Users,
+  type LucideIcon,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CategoryLine } from "@/components/category";
@@ -25,16 +50,29 @@ const EVENT_ICON: Record<ItemEventKind, LucideIcon> = {
   moderation: Info,
 };
 
-const OFFICIAL_LABEL: Record<OfficialStatus, string> = { acknowledged: "Ciente", under_review: "Em análise", scheduled: "Agendado", in_progress: "Em atendimento", resolved: "Marcou como resolvido" };
+const OFFICIAL_LABEL: Record<OfficialStatus, string> = {
+  acknowledged: "Ciente",
+  under_review: "Em análise",
+  scheduled: "Agendado",
+  in_progress: "Em atendimento",
+  resolved: "Marcou como resolvido",
+};
 
-const COMMUNITY_LABEL: Record<CommunityStatus, string> = { reported: "Aguardando confirmação", confirmed: "Confirmado", ongoing: "Continua acontecendo", apparently_resolved: "Parece resolvido", resolved: "Resolvido" };
+const COMMUNITY_LABEL: Record<CommunityStatus, string> = {
+  reported: "Aguardando confirmação",
+  confirmed: "Confirmado",
+  ongoing: "Continua acontecendo",
+  apparently_resolved: "Parece resolvido",
+  resolved: "Resolvido",
+};
 
 /** Local, optimistic interactions until the write path (Supabase) exists. */
 function useLocalActions(it: Item, viewer: Viewer) {
   const [confirmed, setConfirmed] = useState(false);
   const [following, setFollowing] = useState(false);
   const [extra, setExtra] = useState<ItemEvent[]>([]);
-  const add = (kind: ItemEventKind, text: string) => setExtra((e) => [...e, { at: "agora", actor: viewer.nick, kind, text }]);
+  const add = (kind: ItemEventKind, text: string) =>
+    setExtra((e) => [...e, { at: "agora", actor: viewer.nick, kind, text }]);
   return {
     confirmed,
     following,
@@ -83,16 +121,41 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
             <span className="absolute top-3 left-3 rounded-md bg-foreground/70 px-2 py-1.5 font-mono text-xs text-background">
               {photo.takenAt} · {photo.by}
             </span>
-            {photo.credit && <span className="absolute right-2.5 bottom-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 text-2xs text-background">{photo.credit}</span>}
+            {photo.credit && (
+              <span className="absolute right-2.5 bottom-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 text-2xs text-background">
+                {photo.credit}
+              </span>
+            )}
           </div>
-          <div className="flex gap-2 overflow-x-auto border-b border-hairline bg-card px-4 py-2.5" role="group" aria-label="Fotos ao longo do tempo">
+          <div
+            className="flex gap-2 overflow-x-auto border-b border-hairline bg-card px-4 py-2.5"
+            role="group"
+            aria-label="Fotos ao longo do tempo"
+          >
             {it.photos.map((p, k) => (
-              <button key={`${p.src}|${p.takenAt}`} type="button" aria-pressed={p === photo} onClick={() => setPhotoIndex(k)} className="grid shrink-0 gap-1 text-left">
-                <img src={p.src} alt="" className={cn("h-14 w-19 rounded-md border-2 object-cover", p === photo ? "border-foreground" : "border-transparent")} />
+              <button
+                key={`${p.src}|${p.takenAt}`}
+                type="button"
+                aria-pressed={p === photo}
+                onClick={() => setPhotoIndex(k)}
+                className="grid shrink-0 gap-1 text-left"
+              >
+                <img
+                  src={p.src}
+                  alt=""
+                  className={cn(
+                    "h-14 w-19 rounded-md border-2 object-cover",
+                    p === photo ? "border-foreground" : "border-transparent",
+                  )}
+                />
                 <small className="font-mono text-2xs text-muted-foreground">{p.takenAt.split(" · ")[0]}</small>
               </button>
             ))}
-            <button type="button" className="grid shrink-0 gap-1 text-left" onClick={() => toast("No app, abre a câmera para a foto atual.")}>
+            <button
+              type="button"
+              className="grid shrink-0 gap-1 text-left"
+              onClick={() => toast("No app, abre a câmera para a foto atual.")}
+            >
               <span className="grid h-14 w-19 place-items-center rounded-md border border-dashed border-hairline-strong bg-muted text-muted-foreground">
                 <Camera className="size-4" />
               </span>
@@ -116,18 +179,26 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} />
           <h2 className="mt-1 text-2xl leading-tight font-semibold tracking-tight text-balance">{it.title}</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
-            por <b className="font-medium text-ink-2">{it.visibility === "anonymous" ? "Anônimo" : (it.author ?? viewer.nick)}</b> · {dateAgo(now, it.days)}
+            por{" "}
+            <b className="font-medium text-ink-2">
+              {it.visibility === "anonymous" ? "Anônimo" : (it.author ?? viewer.nick)}
+            </b>{" "}
+            · {dateAgo(now, it.days)}
           </p>
         </header>
 
         <section className="grid gap-2.5 rounded-xl border border-hairline bg-muted p-3.5" aria-label="Relógio público">
           <p className="flex items-baseline gap-2.5">
-            <span className={cn("text-5xl leading-none font-semibold tracking-tighter", over && "text-signal-text")}>{it.days}</span>
+            <span className={cn("text-5xl leading-none font-semibold tracking-tighter", over && "text-signal-text")}>
+              {it.days}
+            </span>
             <span className="text-sm leading-tight text-muted-foreground">{unit}</span>
           </p>
           <DaysMeter days={it.days} deadline={muni.deadlineDays} size="lg" />
           <p className="text-xs text-muted-foreground">
-            {open ? `Enviado à Prefeitura em ${dateAgo(now, it.days)}, às ${muni.digestHour}:00. O relógio conta desde então.` : `Fechado pelos vizinhos em ${dateAgo(now, 0)}.`}
+            {open
+              ? `Enviado à Prefeitura em ${dateAgo(now, it.days)}, às ${muni.digestHour}:00. O relógio conta desde então.`
+              : `Fechado pelos vizinhos em ${dateAgo(now, 0)}.`}
           </p>
         </section>
 
@@ -136,7 +207,9 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
             <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <Users className="size-3.5" /> Comunidade
             </span>
-            <span className="text-sm leading-snug font-semibold">{issue ? "Isso me afeta" : COMMUNITY_LABEL[it.community]}</span>
+            <span className="text-sm leading-snug font-semibold">
+              {issue ? "Isso me afeta" : COMMUNITY_LABEL[it.community]}
+            </span>
             <span className="text-xs text-muted-foreground">
               {communityLine(it, a.confirmations)} · {relativeTime(it.updatedMinutesAgo)}
             </span>
@@ -146,15 +219,20 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
               <BadgeCheck className="size-3.5" /> Prefeitura
               {it.official && <Badge variant="outline">verificada · exemplo</Badge>}
             </span>
-            <span className={cn("text-sm leading-snug font-semibold", !it.official && "font-medium text-muted-foreground")}>
+            <span
+              className={cn("text-sm leading-snug font-semibold", !it.official && "font-medium text-muted-foreground")}
+            >
               {it.official ? OFFICIAL_LABEL[it.official.status] : "Sem resposta registrada"}
             </span>
-            <span className="text-xs text-muted-foreground">{it.official ? `${it.official.agency} · há ${it.official.daysAgo} dias` : "Recebe o resumo diário."}</span>
+            <span className="text-xs text-muted-foreground">
+              {it.official ? `${it.official.agency} · há ${it.official.daysAgo} dias` : "Recebe o resumo diário."}
+            </span>
           </div>
           {disagreement && (
             <p className="col-span-2 flex items-start gap-2 text-xs text-ink-2">
-              <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />A Prefeitura diz que resolveu; {it.disagreeing ?? a.confirmations} moradores dizem que continua. O Fala
-              registra as duas coisas e não decide quem está certo.
+              <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />A Prefeitura diz que resolveu;{" "}
+              {it.disagreeing ?? a.confirmations} moradores dizem que continua. O Fala registra as duas coisas e não
+              decide quem está certo.
             </p>
           )}
         </section>
@@ -162,7 +240,8 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
         {(disagreement || it.community === "apparently_resolved") && (
           <section className="grid gap-2.5 rounded-xl border border-dashed border-hairline-strong p-3.5">
             <p className="text-sm text-ink-2">
-              <b className="text-foreground">Está resolvido?</b> Quem mora perto confirma. Com dois vizinhos, o registro fecha e entra no placar.
+              <b className="text-foreground">Está resolvido?</b> Quem mora perto confirma. Com dois vizinhos, o registro
+              fecha e entra no placar.
             </p>
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={() => toast("No app, abre a câmera para a foto do depois.")}>
@@ -190,7 +269,11 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
             </>
           ) : (
             <>
-              <Button variant={a.confirmed ? "default" : "outline"} aria-pressed={a.confirmed} onClick={a.toggleConfirm}>
+              <Button
+                variant={a.confirmed ? "default" : "outline"}
+                aria-pressed={a.confirmed}
+                onClick={a.toggleConfirm}
+              >
                 <Check data-icon="inline-start" />
                 Confirmo <span className="font-mono text-xs opacity-70">{a.confirmations}</span>
               </Button>
@@ -214,7 +297,10 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
 
         <section aria-labelledby="hist">
           <h3 id="hist" className="flex items-baseline justify-between text-sm font-semibold">
-            Histórico <small className="text-xs font-normal text-muted-foreground">{it.updates + a.extra.length} atualizações · {relativeTime(it.updatedMinutesAgo)}</small>
+            Histórico{" "}
+            <small className="text-xs font-normal text-muted-foreground">
+              {it.updates + a.extra.length} atualizações · {relativeTime(it.updatedMinutesAgo)}
+            </small>
           </h3>
           <ol className="mt-2.5 grid">
             {events.map((e, k) => {
@@ -222,8 +308,15 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
               const official = e.kind === "official_response" || e.kind === "official_status_changed";
               return (
                 <li key={`${e.at}|${e.actor}|${e.text}`} className="relative flex gap-2.5 pb-3.5 last:pb-0">
-                  {k < events.length - 1 && <span className="absolute top-5 bottom-0 left-2.5 w-px bg-border" aria-hidden="true" />}
-                  <span className={cn("relative z-10 grid size-5.5 shrink-0 place-items-center rounded-full border", official ? "border-foreground bg-foreground text-background" : "border-border bg-card text-ink-2")}>
+                  {k < events.length - 1 && (
+                    <span className="absolute top-5 bottom-0 left-2.5 w-px bg-border" aria-hidden="true" />
+                  )}
+                  <span
+                    className={cn(
+                      "relative z-10 grid size-5.5 shrink-0 place-items-center rounded-full border",
+                      official ? "border-foreground bg-foreground text-background" : "border-border bg-card text-ink-2",
+                    )}
+                  >
                     <EventIcon className="size-3" />
                   </span>
                   <div>
@@ -237,7 +330,9 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
               );
             })}
           </ol>
-          <p className="mt-2 text-xs text-muted-foreground">O histórico não é apagado. Correções e moderação também ficam registradas.</p>
+          <p className="mt-2 text-xs text-muted-foreground">
+            O histórico não é apagado. Correções e moderação também ficam registradas.
+          </p>
         </section>
 
         <form
@@ -253,7 +348,13 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           <label className="sr-only" htmlFor="composer">
             Escrever atualização ou comentário
           </label>
-          <Input id="composer" value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Escreva uma atualização ou um comentário" autoComplete="off" />
+          <Input
+            id="composer"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder="Escreva uma atualização ou um comentário"
+            autoComplete="off"
+          />
           <Button type="submit">Enviar</Button>
         </form>
       </div>

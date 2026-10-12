@@ -29,7 +29,10 @@ function MapRoute() {
   const params = useParams({ strict: false });
   const selectedId = typeof params.id === "string" ? params.id : null;
   const visible = useMemo(() => visibleItems(city.items, search, canoas, city.viewer.location), [city, search]);
-  const setQuery = useDebouncedCallback((patch: Partial<MapSearch>) => void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) }), { wait: 200 });
+  const setQuery = useDebouncedCallback(
+    (patch: Partial<MapSearch>) => void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) }),
+    { wait: 200 },
+  );
   return (
     <MapPage
       muni={canoas}
@@ -37,7 +40,9 @@ function MapRoute() {
       visible={visible}
       search={search}
       selectedId={selectedId}
-      onSearch={(patch) => ("q" in patch ? setQuery(patch) : void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) }))}
+      onSearch={(patch) =>
+        "q" in patch ? setQuery(patch) : void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) })
+      }
       onOpen={(id) => void navigate({ to: "/o/$id", params: { id }, search: (prev) => prev })}
       onClose={() => void navigate({ to: "/", search: (prev) => prev })}
       detail={<Outlet />}

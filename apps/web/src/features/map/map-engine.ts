@@ -19,7 +19,13 @@ function featureCollection(items: Item[]) {
     features: items.flatMap((it) => {
       const p = itemLngLat(it);
       return p
-        ? [{ type: "Feature" as const, geometry: { type: "Point" as const, coordinates: p }, properties: { id: it.id, days: it.days, open: isOpen(it) ? 1 : 0, q: it.kind === "public_issue" ? 1 : 0 } }]
+        ? [
+            {
+              type: "Feature" as const,
+              geometry: { type: "Point" as const, coordinates: p },
+              properties: { id: it.id, days: it.days, open: isOpen(it) ? 1 : 0, q: it.kind === "public_issue" ? 1 : 0 },
+            },
+          ]
         : [];
     }),
   };
@@ -52,7 +58,10 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     fadeDuration: 120,
   });
   map.touchZoomRotate.disableRotation();
-  map.addControl(new ml.AttributionControl({ compact: true, customAttribution: "Dados fictícios do protótipo" }), "bottom-right");
+  map.addControl(
+    new ml.AttributionControl({ compact: true, customAttribution: "Dados fictícios do protótipo" }),
+    "bottom-right",
+  );
 
   const me = document.createElement("div");
   me.className = "fc-mepin";
@@ -79,13 +88,66 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     const hasGlyphs = Boolean(map.getStyle().glyphs);
     map.addSource("bairros", { type: "geojson", data: muni.geo.neighborhoods, promoteId: "slug" });
     map.addSource("limite", { type: "geojson", data: muni.geo.boundary });
-    map.addSource("items", { type: "geojson", data: featureCollection(state.visible), cluster: true, clusterMaxZoom: 13.4, clusterRadius: 48 });
+    map.addSource("items", {
+      type: "geojson",
+      data: featureCollection(state.visible),
+      cluster: true,
+      clusterMaxZoom: 13.4,
+      clusterRadius: 48,
+    });
     const sel: ExpressionSpecification = ["boolean", ["feature-state", "sel"], false];
-    map.addLayer({ id: "bairro-fill", type: "fill", source: "bairros", paint: { "fill-color": ["case", sel, signal, ink], "fill-opacity": ["case", sel, 0.1, ["*", ["coalesce", ["feature-state", "v"], 0], 0.5]] } });
-    map.addLayer({ id: "bairro-line", type: "line", source: "bairros", paint: { "line-color": ["case", sel, signal, ink], "line-opacity": ["case", sel, 1, 0.26], "line-width": ["case", sel, 2, ["interpolate", ["linear"], ["zoom"], 11, 0.8, 15, 1.4]] } });
-    map.addLayer({ id: "limite-line", type: "line", source: "limite", paint: { "line-color": ink, "line-opacity": 0.55, "line-width": 1.4 } });
-    map.addLayer({ id: "clusters", type: "circle", source: "items", filter: ["has", "point_count"], paint: { "circle-color": ink, "circle-opacity": 0.94, "circle-stroke-color": paper, "circle-stroke-width": 2.5, "circle-radius": ["step", ["get", "point_count"], 13, 8, 16, 25, 20, 60, 24] } });
-    if (hasGlyphs) map.addLayer({ id: "cluster-count", type: "symbol", source: "items", filter: ["has", "point_count"], layout: { "text-field": ["get", "point_count_abbreviated"], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-allow-overlap": true }, paint: { "text-color": paper } });
+    map.addLayer({
+      id: "bairro-fill",
+      type: "fill",
+      source: "bairros",
+      paint: {
+        "fill-color": ["case", sel, signal, ink],
+        "fill-opacity": ["case", sel, 0.1, ["*", ["coalesce", ["feature-state", "v"], 0], 0.5]],
+      },
+    });
+    map.addLayer({
+      id: "bairro-line",
+      type: "line",
+      source: "bairros",
+      paint: {
+        "line-color": ["case", sel, signal, ink],
+        "line-opacity": ["case", sel, 1, 0.26],
+        "line-width": ["case", sel, 2, ["interpolate", ["linear"], ["zoom"], 11, 0.8, 15, 1.4]],
+      },
+    });
+    map.addLayer({
+      id: "limite-line",
+      type: "line",
+      source: "limite",
+      paint: { "line-color": ink, "line-opacity": 0.55, "line-width": 1.4 },
+    });
+    map.addLayer({
+      id: "clusters",
+      type: "circle",
+      source: "items",
+      filter: ["has", "point_count"],
+      paint: {
+        "circle-color": ink,
+        "circle-opacity": 0.94,
+        "circle-stroke-color": paper,
+        "circle-stroke-width": 2.5,
+        "circle-radius": ["step", ["get", "point_count"], 13, 8, 16, 25, 20, 60, 24],
+      },
+    });
+    if (hasGlyphs)
+      map.addLayer({
+        id: "cluster-count",
+        type: "symbol",
+        source: "items",
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 12,
+          "text-allow-overlap": true,
+        },
+        paint: { "text-color": paper },
+      });
     const open: ExpressionSpecification = ["==", ["get", "open"], 1];
     map.addLayer({
       id: "points",
@@ -96,11 +158,46 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
         "circle-color": ["case", open, ink, paper],
         "circle-stroke-color": ["case", open, paper, ink3],
         "circle-stroke-width": ["case", open, 2, 1.6],
-        "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, ["case", open, ["interpolate", ["linear"], ["get", "days"], 0, 3.2, 30, 4.4, 120, 6], 3], 16, ["case", open, ["interpolate", ["linear"], ["get", "days"], 0, 6, 30, 8.5, 120, 12], 5.5]],
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          11,
+          ["case", open, ["interpolate", ["linear"], ["get", "days"], 0, 3.2, 30, 4.4, 120, 6], 3],
+          16,
+          ["case", open, ["interpolate", ["linear"], ["get", "days"], 0, 6, 30, 8.5, 120, 12], 5.5],
+        ],
       },
     });
-    map.addLayer({ id: "questions", type: "circle", source: "items", filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "q"], 1]], paint: { "circle-color": paper, "circle-stroke-color": ink, "circle-stroke-width": 3, "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 5, 16, 9] } });
-    if (hasGlyphs) map.addLayer({ id: "days", type: "symbol", source: "items", minzoom: 13.6, filter: ["all", ["!", ["has", "point_count"]], open], layout: { "text-field": ["concat", ["to-string", ["get", "days"]], "d"], "text-font": ["Noto Sans Bold"], "text-size": 11, "text-offset": [0, -1.45], "text-anchor": "bottom", visibility: "none" }, paint: { "text-color": ink, "text-halo-color": paper, "text-halo-width": 1.6 } });
+    map.addLayer({
+      id: "questions",
+      type: "circle",
+      source: "items",
+      filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "q"], 1]],
+      paint: {
+        "circle-color": paper,
+        "circle-stroke-color": ink,
+        "circle-stroke-width": 3,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, 5, 16, 9],
+      },
+    });
+    if (hasGlyphs)
+      map.addLayer({
+        id: "days",
+        type: "symbol",
+        source: "items",
+        minzoom: 13.6,
+        filter: ["all", ["!", ["has", "point_count"]], open],
+        layout: {
+          "text-field": ["concat", ["to-string", ["get", "days"]], "d"],
+          "text-font": ["Noto Sans Bold"],
+          "text-size": 11,
+          "text-offset": [0, -1.45],
+          "text-anchor": "bottom",
+          visibility: "none",
+        },
+        paint: { "text-color": ink, "text-halo-color": paper, "text-halo-width": 1.6 },
+      });
     ready = true;
     applyPins(state);
     applySelection(state, Boolean(state.selectedId));
@@ -109,19 +206,25 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
   function applyPins(s: MapState) {
     if (!ready) return;
     const byBairro = s.pinMode === "bairros";
-    for (const l of ["clusters", "cluster-count", "points", "questions"]) if (map.getLayer(l)) map.setLayoutProperty(l, "visibility", byBairro ? "none" : "visible");
+    for (const l of ["clusters", "cluster-count", "points", "questions"])
+      if (map.getLayer(l)) map.setLayoutProperty(l, "visibility", byBairro ? "none" : "visible");
     if (map.getLayer("days")) map.setLayoutProperty("days", "visibility", s.pinMode === "dias" ? "visible" : "none");
     const counts = new Map<string, number>();
-    if (byBairro) for (const it of s.visible) if (isOpen(it) && it.neighborhood) counts.set(it.neighborhood, (counts.get(it.neighborhood) ?? 0) + 1);
+    if (byBairro)
+      for (const it of s.visible)
+        if (isOpen(it) && it.neighborhood) counts.set(it.neighborhood, (counts.get(it.neighborhood) ?? 0) + 1);
     const max = Math.max(1, ...counts.values());
-    for (const n of muni.neighborhoods) map.setFeatureState({ source: "bairros", id: n.slug }, { v: byBairro ? (counts.get(n.slug) ?? 0) / max : 0 });
+    for (const n of muni.neighborhoods)
+      map.setFeatureState({ source: "bairros", id: n.slug }, { v: byBairro ? (counts.get(n.slug) ?? 0) / max : 0 });
   }
 
   function marker(className: string, html: string, lngLat: [number, number], anchor: "left" | "center") {
     const el = document.createElement("div");
     el.className = className;
     el.innerHTML = html;
-    return new ml.Marker({ element: el, anchor, offset: anchor === "left" ? [-9, 0] : [0, 0] }).setLngLat(lngLat).addTo(map);
+    return new ml.Marker({ element: el, anchor, offset: anchor === "left" ? [-9, 0] : [0, 0] })
+      .setLngLat(lngLat)
+      .addTo(map);
   }
 
   function applySelection(s: MapState, fly: boolean) {
@@ -129,14 +232,23 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     const it = id ? s.visible.find((i) => i.id === id) : undefined;
     selMarker?.remove();
     selMarker = null;
-    if (ready) for (const n of muni.neighborhoods) map.setFeatureState({ source: "bairros", id: n.slug }, { sel: Boolean(it && it.neighborhood === n.slug) });
+    if (ready)
+      for (const n of muni.neighborhoods)
+        map.setFeatureState({ source: "bairros", id: n.slug }, { sel: Boolean(it && it.neighborhood === n.slug) });
     const p = it ? itemLngLat(it) : null;
     if (!it || !p) return;
     const label = isOpen(it) ? `${it.days} ${it.days === 1 ? "dia" : "dias"}` : "resolvido";
     selMarker = marker("fc-selpin", `<span></span><span>${label}</span>`, p, "left");
     if (fly) {
-      const pad = opts.isPhone() ? { top: 120, bottom: opts.railHeight() + 20, left: 20, right: 20 } : { top: 40, bottom: 40, left: 40, right: 40 };
-      map.easeTo({ center: p, zoom: Math.max(map.getZoom(), 14.4), padding: pad, duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 750 });
+      const pad = opts.isPhone()
+        ? { top: 120, bottom: opts.railHeight() + 20, left: 20, right: 20 }
+        : { top: 40, bottom: 40, left: 40, right: 40 };
+      map.easeTo({
+        center: p,
+        zoom: Math.max(map.getZoom(), 14.4),
+        padding: pad,
+        duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 750,
+      });
     }
   }
 
@@ -155,7 +267,9 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     const src = itemsSource();
     if (!f || typeof clusterId !== "number" || !src || f.geometry.type !== "Point") return;
     const center = f.geometry.coordinates;
-    void src.getClusterExpansionZoom(clusterId).then((z) => map.easeTo({ center: [center[0] ?? 0, center[1] ?? 0], zoom: z + 0.3, duration: 500 }));
+    void src
+      .getClusterExpansionZoom(clusterId)
+      .then((z) => map.easeTo({ center: [center[0] ?? 0, center[1] ?? 0], zoom: z + 0.3, duration: 500 }));
   });
   for (const layer of ["points", "questions"]) {
     map.on("click", layer, (e) => {
@@ -181,7 +295,10 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     if (next.hoveredId !== prev.hoveredId) applyHover(next);
   });
 
-  const api = { zoomBy: (d: number) => map.zoomTo(map.getZoom() + d, { duration: 300 }), locate: () => map.easeTo({ center: viewer.location, zoom: 15, duration: 700 }) };
+  const api = {
+    zoomBy: (d: number) => map.zoomTo(map.getZoom() + d, { duration: 300 }),
+    locate: () => map.easeTo({ center: viewer.location, zoom: 15, duration: 700 }),
+  };
   mapControls.current = api;
 
   return () => {
@@ -193,4 +310,3 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
 
 /** Imperative controls for buttons outside the map (zoom, locate). Set while a map is mounted. */
 export const mapControls: { current: { zoomBy: (d: number) => void; locate: () => void } | null } = { current: null };
-
