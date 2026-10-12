@@ -17,6 +17,7 @@ import { Route as AppVoceRouteImport } from './routes/_app/voce'
 import { Route as AppMapMapaRouteImport } from './routes/_app/_map/mapa'
 import { Route as AppBairroIndexRouteImport } from './routes/_app/bairro.index'
 import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppMapOIdRouteImport } from './routes/_app/_map/o.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -57,6 +58,11 @@ const AppBairroSlugRoute = AppBairroSlugRouteImport.update({
   path: '/bairro/$slug',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppMapOIdRoute = AppMapOIdRouteImport.update({
   id: '/o/$id',
   path: '/o/$id',
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/voce': typeof AppVoceRoute
   '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/bairro/': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/voce': typeof AppVoceRoute
   '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/bairro': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
 }
@@ -90,6 +98,7 @@ export interface FileRoutesById {
   '/_app/voce': typeof AppVoceRoute
   '/_app/_map/mapa': typeof AppMapMapaRoute
   '/_app/bairro/$slug': typeof AppBairroSlugRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/_app/bairro/': typeof AppBairroIndexRoute
   '/_app/_map/o/$id': typeof AppMapOIdRoute
 }
@@ -101,11 +110,19 @@ export interface FileRouteTypes {
     | '/voce'
     | '/mapa'
     | '/bairro/$slug'
+    | '/api/auth/$'
     | '/bairro/'
     | '/o/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/placar' | '/voce' | '/mapa' | '/bairro/$slug' | '/bairro' | '/o/$id'
+    | '/'
+    | '/placar'
+    | '/voce'
+    | '/mapa'
+    | '/bairro/$slug'
+    | '/api/auth/$'
+    | '/bairro'
+    | '/o/$id'
   id:
     | '__root__'
     | '/'
@@ -115,6 +132,7 @@ export interface FileRouteTypes {
     | '/_app/voce'
     | '/_app/_map/mapa'
     | '/_app/bairro/$slug'
+    | '/api/auth/$'
     | '/_app/bairro/'
     | '/_app/_map/o/$id'
   fileRoutesById: FileRoutesById
@@ -122,6 +140,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,6 +201,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBairroSlugRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/_map/o/$id': {
       id: '/_app/_map/o/$id'
       path: '/o/$id'
@@ -226,6 +252,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

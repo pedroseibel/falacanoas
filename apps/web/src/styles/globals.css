@@ -55,6 +55,7 @@
   --color-seq-4: var(--seq-4);
   --color-seq-5: var(--seq-5);
   --color-track: var(--track);
+  --color-scrim: var(--scrim);
   --shadow-panel: var(--shadow);
   --shadow-soft: var(--shadow-sm);
   --shadow-float: var(--shadow-float);

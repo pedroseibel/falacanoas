@@ -1,3 +1,4 @@
+import { initials } from "@fala/core";
 import { BarChart3, Home, Map as MapIcon, Plus, Search, User } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,10 @@ export interface ShellProps {
   query: string;
   onQuery: (q: string) => void;
   onReport: () => void;
+  /** Signed in with a phone; nick is null until an apelido is chosen. */
+  signedIn: boolean;
+  nick: string | null;
+  onSignIn: () => void;
   /** Renders a navigation link; the route adapter owns routing. */
   link: (to: Section, children: ReactNode, className: string, current: boolean) => ReactNode;
   children: ReactNode;
@@ -23,7 +28,7 @@ const NAV: { to: Section; label: string; Icon: typeof MapIcon }[] = [
   { to: "bairro", label: "Bairro", Icon: Home },
 ];
 
-export function AppShell({ section, query, onQuery, onReport, link, children }: ShellProps) {
+export function AppShell({ section, query, onQuery, onReport, signedIn, nick, onSignIn, link, children }: ShellProps) {
   return (
     <div className="flex h-dvh flex-col">
       <header className="relative z-30 flex h-14 items-center gap-5 border-b border-hairline bg-background pr-4 pl-5 max-phone:hidden">
@@ -70,11 +75,19 @@ export function AppShell({ section, query, onQuery, onReport, link, children }: 
           <Plus data-icon="inline-start" />
           Registrar
         </Button>
-        {link(
-          "voce",
-          <span className="text-xs font-semibold">GS</span>,
-          "grid size-8.5 place-items-center rounded-full border border-border bg-muted",
-          section === "voce",
+        {signedIn ? (
+          link(
+            "voce",
+            <span className="text-xs font-semibold" aria-label={nick ? `Você: ${nick}` : "Você"}>
+              {nick ? initials(nick) : "?"}
+            </span>,
+            "grid size-8.5 place-items-center rounded-full border border-border bg-muted",
+            section === "voce",
+          )
+        ) : (
+          <Button variant="outline" onClick={onSignIn}>
+            Entrar
+          </Button>
         )}
       </header>
 

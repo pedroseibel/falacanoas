@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getCity, getItem, getThreads } from "@/server/data";
+import { getAccount } from "@/server/account";
 import { getQueue } from "@/server/queue";
 
 /** Server state lives in TanStack Query. Loaders prefetch, components read. */
@@ -19,4 +20,11 @@ export const queueQuery = queryOptions({
   queryKey: ["queue"],
   queryFn: () => getQueue(),
   staleTime: 60_000,
+});
+
+/** The signed-in person, or null. Invalidate after signing in or out. */
+export const accountQuery = queryOptions({
+  queryKey: ["account"],
+  queryFn: () => getAccount(),
+  staleTime: 30_000,
 });

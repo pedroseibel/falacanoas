@@ -21,13 +21,15 @@ bun run format         # prettier
 bun run typecheck      # tsc (TypeScript 7, native) in every workspace
 ```
 
+First run: copy `apps/web/.dev.vars.example` to `apps/web/.dev.vars` and fill `BETTER_AUTH_SECRET` (`openssl rand -base64 32`).
+
 The landing page is the web app's `/` route; the app's map is `/mapa`. The static landing and the clickable prototype were retired once ported (they live in git history).
 
 ## Layout
 
 - `packages/core` (`@fala/core`): domain only. Zod schemas and inferred types; the event-sourced item model; the two status axes (community vs public authority); geo and format helpers. No React, no I/O.
 - `instances/canoas` (`@fala/instance-canoas`): the municipal instance, versioned as config (`defineMunicipality`): categories, agencies, bairros, geo, branding. `./fixtures` holds fictional demo data, validated with the core schemas.
-- `apps/web` (`@fala/web`): TanStack Start on Cloudflare Workers. `/` is the landing page (`features/landing`: the bairro queue sign-up); the app lives under `/mapa`, `/o/$id`, `/placar`, `/bairro/$slug`, `/voce`.
+- `apps/web` (`@fala/web`): TanStack Start on Cloudflare Workers. `/` is the landing page (`features/landing`: the bairro queue sign-up); the app lives under `/mapa`, `/o/$id`, `/placar`, `/bairro/$slug`, `/voce`. Accounts: Better Auth (`src/server/auth.ts`, mounted at `/api/auth/$`; in memory until the database is connected). In development, sign-in codes are not sent: the dialog shows them.
 - **Standalone backend services**, when one is needed (the WhatsApp webhook, the 18h digest job, the public open-data API): **Elysia** on Bun. Don't add them to `apps/web`.
 
 ## Hard rules (lint-enforced where possible)

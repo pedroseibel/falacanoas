@@ -1,0 +1,5 @@
+# Copy to .dev.vars for `bun run dev`. Generate the secret with: openssl rand -base64 32
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL=http://127.0.0.1:3100
+# Extra origins allowed to call /api/auth (tailnet, previews), comma-separated.
+BETTER_AUTH_TRUSTED_ORIGINS=http://127.0.0.1:3100,http://localhost:3100

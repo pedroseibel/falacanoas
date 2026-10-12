@@ -138,7 +138,9 @@ The app draft covers both phone and desktop at equal weight: map + pin detail, r
 - **URLs:** `/` landing (`?b=` opens a bairro, `?canal=email` picks the channel); `/mapa` map; `/o/$id` item; `/placar`; `/bairro/$slug`; `/voce`.
 - **The queue sign-up** goes through a server function validated by `QueueSignupSchema` (core). Until the database exists nothing is stored, and the confirmation says so.
 - **Retired:** `apps/landing` (static page) and `apps/landing/app` (clickable prototype). Both remain in git history.
-- **Auth: open question,** asked 2026-10-12: Better Auth or Supabase Auth. See the recommendation in the thread; to be decided with the database.
+- **Auth: Better Auth** (decided 2026-10-12, over Supabase Auth). Accounts live in our own Postgres, so other cities only need Postgres. Sign-in is a code sent to a Brazilian mobile (WhatsApp first; the sender is ours to plug in). Guests get an anonymous session that upgrades when they verify a phone. Ids are UUIDs, ready for row-level security.
+- **Realtime with Better Auth:** phone alerts are sent by the backend (WhatsApp, web push) and don't depend on auth. Live map updates use public Supabase Realtime channels. A private live channel per person, if needed, runs on a Cloudflare Durable Object that checks the session cookie (Supabase only accepts tokens from its listed auth providers).
+- **Before launch:** encrypt the phone at rest with a keyed hash for lookup (Better Auth's phone plugin stores it in plain text); connect a WhatsApp/SMS sender; keep Better Auth pinned (1.7.0 to 1.7.2 broke upgrades).
 
 ## Research findings that constrain design (2026-10-12)
 

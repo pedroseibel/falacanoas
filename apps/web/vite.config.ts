@@ -9,6 +9,7 @@ export default defineConfig({
   resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
   server: {
     port: 3100,
+    strictPort: true,
     host: "127.0.0.1",
     allowedHosts: [".ts.net"],
   },
