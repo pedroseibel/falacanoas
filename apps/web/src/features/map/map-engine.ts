@@ -124,7 +124,8 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
       paint: {
         "line-color": ["case", sel, signal, ink],
         "line-opacity": ["case", sel, 1, 0.26],
-        "line-width": ["case", sel, 2, ["interpolate", ["linear"], ["zoom"], 11, 0.8, 15, 1.4]],
+        // MapLibre allows "zoom" only at the top of an interpolate, so the selection case goes inside it.
+        "line-width": ["interpolate", ["linear"], ["zoom"], 11, ["case", sel, 2, 0.8], 15, ["case", sel, 2, 1.4]],
       },
     });
     map.addLayer({
