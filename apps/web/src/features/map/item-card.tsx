@@ -2,6 +2,7 @@ import { communityLine, isOpen, relativeTime, type Item, type Municipality } fro
 import { Check, VenetianMask } from "lucide-react";
 import { CategoryLine } from "@/components/category";
 import { Icon, categoryIcon } from "@/components/Icons";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 export function whereOf(it: Item, muni: Municipality): string {
@@ -51,17 +52,30 @@ export function ItemCard({
         ) : (
           <Icon name={categoryIcon(it.category)} size={28} />
         )}
+        {/* On the thumbnail, so the label never costs the category line its bairro and distance. */}
+        {it.demo && (
+          <span className="absolute top-1 left-1 flex">
+            <Badge variant="chip-inline">exemplo</Badge>
+          </span>
+        )}
         {it.visibility === "anonymous" && (
           <span
             className="absolute bottom-1 left-1 grid size-5 place-items-center rounded-md bg-card/90"
             title="Publicado como Anônimo"
           >
-            <VenetianMask className="size-3" />
+            <VenetianMask className="size-3" aria-hidden="true" />
+            <span className="sr-only">Publicado como Anônimo</span>
           </span>
         )}
       </span>
       <span className="grid min-w-0 content-start gap-1">
-        <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} extra={distance} demo={it.demo} />
+        <CategoryLine
+          muni={muni}
+          category={it.category}
+          where={whereOf(it, muni)}
+          extra={distance}
+          wrap={layout === "rail"}
+        />
         <span className="line-clamp-2 text-sm leading-snug font-semibold tracking-tight">{it.title}</span>
         <span className="mt-0.5 flex min-w-0 items-baseline gap-2 text-xs whitespace-nowrap text-muted-foreground">
           {open ? (
