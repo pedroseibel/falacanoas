@@ -86,19 +86,86 @@ export type IconName =
   | "c-sinal"
   | "c-questao";
 
-const ICON_SET = new Set<string>(["i-map", "i-chart", "i-home", "i-user", "i-plus", "i-search", "i-down", "i-back", "i-close", "i-share", "i-more", "i-check", "i-eye", "i-repeat", "i-edit", "i-bell", "i-camera", "i-image", "i-locate", "i-minus", "i-send", "i-chat", "i-mask", "i-badge", "i-users", "i-clock", "i-info", "i-sliders", "i-route", "c-buraco", "c-alaga", "c-bocalobo", "c-lixo", "c-entulho", "c-poste", "c-arvore", "c-calcada", "c-esgoto", "c-sinal", "c-questao"]);
+const ICON_SET = new Set<string>([
+  "i-map",
+  "i-chart",
+  "i-home",
+  "i-user",
+  "i-plus",
+  "i-search",
+  "i-down",
+  "i-back",
+  "i-close",
+  "i-share",
+  "i-more",
+  "i-check",
+  "i-eye",
+  "i-repeat",
+  "i-edit",
+  "i-bell",
+  "i-camera",
+  "i-image",
+  "i-locate",
+  "i-minus",
+  "i-send",
+  "i-chat",
+  "i-mask",
+  "i-badge",
+  "i-users",
+  "i-clock",
+  "i-info",
+  "i-sliders",
+  "i-route",
+  "c-buraco",
+  "c-alaga",
+  "c-bocalobo",
+  "c-lixo",
+  "c-entulho",
+  "c-poste",
+  "c-arvore",
+  "c-calcada",
+  "c-esgoto",
+  "c-sinal",
+  "c-questao",
+]);
 
 export function isIconName(s: string): s is IconName {
   return ICON_SET.has(s);
 }
 
 export function IconSprite() {
-  return <svg width="0" height="0" style={{ position: "absolute" }} aria-hidden="true" dangerouslySetInnerHTML={{ __html: SYMBOLS }} />;
+  return (
+    <svg
+      width="0"
+      height="0"
+      style={{ position: "absolute" }}
+      aria-hidden="true"
+      dangerouslySetInnerHTML={{ __html: SYMBOLS }}
+    />
+  );
 }
 
-export function Icon({ name, className = "shrink-0", size = 18 }: { name: IconName; className?: string; size?: number }) {
+export function Icon({
+  name,
+  className = "shrink-0",
+  size = 18,
+}: {
+  name: IconName;
+  className?: string;
+  size?: number;
+}) {
   return (
-    <svg className={className} width={size} height={size} fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
       <use href={`#${name}`} />
     </svg>
   );
