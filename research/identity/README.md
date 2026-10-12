@@ -1,6 +1,14 @@
 # FalaCanoas: Identity & Trust (decision brief)
 
 **Rewritten and fact-checked 2026-10-12.** Replaces the 1,250-line draft (kept as `README.draft-v0-original.md`, safe to delete).
+> **Superseded in part by `research/DECISIONS.md`, round 18 (2026-10-12).** Where this brief and round 18 differ, round 18 wins:
+> - **Tiers (2 and 4.1):** civil identity no longer unlocks confirming, voting or the forum, and T2-lite is dropped. A phone code is enough for the whole loop. Nível 2 is optional, adds only weight or limits, and is not in the MVP.
+> - **D1:** a phone-verified pin counts on the Placar after one independent confirmation. That means another account whose phone was verified at least 72 hours earlier.
+> - **Phone storage (4.3):** the phone is always encrypted in a separate vault (for traceability), not only for notifications.
+> - **CPF collision (4.4):** a new valid proof moves nível 2 to the new account in one transaction; it doesn't hold the account for review.
+> - **Path A (4.1):** it is a pilot. It proceeds only if the full CPF is read from the signer's certificate and matches the declared one; a visual check on VALIDAR is no substitute.
+> - **Legal basis for gov.br signatures:** corrected below to MP 2.200-2 art. 10 §2.
+
 **Legend:** **[✔]** read in a primary source on 2026-10-12 · **[~]** secondary source or search snippet only · **[não verificado]** could not confirm · **não público** = no public price found.
 
 ---
@@ -10,7 +18,7 @@
 1. **Login Único (gov.br) is closed to FalaCanoas.** gov.br's own FAQ: integration is "exclusiva" to public administration. Portaria SGD/MGI nº 7.076/2024 is real, but it needs an official government domain. The only path is a Prefeitura-sponsored project, and the municipality must first join the Rede Nacional de Governo Digital. [✔]
 2. **OTP prices, corrected.** WhatsApp *authentication* in Brazil = **US$0.0068 = R$0.035 per delivered message** (Meta rate card, effective 2026-10-01). SMS = **US$0.0599** (Twilio list), about R$0.31. That is ~9x, not 7-8x. 5,000 verifications cost about R$175 (WhatsApp) vs about R$1,540 (SMS). BSP markups: não público. [✔]
 3. **A phone code proves a phone**, not a person, uniqueness or Canoas residency. **A typed CPF proves nothing** (CPFs are not secrets). Make CPF enter the system only through a proof path, never as a text field.
-4. **Two realistic proof paths for Tier 2.** (A) A gov.br-signed declaration (prata/ouro), validated at validar.iti.gov.br: free and lawful if our terms accept it (Lei 14.063 art. 4 II), but no API was found, so it is manual at first. (B) A KYC vendor such as Didit (free up to 500 full KYCs/month), but the selfie is sensitive biometric data. **Skip** the Pix R$0,01 trick and a direct Serpro contract.
+4. **Two realistic proof paths for Tier 2.** (A) A gov.br-signed declaration (prata/ouro), validated at validar.iti.gov.br: free, and acceptable if our terms of use accept it (MP 2.200-2 art. 10 §2), but no API was found, so it is manual at first. *Corrected 2026-10-12:* the earlier basis was Lei 14.063 art. 4 II, but its art. 2, parágrafo único, II "a" excludes interactions between private parties. (B) A KYC vendor such as Didit (free up to 500 full KYCs/month), but the selfie is sensitive biometric data. **Skip** the Pix R$0,01 trick and a direct Serpro contract.
 5. **Draft prices not supported:** Serpro "~$0.30" and Didit "$0.33". Didit list is $0.15 + $0.10 + $0.05 = $0.30. Serpro Consulta CPF bands are R$0.26-0.66 per query [~]. Datavalid is não público (not readable).
 6. **Hashes:** CPF and phone numbers have only ~10^9-10^10 possible values, so an unkeyed hash is reversible in minutes. Use **HMAC-SHA256 with secret keys kept outside the DB**. It is still personal data under LGPD.
 7. **Guest pins** are held for moderation and excluded from the scoreboard until 2 distinct verified neighbours confirm.
@@ -40,7 +48,7 @@
 | **Phone code, SMS** | same | same | None | US$0.0599 ≈ R$0.31/msg [✔ Twilio list]; local aggregators: não público | ~10-30 s | `phone_hmac` | Low |
 | **Guest (no ID)** | None | None | None (pin point only) | R$0 | lowest | edit-token hash | Low; heavy moderation load |
 | **gov.br Login Único** | High | High | Low | n/a | n/a | n/a | **Not available** to private projects [✔] |
-| **A. gov.br-signed declaration** (ITI validator) | High (prata = bank-validated; ouro = facial biometrics [~]) | High (`cpf_hmac`) | None | R$0 | High (several steps; no API found, manual check) | `cpf_hmac` only | Low-Med; Lei 14.063 art. 4 II allows acceptance by the parties [✔] |
+| **A. gov.br-signed declaration** (ITI validator) | High (prata = bank-validated; ouro = facial biometrics [~]) | High (`cpf_hmac`) | None | R$0 | High (several steps; no API found, manual check) | `cpf_hmac` only | Low-Med; acceptance by the parties under MP 2.200-2 art. 10 §2 [✔] (corrected: Lei 14.063 art. 4 II excludes private-party interactions, art. 2, parágrafo único, II "a") |
 | **B. KYC vendor** (Didit: doc + selfie) | High | High (doc-number hash) | Low (document address not guaranteed) | Free ≤500 full KYC/month, then US$0.30 list [✔] | 1-3 min | `cpf_hmac`; **vendor** holds face data | Med-High: biometrics are sensitive (LGPD Art. 5 II); DPA/hosting [não verificado] |
 | **Serpro Datavalid / Consulta CPF direct** | Medium (data match, no possession proof) | Medium | None | Consulta CPF R$0.26-0.66 [~]; Datavalid não público | Needs contract; eligibility [não verificado] | n/a | High; name/DoB/CPF are not secret |
 | **Pix R$0,01** | Medium (bank-KYC'd payer) | Medium (receipts show CPF masked [~]) | None | ~R$0 + a payment account [não verificado] | Medium | name + masked CPF (more than needed) | Medium; no primary source on bank terms: **skip** |
@@ -218,13 +226,16 @@ cpf_hmac   = HMAC-SHA256(K_cpf[v],   "fc:cpf:v1|"   + 11_digits)
 - **Fines:** Art. 52 II: up to 2% of Brazilian revenue, **capped at R$50M per infraction** [✔]. How the base applies to a non-profit with no revenue is [não verificado].
 - **Logs:** Marco Civil Art. 15 obliges *organised, professional, for-profit* legal entities to keep access logs for 6 months. Others only by court order (§1) [✔]. A volunteer project is probably outside the caput [jurídico a confirmar]. Keep IP logs to a short window and document the choice. The draft's "never log IP" is a policy choice, not a legal requirement.
 - **Minors:** the ECA Digital (Lei 15.211/2025, in force 2026-03-17; Decreto 12.880/2026) applies to services "likely accessed" by minors, and the forum probably is [~]. Use an 18+ declaration plus counsel review of age-assurance duties.
-- **Electronic signatures:** Lei 14.063 art. 4 II lets private parties accept advanced signatures [✔].
+- **Electronic signatures:** MP 2.200-2 art. 10 §2 lets parties accept other means of proving authorship and integrity, including certificates not issued by ICP-Brasil, such as gov.br's [✔]. Put that acceptance in the terms of use. *Corrected 2026-10-12:* Lei 14.063 art. 4 II does not apply directly between private parties (its art. 2, parágrafo único, II "a").
 
 ---
 
 ## 8. Next steps
 
 1. **Spike (1-2 days):** 5 real gov.br prata/ouro users sign the nonce PDF; test validar.iti.gov.br and whether the CPF is readable. Decide A.
+   - *Round 18:* this is the path A pilot, and it starts with one PDF signed by the founder.
+   - It validates PAdES, the chain, revocation, the signed revision, `userId`, the nonce and the expiry.
+   - A goes on only if the certificate's full CPF matches the declared one.
 2. **Spike:** WhatsApp Business account via a BSP for an unincorporated group, plus real BSP markup. Fallback: SMS-only or reverse-OTP.
 3. **Prefeitura:** send the section 5 request to Gabinete/Ouvidoria; ask about the public attestation.
 4. **Counsel (1 h):** items in section 7 + D2.
@@ -252,7 +263,7 @@ cpf_hmac   = HMAC-SHA256(K_cpf[v],   "fc:cpf:v1|"   + 11_digits)
 | "CPF 216.8M vs 212.6M population" | TCU: **~216M** regular CPFs vs **~203M** (Census 2022; 203,080,756) = ~13M surplus, many deceased CPFs still active. 212.6M was a 2024 *estimate*, so the draft mixed years. Ratio ≈ 1.06, not 1.02. "98-99% adult coverage" and "95% Datavalid match": [não verificado] | https://portal.tcu.gov.br/imprensa/noticias/tcu-audita-base-de-cadastro-de-pessoas-fisicas-da-receita-federal/ [✔] |
 | Reclame Aqui "monthly CNPJ + biometric" | **Half right.** Initial biometric of a sócio/representante legal; monthly *automated* CNPJ/Receita check + reputation + security checks. No monthly biometric | https://manual.reclameaqui.com.br/ra-verificada [✔] |
 | Colab "e-mail only, no CPF" | **Contradicted** by 2021 press: name, CPF, e-mail, address; CPF and e-mail mandatory. Current app [não verificado]. Prefeituras use a monitoring panel [~] | https://www.conexaoto.com.br/2021/10/22/rede-social-da-prefeitura-de-palmas-colab-ganha-adesao-da-populacao |
-| gov.br-signed PDF via validar.iti.gov.br: feasible/lawful? | **Lawful:** advanced signatures valid when the parties accept them (Lei 14.063 art. 4 II) [✔]. **Feasible but manual:** validator checks ICP-Brasil and GOV.BR signatures, no API mentioned; "nenhuma informação ou arquivo são armazenados" [✔]. Signer needs prata/ouro; cert valid 1 year [✔]. The *signing* integration API is public-bodies-only [✔]. CPF in cert: [não verificado] | https://validar.iti.gov.br ; https://www.gov.br/iti/pt-br/assuntos/assinatura-eletronica-avancada ; https://manual-integracao-assinatura-eletronica.servicos.gov.br/pt-br/latest/iniciarintegracao.html ; https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14063.htm |
+| gov.br-signed PDF via validar.iti.gov.br: feasible/lawful? | **Lawful:** advanced signatures valid when the parties accept them (MP 2.200-2 art. 10 §2; corrected from Lei 14.063 art. 4 II, which excludes private-party interactions) [✔]. **Feasible but manual:** validator checks ICP-Brasil and GOV.BR signatures, no API mentioned; "nenhuma informação ou arquivo são armazenados" [✔]. Signer needs prata/ouro; cert valid 1 year [✔]. The *signing* integration API is public-bodies-only [✔]. CPF in cert: [não verificado]. Third-party code reads it in clear from SubjectAltName OID 2.16.76.1.3.1 (birth date + CPF). The gov.br chain is its own PKI (Raiz, Intermediária, AC Final do Governo Federal v1), not ICP-Brasil, with a public CRL. To be tested on a real signed PDF (DECISIONS round 18, path A pilot). | https://validar.iti.gov.br ; https://www.gov.br/iti/pt-br/assuntos/assinatura-eletronica-avancada ; https://manual-integracao-assinatura-eletronica.servicos.gov.br/pt-br/latest/iniciarintegracao.html ; https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14063.htm |
 | Pix R$0,01 legality / bank terms | **No primary source found** either way: [não verificado]. Receipts show payer CPF masked (***.XXX.XXX-**) [~]. The draft's "BCB Normative nº 491" came from a Feedzai blog; press attributes the R$200/R$1,000 unregistered-device limits to **Res. BCB 403/2024**; irrelevant at R$0.01. Dropped | search results; https://www.feedzai.com/blog/bcb-normative-no-491-how-brazil-can-strengthen-pix-fraud-prevention/ |
 | Breach = "LGPD Art. 17" | **Wrong.** Art. 17 = titularidade; breach = **Art. 48** ("prazo razoável" set by ANPD) | https://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm [✔] |
 | Breach: "ANPD in 3 working days, users in 20 days" | **Wrong on users.** Res. CD/ANPD 15/2024: 3 business days to ANPD **and** titulares; complementary info up to 20 business days; incident record kept 5 years; small-scale agents x2 | search results (cnbsp.org.br, confidata.com.br); primary text not read [~] |

@@ -6,11 +6,14 @@
 
 ## TL;DR
 
-1. **Public pseudonym + private phone fits CF art. 5º IV** if you can identify authors on court order (STJ REsp 1.193.764/SP): keep the phone encrypted, plus IP/port logs. A CPF hash identifies nobody. Guest pins: log IPs; publish only once confirmed.
+1. **Public pseudonym + private phone fits CF art. 5º IV** if the platform keeps the minimum data needed to help identify an author under a legally valid request (STJ REsp 1.193.764/SP): keep the phone encrypted, plus IP/port logs. A CPF hash identifies nobody. Guest pins: log IPs; publish only once confirmed. *Wording per DECISIONS round 18:* these records let connections be correlated; they cannot guarantee that a person is identified. A phone identifies a line, and an IP may be shared (a home, a public network, CGNAT).
 2. **STF Temas 987/533 (final thesis 17/06/2026):** honour offences still need a court order; other illicit content brings solidary liability after notice; "falha sistêmica" covers a closed list of grave crimes. Self-regulation, a notice channel and annual reports are required; no express small or non-profit carve-out.
 3. **MCI art. 15 is no safe "exemption":** it targets organised entities with "fins econômicos", yet courts can order retention anyway (§1). Keep 6 months of logs.
 4. **LGPD already applies to the waitlist.** Res. ANPD 2/2022 can cover an associação or informal group unless high-risk. Breach notice: 3 business days (6 if small).
-5. **Ouvidoria:** file as FalaCanoas; Lei 13.460 art. 16 gives the identified manifestante 30+30 days. Start the scoreboard clock at the Prefeitura's protocol.
+5. **Ouvidoria:** file as FalaCanoas; Lei 13.460 art. 16 gives the identified manifestante 30+30 days. *Decided in DECISIONS round 18:*
+   - The public clock still counts from the send time (`enviadoEm`), as round 5 decided.
+   - A separate legal-deadline mark counts from the protocol (`protocoladoEm`) when there is one.
+   - A protocol is evidence of receipt, not the act that creates the duty.
 6. **Scoreboard:** órgão-level, factual, documented; never individuals.
 7. **Images:** blur faces and plates publicly.
 8. **Age:** 18+; ECA Digital in force since 17/03/2026.
@@ -21,9 +24,17 @@
 
 ## 1. Assumptions (decisions already taken)
 
-- Public scoreboard of days open by bairro/category/secretaria. Clock starts when FalaCanoas notifies the Prefeitura (per pin or daily digest to the Ouvidoria). The Prefeitura may get a verified account to reply on pins.
-- Public identity = pseudonym + bairro. Phone code (WhatsApp/SMS) to post; stronger proof unlocks confirming, voting and the forum. CPF optional, stored only as a hash.
-- Guests may drop pins; they are held for moderation and do not count on the scoreboard until a verified neighbour confirms.
+*Updated to DECISIONS round 18 (2026-10-12).*
+
+- **Scoreboard:** a public scoreboard of days open by bairro, category and secretaria.
+  - The clock starts when FalaCanoas notifies the Prefeitura, in the daily digest to the Ouvidoria. A separate legal-deadline mark counts from the protocol.
+  - The Prefeitura may get a verified institutional account. It never sees authors' identity and never edits community items.
+- **Public identity:** an apelido and a bairro, or "Anônimo em público" per item.
+  - A phone code (WhatsApp/SMS) is enough to post, confirm, comment and close. Optional civil identity never gates any of that.
+  - The CPF is optional, used only for uniqueness, and stored only as an HMAC after a proof of ownership.
+  - Civil identity (nível 2) is not in the MVP.
+- **Guests:** they may drop pins. Their pins are held for moderation and don't count on the scoreboard until two independent confirmations.
+- **Identity storage:** identity data sit in a separate vault. The phone is encrypted, and access logs are kept 6 months.
 - The landing page collects sign-ups by bairro, so personal data is collected from day one.
 
 ---
@@ -42,7 +53,7 @@
   - A CPF hash only confirms a CPF someone already suspects; it cannot reveal an unknown author. It is still personal data (pseudonymised; LGPD art. 5º I and art. 13 §4, S3).
   - Disclosure only on court order: MCI art. 10 §1 and art. 22 (S2). Administrative authorities may request *dados cadastrais* (qualification, filiação, address) under art. 10 §3; you hold none of these if you only keep a phone number.
   - Do not market the service as "anonymous".
-- CP art. 339 §1 raises the penalty by one sixth when the agent uses "anonimato ou nome suposto" in a knowingly false accusation (S4). The law treats a shielded identity as aggravating, which is another reason to stay traceable.
+- CP art. 339 §1 raises the penalty by one sixth when the agent uses "anonimato ou nome suposto" in a knowingly false accusation (S4). The law treats a shielded identity as aggravating, which is another reason to stay traceable. *Context:* art. 339 is denunciação caluniosa and needs its specific elements; it does not reach every pseudonymous report about the city.
 - Electoral period: Lei 9.504 art. 57-D forbids anonymity in internet campaigning (S9). How the TSE treats pseudonyms [não verificado; TSE site returned HTTP 403].
 - Whether a phone number leads to a person depends on SIM registration rules [não verificado].
 - **Guest pins held for review:**
@@ -211,6 +222,14 @@ Holdings (S22; the thesis' own item numbers are given in parentheses):
 - **Decreto 8.771 art. 13 §2:** keep as little personal data as possible and delete it as soon as the purpose is met or a legal deadline ends. **Art. 15-A** (added by Decreto 12.975/2026): the IP-log duty under arts. 13 and 15 includes the source *porta lógica* when needed to identify the terminal; it falls on each provider and does not depend on a request (S13).
 - **MCI art. 16** bans logging other applications without consent and holding personal data excessive to the purpose.
 - **Conclusion:** do not rely on "exemption". Keep a minimal, secured 6-month log (the cost is low and it supports the STJ identification standard). Delete on schedule. The longer-term retention of identification tied to a post is a separate question: CC art. 206 §3 V sets a three-year period for civil reparation claims (S5), a reference point for the lawyer.
+- **Where the 6 months come from:** MCI art. 15 caput. A secondary source says Decreto 12.975/2026 sets no retention period of its own [~ S36].
+- **Preservation requests:** art. 15 §2 refers to art. 13 §§3-4. The requesting authority has 60 days to seek a court order for access. If it doesn't, or the order is refused, the request lapses. Release always needs a court order.
+  - Decided in DECISIONS round 18: deletion is suspended only selectively, with grounds, scope, start and end documented, and never indefinitely on an administrative request.
+- **How we capture it (DECISIONS round 18):**
+  - The Worker doesn't receive the client port natively. A Transform Rule copies `cf.edge.client_port` into a request header, together with the edge IP and port and the transport.
+  - The record is made on sign-ins and writes only (publications, confirmations, comments, guest pins), never on reads.
+  - Under HTTP/2 and HTTP/3 many requests share one port, so the record keeps a millisecond timestamp.
+  - A blocking test on the real domain must pass before launch. The fallback is Logpush `http_requests` (`ClientSrcPort`), available on every plan since 2026-09-30 (S37, S38).
 
 ---
 
@@ -272,6 +291,12 @@ Holdings (S22; the thesis' own item numbers are given in parentheses):
 
 **For FalaCanoas:** keep to "removal on notice, immediately for electoral content orders". Do not amplify political content. Moderate electoral propaganda out. Place a neutrality notice during campaigns. Disable boosting. A lawyer should read art. 9-E's "imediata" for a very small provider.
 
+**Moderation rule (DECISIONS round 18).** In every relevant campaign period, 2026 included:
+- Content classified as electoral propaganda can't be published as "Anônimo em público". Moderation removes it, or asks for it to be republished in a lawful form.
+- Moderation decisions can be contested.
+- A report about a public service is not propaganda just because it hurts an administration.
+- A pseudonym is not assumed sufficient under art. 57-D until counsel reviews it.
+
 ---
 
 ## 7. Entity form and licence
@@ -287,15 +312,41 @@ Holdings (S22; the thesis' own item numbers are given in parentheses):
 
 1. **STF thesis scope:** are we within items 7-10 (self-regulation, channels, representative) or within 3.4(d)? Does the "over one million registered users" limit reported on 11/06/2026 appear in the minutes or acórdão? Has the ANPD issued criteria under Decreto 12.975 art. 16-P?
 2. **Pre-moderation:** does holding and approving guest pins change our liability posture or our "no prior knowledge" position? Would publish-then-moderate for verified users and hold-for-guests be safer?
-3. **Logs and identification:** is a registered associação outside MCI art. 15 "fins econômicos"? Do donations, ads or a service contract with the Prefeitura change that? How do STJ REsp 1.193.764 and MCI art. 17 interact? How long may we keep identification data (CC art. 206 §3 V)?
-4. **LGPD:** is consent enough for the waitlist? Do the elderly-data and "large scale" criteria remove us from Res. 2/2022? Do we need a risk-impact report? Should we name an encarregado anyway?
+3. **Logs and identification:**
+   - Is a registered associação outside MCI art. 15 "fins econômicos"? Do donations, ads or a service contract with the Prefeitura change that?
+   - How do STJ REsp 1.193.764 and MCI art. 17 interact?
+   - How long may we keep identification data (CC art. 206 §3 V)?
+   - Is the round 18 wording right: we keep the minimum data to *help* identify an author under a valid request, without promising identification?
+4. **LGPD:**
+   - Is consent enough for the waitlist?
+   - Do the elderly-data and "large scale" criteria, or the potentially high-risk processing (identity, location, photos, possible political opinion), remove us from Res. 2/2022? Until that's confirmed we follow the general deadlines, including art. 19's 15 days.
+   - What should the RIPD cover? Round 18 requires one before any CPF, selfie or biometric data.
+   - Should we name an encarregado anyway?
+   - Is the data-subject procedure in round 18 adequate? It includes a public channel for people without an account and asks for no identity documents by default.
 5. **Ouvidoria:** under Decreto 434/2019 and Fala.BR, can a legal entity file as manifestante, can it file per pin, and will the Prefeitura reply to it? What exact consent or authorisation text should we use for sharing identity?
 6. **Scoreboard:** wording review; can a *órgão* or the Município be the victim of honour offences or claim *dano moral*; election-year handling; correction and right-of-reply procedure.
 7. **Images:** legitimate-interest assessment template; are licence plates personal data; liability for "blurred but still identifiable" images; servants' conduct reports.
-8. **Minors:** is the service "de acesso provável" under ECA Digital; is a self-declared 18+ gate enough; status of ANPD guidance.
-9. **Elections:** how to read art. 9-E "imediata" for a tiny provider; pseudonyms and Lei 9.504 art. 57-D; effect of Lei 9.504 art. 73 VI b on a verified Prefeitura account.
-10. **Entity:** statute clauses (non-economic purposes, funding sources); who is the "representante" under item 10; directors' exposure (CC art. 50; LGPD art. 42); contract with the Prefeitura vs informal cooperation.
+8. **Minors (launch condition, DECISIONS round 18):**
+   - Is the service "de acesso provável" under the ECA Digital?
+   - Are the two `/bem-vindo` confirmations (18+, privacy notice read) enough, or what proportionate age assurance is required? The ANPD's preliminary guidance calls self-declaration alone low-reliability.
+   - What is the status of the ANPD's age-assurance guidance?
+9. **Elections:**
+   - How should art. 9-E "imediata" be read for a tiny provider?
+   - Do pseudonyms satisfy Lei 9.504 art. 57-D, and is the round 18 moderation rule (no "Anônimo em público" for electoral propaganda, with contestation) adequate?
+   - What effect does Lei 9.504 art. 73 VI b have on a verified Prefeitura account?
+10. **Entity (reverses round 6, per DECISIONS round 18):** an associação is a prerequisite for the user-content launch and for any civil verification; the waitlist can run before it.
+    - Which statute clauses do we need (non-economic purposes, funding sources), and what governance and duties?
+    - Who is the "representante" under item 10 and under Decreto 8.771 art. 16-A?
+    - What is the directors' exposure (CC art. 50; LGPD art. 42)?
+    - Contract with the Prefeitura, or informal cooperation?
 11. **Transfers:** which vendors will sign the ANPD standard clauses; Brazilian-region hosting; SMS/WhatsApp provider role and location.
+12. **Electronic signatures (civil identity, path A):**
+    - Is accepting gov.br advanced signatures through our terms of use valid under MP 2.200-2 art. 10 §2 (S39)?
+    - This is the basis to rely on, not Lei 14.063 art. 4 II: Lei 14.063 art. 2, parágrafo único, II "a" excludes interactions between private parties (S40).
+    - Is reading the CPF from the signer's certificate to check uniqueness (keeping only an HMAC) proportionate?
+13. **Recycled phone numbers:**
+    - After 180 days without a sign-in, an account can only be reopened with a passkey (DECISIONS round 18). Anatel keeps released numbers unassigned for at least 6 months (S41).
+    - Is that acceptable under consumer and data-subject rules, given that the person may lose the old account?
 
 ---
 
@@ -403,6 +454,12 @@ Holdings (S22; the thesis' own item numbers are given in parentheses):
 - S33 STJ news on REsp 1.449.082: https://www.stj.jus.br/sites/portalp/Paginas/Comunicacao/Noticias-antigas/2017/2017-04-10_09-11_Negada-indenizacao-a-manifestante-que-teve-foto-estampada-em-jornal.aspx
 - S34 STJ REsp 1.193.764/SP: located through the STJ SCON search (https://scon.stj.jus.br/jurisprudencia/externo/informativo/, search "REsp 1193764"); holding as summarised there; full text not reopened.
 - S35 Artigo 19, technical note on Res. TSE 23.755/2026 (quotes the amended text of Res. 23.610): https://artigo19.org/wp-content/blogs.dir/24/files/2026/03/NOTA_TSE2026-VF.pdf ; TSE compiled text (not accessible, HTTP 403): https://www.tse.jus.br/legislacao/compilada/res/2026/resolucao-no-23-755-de-2-de-marco-de-2026
+- S36 Migalhas, "Decreto 12.975/26: por que o IP já não basta para identificar o usuário" (secondary; CGNAT and source port): https://www.migalhas.com.br/depeso/458172/decreto-12-975-26-por-que-o-ip-ja-nao-basta-para-identificar-o-usuario
+- S37 Cloudflare, Request Header Transform Rules, fields usable in dynamic values (`cf.edge.client_port`, `cf.edge.server_ip`, `cf.edge.server_port`, `cf.ray_id`): https://developers.cloudflare.com/rules/transform/request-header-modification/reference/fields-functions/ ; Cloudflare HTTP headers (no port header by default): https://developers.cloudflare.com/fundamentals/reference/http-headers/
+- S38 Cloudflare Logpush `http_requests` dataset (`ClientSrcPort`, `RayID`, `EdgeStartTimestamp`): https://developers.cloudflare.com/logs/logpush/logpush-job/datasets/zone/http_requests/ ; changelog "Logpush is now available on all plans" (30/09/2026): https://developers.cloudflare.com/changelog/post/2026-09-30-logpush-usage-based-pricing/
+- S39 MP 2.200-2/2001, art. 10 §2 (other means of proving authorship and integrity, including certificates not issued by ICP-Brasil, when accepted by the parties): https://www.planalto.gov.br/ccivil_03/mpv/antigas_2001/2200-2.htm
+- S40 Lei 14.063/2020 (art. 2, parágrafo único, II "a"; art. 4 II): https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2020/lei/l14063.htm
+- S41 Anatel, Ato nº 12.712/2024, Anexo I, item 22.1 (released numbers not reassigned for at least 6 months): https://informacoes.anatel.gov.br/legislacao/component/content/article/154-atos-de-numera%C3%A7%C3%A3o/2140-ato-12712
 
 ---
 
