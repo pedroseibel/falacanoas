@@ -68,7 +68,7 @@ function RadioGroupTile({ className, ...props }: RadioPrimitive.Root.Props) {
     <RadioPrimitive.Root
       data-slot="radio-group-tile"
       className={cn(
-        "flex min-h-12 cursor-pointer items-center gap-2.5 rounded-lg border border-hairline bg-card px-3 py-2 text-left text-sm leading-tight font-medium text-ink-2 transition-colors outline-none hover:border-hairline-strong hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-signal-text data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground [&_svg]:shrink-0",
+        "flex min-h-12 cursor-pointer items-center gap-2.5 rounded-lg border border-hairline bg-card px-3 py-2 text-left text-sm leading-tight font-medium text-ink-2 transition-colors outline-none not-data-checked:hover:border-hairline-strong not-data-checked:hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-signal-text data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground [&_svg]:shrink-0",
         className,
       )}
       {...props}
