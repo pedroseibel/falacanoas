@@ -172,6 +172,11 @@ components:
     rounded: "{rounded.ctl}"
     padding: "0 14px"
     height: "48px"
+  code-slot:
+    backgroundColor: "{colors.panel}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.ctl}"
+    height: "56px"
   channel-segment:
     backgroundColor: "{colors.panel-2}"
     textColor: "{colors.ink-3}"
@@ -194,6 +199,18 @@ components:
     rounded: "{rounded.pill}"
     padding: "5px 10px"
   choice-chip-selected:
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.paper}"
+  choice-chip-app:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.pill}"
+    padding: "0 10px"
+    height: "24px"
+  choice-chip-app-touch:
+    padding: "0 14px"
+    height: "36px"
+  choice-chip-app-selected:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
   panel:
@@ -301,7 +318,7 @@ A cool-neutral grey scale with a faint blue cast, plus one saturated orange take
 Weights in use are 400, 500 (table names, tabs, list names, counters) and 600 (headings, labels, buttons).
 
 ### Named Rules
-**The Measurement Rule.** Geist Mono with tabular figures is for things that are measured: counts, days, dates, codes, footnote markers. Words stay in Geist.
+**The Measurement Rule.** Geist Mono with tabular figures is for things that are measured: counts, days, dates, codes, footnote markers. Words stay in Geist. Mono is for standalone measurements; an identifier inside running text (the masked phone number in a sentence) stays Geist with tabular figures, because mono breaks the line's rhythm.
 
 **The Sentence-Case Rule.** No uppercase, no letter-spaced labels and no eyebrow kickers above headings. Section heads are a headline and a paragraph. The only numbered markers are the four loop steps.
 
@@ -334,7 +351,7 @@ The corners are soft and concentric. Stages are 28px, the panels inside them 18p
 ### Buttons
 Quiet, exact, 48px tall.
 - **Shape:** gently rounded (11px; small size 38px tall at 9px).
-- **Primary:** Bus-Shelter Orange fill, ink label at 600, 0 20px padding, primary bevel. In the hero it grows to 52px; in the signup form it is full width at 54px. Carries a leading WhatsApp icon or a trailing arrow.
+- **Primary:** Bus-Shelter Orange fill, ink label at 600, 0 20px padding, primary bevel. In the hero it grows to 52px; in the signup form it is full width at 54px; in the sign-in column it is full width at 52px. Carries a leading WhatsApp icon or a trailing arrow. The orange paints out to the border edge, under the transparent 1px border, so a full-width button lines up exactly with the fields above it.
 - **Hover / Focus / Active:** hover moves to Shelter Orange Deep. Active nudges down 1px. Focus is a 2px ink outline at 3px offset. A loading state dims the label and shows a 16px spinner. Disabled sits at 55% opacity.
 - **Ghost:** transparent with a Hairline Strong border and ink label. On hover it takes Panel Recess with Hairline Firm. It is used for the header CTA and the share actions, with a leading 17px stroke icon.
 - **Ink:** ink fill with a paper label. It appears only inside mock product UI (the composer's "Enviar").
@@ -342,6 +359,7 @@ Quiet, exact, 48px tall.
 ### Chips
 - **Exemplo chip:** a mono 11px pill with Hairline Strong border, Slate text and panel fill. It sits at the right of every mock panel bar, or over a photo at 88% panel.
 - **Choice chips (mock):** 12px Geist pills. Unselected is panel with graphite text; selected is inverted to ink fill with paper text.
+- **Choice chips (app):** full pills, 24px tall with 12px Geist for a mouse, 36px with 14px text on touch or narrow screens. Unselected is paper with a Hairline Strong border and an ink label, Panel Recess on hover. Selected inverts to ink fill with a paper label. They are toggles (pressed state) under a field, for suggestions such as apelidos.
 - **Badge:** a mono 11px tag at 6px radius for inline verification marks.
 
 ### Cards / Containers
@@ -353,6 +371,7 @@ Quiet, exact, 48px tall.
 - **Style:** 48px (52px in the hero), 11px radius, Hairline Strong border, panel fill, 1rem Geist, 14px inset. The native select carries a custom chevron at 14px from the right.
 - **Focus:** the border turns ink with a 3px ring of ink at 14%.
 - **Error:** the border and a 13px message turn Shelter Orange Text.
+- **Code entry:** six separate 56px boxes that share the column's full width with 8px gaps, each 11px radius on panel fill with a Hairline Strong border, one Geist Mono digit at 1.5rem with tabular figures. The current box takes an ink border on all four sides and the 3px ring of ink at 14%. Errors turn the borders Shelter Orange Text.
 - **Checkbox:** 20px at 6px radius with a Hairline Firm border. Checked is an ink fill with a paper tick.
 
 ### Segmented Channel Control
@@ -369,6 +388,9 @@ A panel with a 4:3 credited photo (exemplo chip overlaid), a 12px category line,
 
 ### Scoreboard Ruler
 A 22px track with 12 hairline ticks masked to the bottom 7px. An 8px ink fill with 2px radius marks the median days. A 1px Slate reference line marks 30 days, labelled in 10px mono. Fills past the deadline switch to orange at the cut. In tables, numbers are right-aligned mono and names are ink 500.
+
+### Step Ruler
+The sign-in stepper, a variant of the Scoreboard Ruler. It is 18px tall with 13 marks on twelfths, each a 1px box that ends exactly on its position (the first starts on it), so every mark, the line and the needle snap to one pixel grid. Every fourth mark is a 12px step mark in Hairline Firm; the others are 6px minor ticks in Hairline Strong, over a 1px Hairline Strong baseline. Progress is a 2px ink line that ends under a 2px by 18px ink needle resting on the middle tick of the current step, or on the last tick when done. Line and needle move together over 0.7s with the house easing and pick up where the previous page stopped; under reduced motion they jump. Below, three 13px labels sit flush with the step marks: past steps in graphite with a leading check, the current step in ink 500, later steps in Slate. It uses a 2px line and a needle instead of the Scoreboard Ruler's 8px rounded fill because a rounded fill cannot end cleanly on a tick.
 
 ### Bairro Queue List
 Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500), a right-aligned mono queue count, and a 20-slot meter of 12px cells at 2px radius on Panel Well, filled with ink as neighbours join. Hover takes Panel Recess. The selected row gets Shelter Orange Wash, orange lit slots and an orange count.
