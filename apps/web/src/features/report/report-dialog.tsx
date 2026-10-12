@@ -111,7 +111,7 @@ async function share(item: Item) {
 
 function ReportDone({
   muni,
-  done: { item, digest, persisted },
+  done: { item, digest },
   phone,
   head,
   onView,
@@ -142,12 +142,11 @@ function ReportDone({
             <b className="font-medium text-foreground">{item.title}</b> · {whereOf(item, muni)}
           </p>
         </div>
-        {!persisted && (
-          <p className="rounded-xl border border-dashed border-hairline-strong px-3.5 py-2.5 text-caption text-ink-2">
-            Protótipo: o registro fica só neste servidor de teste e some quando ele reinicia. Nenhum resumo é enviado à
-            Prefeitura ainda.
-          </p>
-        )}
+        {/* Until the digest service runs (research/BUILD.md, 3.1), nothing reaches the Prefeitura. */}
+        <p className="rounded-xl border border-dashed border-hairline-strong px-3.5 py-2.5 text-caption text-ink-2">
+          Protótipo: o registro fica salvo, mas o resumo diário ainda não vai à Prefeitura. O relógio só começa quando
+          ele for enviado.
+        </p>
       </div>
       <div
         className={cn(

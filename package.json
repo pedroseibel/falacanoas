@@ -15,7 +15,8 @@
     "lint": "oxlint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "db:generate": "bun --filter @fala/web db:generate",
-    "db:migrate": "bun --filter @fala/web db:migrate"
+    "db:migrate": "bun --filter @fala/web db:migrate",
+    "db:seed": "bun --filter @fala/web db:seed"
   },
   "workspaces": [
     "apps/*",

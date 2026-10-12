@@ -21,6 +21,7 @@ bun run format         # prettier
 bun run typecheck      # tsc (TypeScript 7, native) in every workspace
 bun run db:generate    # drizzle-kit: SQL migration from src/server/db/schema.ts (add --custom for hand-written SQL)
 bun run db:migrate     # apply migrations to DATABASE_URL (Supabase, São Paulo)
+bun run db:seed        # replace the demo items (demo = true) with the fixtures; real reports are untouched
 ```
 
 First run: copy `apps/web/.dev.vars.example` to `apps/web/.dev.vars` and fill `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `DATABASE_URL` and the Supabase keys.
@@ -30,7 +31,7 @@ The landing page is the web app's `/` route; the app's map is `/mapa`. The stati
 ## Layout
 
 - `packages/core` (`@fala/core`): domain only. Zod schemas and inferred types; the event-sourced item model; the two status axes (community vs public authority); geo and format helpers. No React, no I/O.
-- `instances/canoas` (`@fala/instance-canoas`): the municipal instance, versioned as config (`defineMunicipality`): categories, agencies, bairros, geo, branding. `./fixtures` holds fictional demo data, validated with the core schemas.
+- `instances/canoas` (`@fala/instance-canoas`): the municipal instance, versioned as config (`defineMunicipality`): categories, agencies, bairros, geo, branding. `./fixtures` holds fictional demo data, validated with the core schemas; `db:seed` loads its items as rows marked `demo`, which the UI labels "exemplo".
 - `apps/web` (`@fala/web`): TanStack Start on Cloudflare Workers. `/` is the landing page (`features/landing`: the bairro queue sign-up); the app lives under `/mapa`, `/o/$id`, `/placar`, `/bairro/$slug`, `/voce`. Accounts: Better Auth (`src/server/auth.ts`, mounted at `/api/auth/$`; in memory until the database is connected). In development, sign-in codes are not sent: the dialog shows them.
 - **Standalone backend services**, when one is needed (the WhatsApp webhook, the 18h digest job, the public open-data API): **Elysia** on Bun. Don't add them to `apps/web`.
 
@@ -39,7 +40,7 @@ The landing page is the web app's `/` route; the app's map is `/mapa`. The stati
 - **No `useEffect`.** Use derived state, event handlers, TanStack Query or Store, keyed remounts, React 19 ref callbacks, or `useMountEffect` (`apps/web/src/hooks/use-mount-effect.ts`), the only file allowed to import `useEffect`.
 - **No `as` type assertions** (`consistent-type-assertions: never`). Use type guards, `satisfies`, or Zod parsing. JSON imports are parsed with the core schemas, never cast.
 - **Thin routes, feature-first UI.** `apps/web/src/routes/` only holds `createFileRoute`, loaders, `head`, search validation (Zod adapter) and small adapters that pass params and search as props. Product UI lives in `apps/web/src/features/<domain>/`. Feature modules must not call `createFileRoute`, `Route.use*`, `useParams` or `useSearch`.
-- **All data access goes through server functions** (`apps/web/src/server/`), on Supabase Postgres (São Paulo) with Drizzle (`src/server/db/`). App tables live in the `fala` schema, which the Data API doesn't expose; RLS on, no grants to `anon`/`authenticated`. The browser never talks to Supabase. Use `db()` (one connection per request; Workers can't share sockets).
+- **All data access goes through server functions** (`apps/web/src/server/`), on Supabase Postgres (São Paulo) with Drizzle (`src/server/db/`). App tables live in the `fala` schema, which the Data API doesn't expose; RLS on, no grants to `anon`/`authenticated`. The browser never talks to Supabase. Use `db()` (one connection per request; Workers can't share sockets). Rows store instants; readings like "43 dias" are computed when read (`src/server/items-model.ts`). Photos go to the private `fotos` bucket in Supabase Storage, server-side with the secret key, and are served by `/api/fotos/$key`.
 - **UI primitives:** shadcn/ui on **Base UI** (`components.json` style `base-nova`). Add components with `bunx --bun shadcn@latest add <name>`. Theme variables map onto the DESIGN.md tokens in `src/styles/globals.css`; don't introduce raw colors. Ink is `primary`. Orange is the `signal` variant, reserved for the main action, the clock and the selected place (the DESIGN.md Three Places Rule).
 - **TanStack everywhere it fits:** Router/Start, Query (server state), Store (client state shared with imperative surfaces such as the map), Table (Placar and lists), Virtual (long rails), Form (report flow), Pacer (debounce), Charts (`@tanstack/charts` + `/react`).
 - **Charts follow the dataviz skill.** Validate any palette with its validator before shipping. The neutral ordinal ramp and the meter colors are already validated (see `src/styles/app.css`). Big numbers use sans with proportional figures; mono and `tabular-nums` only for aligned columns.

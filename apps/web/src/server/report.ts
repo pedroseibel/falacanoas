@@ -1,22 +1,11 @@
-import {
-  confirmationStatus,
-  confirmItem,
-  dateAgo,
-  digestDay,
-  isOpen,
-  itemFromReport,
-  newItemId,
-  reportSchema,
-  stripImageMetadata,
-  type Item,
-} from "@fala/core";
+import { digestDay, itemFromReport, newItemId, reportSchema, stripImageMetadata, type Item } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
-import { fixtures } from "@fala/instance-canoas/fixtures";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
+import { createdSince, insertItem, itemExists, joinItem } from "./items";
 import { markNickPublished } from "./nicks";
+import { putPhoto, removePhotos } from "./photos";
 import { getSession } from "./session";
-import * as store from "./store";
 
 /**
  * The report flow's writes (research/DECISIONS.md, rounds 3, 4, 6 and 15). Posting needs a
@@ -28,9 +17,7 @@ const HOUR = 3_600_000;
 const PER_HOUR = 10;
 
 type Failure = { ok: false; error: string };
-export type ReportResult =
-  | Failure
-  | { ok: true; item: Item; digest: "hoje" | "amanhã"; /** False until the database exists. */ persisted: boolean };
+export type ReportResult = Failure | { ok: true; item: Item; digest: "hoje" | "amanhã" };
 export type JoinResult =
   | Failure
   | {
@@ -54,18 +41,17 @@ async function reporter(): Promise<{ id: string; nick: string; phoneVerifiedAt: 
 }
 
 /** Strips metadata from every photo, then stores them, but only if all of them are images. */
-async function keepPhotos(files: File[]): Promise<string[] | null> {
-  if (files.length > store.photoRoom()) return null;
+async function keepPhotos(files: File[]): Promise<{ keys: string[]; srcs: string[] } | null> {
   const clean = await Promise.all(files.map(async (f) => stripImageMetadata(new Uint8Array(await f.arrayBuffer()))));
-  if (clean.some((image) => !image)) return null;
-  return clean.flatMap((image) => (image ? [store.putPhoto(image.bytes, image.type)] : []));
+  const images = clean.flatMap((image) => (image ? [image] : []));
+  if (images.length !== files.length) return null;
+  const stored = await Promise.all(images.map((image) => putPhoto(image.bytes, image.type)));
+  return { keys: stored.map((p) => p.key), srcs: stored.map((p) => p.src) };
 }
 
-function uniqueId(): string {
-  for (;;) {
-    const id = newItemId(crypto.getRandomValues(new Uint32Array(5)));
-    if (!store.hasItem(id)) return id;
-  }
+async function uniqueId(): Promise<string> {
+  const id = newItemId(crypto.getRandomValues(new Uint32Array(5)));
+  return (await itemExists(id)) ? uniqueId() : id;
 }
 
 const PHOTO_ERROR = "Não deu para ler uma das fotos. Tire outra ou escolha outra da galeria.";
@@ -77,17 +63,21 @@ export const createReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = schema.safeParse(readReportFormData(data));
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." };
-    if (store.createdSince(who.id, HOUR) >= PER_HOUR)
+    if ((await createdSince(who.id, HOUR)) >= PER_HOUR)
       return { ok: false, error: "Você fez muitos registros na última hora. Tente de novo mais tarde." };
     const photos = await keepPhotos(parsed.data.photos);
     if (!photos) return { ok: false, error: PHOTO_ERROR };
     const now = new Date();
-    const item = itemFromReport(parsed.data, canoas, { id: uniqueId(), nick: who.nick, photos, now });
-    store.addItem(item, who.id);
-    // The author's own report never counts as a neighbour's confirmation.
-    store.markConfirmed(item.id, who.id);
+    const id = await uniqueId();
+    const item = itemFromReport(parsed.data, canoas, { id, nick: who.nick, photos: photos.srcs, now });
+    try {
+      await insertItem(item, who.id, now);
+    } catch (e) {
+      await removePhotos(photos.keys);
+      throw e;
+    }
     if (parsed.data.visibility === "pseudonymous") markNickPublished(who.id);
-    return { ok: true, item, digest: digestDay(now, canoas), persisted: false };
+    return { ok: true, item, digest: digestDay(now, canoas) };
   });
 
 /** "Já existe algo parecido": confirm the existing problem and add the photos to its timeline. */
@@ -98,29 +88,25 @@ export const joinReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = JoinSchema.safeParse(readJoinFormData(data));
     if (!parsed.success) return { ok: false, error: "Confira o registro." };
-    const item = store.findItem(parsed.data.itemId);
-    if (!item || item.kind !== "occurrence" || !isOpen(item))
-      return { ok: false, error: "Esse registro não está mais aberto. Publique o seu." };
     const photos = await keepPhotos(parsed.data.photos);
     if (!photos) return { ok: false, error: PHOTO_ERROR };
-    const now = new Date();
     // Independent confirmations only (round 18, Q17): one per account, phone verified ≥72 h ago.
-    const confirmation = confirmationStatus({
-      alreadyConfirmed: store.hasConfirmed(item.id, who.id),
-      phoneVerifiedAt: who.phoneVerifiedAt,
-      now,
-    });
-    if (confirmation === "counts") store.markConfirmed(item.id, who.id);
-    // Derived histories are dated against the fixtures' clock, like the item page.
-    const fixturesNow = new Date(fixtures.now);
-    const next = confirmItem(item, canoas, {
+    const joined = await joinItem({
+      id: parsed.data.itemId,
+      accountId: who.id,
       by: parsed.data.visibility === "anonymous" ? "Anônimo" : who.nick,
-      photos,
-      now,
-      counts: confirmation === "counts",
-      dateAgo: (days) => dateAgo(fixturesNow, days),
+      photos: photos.srcs,
+      phoneVerifiedAt: who.phoneVerifiedAt,
+      now: new Date(),
+    }).catch(async (e: unknown) => {
+      await removePhotos(photos.keys);
+      throw e;
     });
-    store.replaceItem(next);
-    if (parsed.data.visibility === "pseudonymous" && next !== item) markNickPublished(who.id);
-    return { ok: true, item: next, confirmation };
+    if (!joined) {
+      await removePhotos(photos.keys);
+      return { ok: false, error: "Esse registro não está mais aberto. Publique o seu." };
+    }
+    if (parsed.data.visibility === "pseudonymous" && (joined.confirmation === "counts" || photos.srcs.length))
+      markNickPublished(who.id);
+    return { ok: true, ...joined };
   });

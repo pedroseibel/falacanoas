@@ -15,6 +15,13 @@
       "when": 1791842390604,
       "tag": "0001_lockdown",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791842999262,
+      "tag": "0002_items",
+      "breakpoints": true
     }
   ]
 }

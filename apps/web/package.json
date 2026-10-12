@@ -12,7 +12,8 @@
     "cf-typegen": "wrangler types",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "bun src/server/db/seed.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

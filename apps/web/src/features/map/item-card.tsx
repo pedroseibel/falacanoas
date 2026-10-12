@@ -61,7 +61,7 @@ export function ItemCard({
         )}
       </span>
       <span className="grid min-w-0 content-start gap-1">
-        <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} extra={distance} />
+        <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} extra={distance} demo={it.demo} />
         <span className="line-clamp-2 text-sm leading-snug font-semibold tracking-tight">{it.title}</span>
         <span className="mt-0.5 flex min-w-0 items-baseline gap-2 text-xs whitespace-nowrap text-muted-foreground">
           {open ? (

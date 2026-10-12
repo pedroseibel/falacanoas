@@ -12,7 +12,7 @@ Blocked items are built behind an interface with a development fallback where th
 
 ## Already built (before this plan)
 
-- Landing page and bairro waitlist (rounds 7-13, 17). The sign-up is validated but not stored.
+- Landing page and bairro waitlist (rounds 7-13, 17).
 - App:
   - map, rail, item page, Placar, Bairro and Você (rounds 15-16);
   - report flow with photos, duplicate check and questão pública (rounds 3, 4, 15);
@@ -37,11 +37,12 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - the phone stored as AES-GCM ciphertext plus a keyed HMAC, with keys in the environment, versioned;
   - narrow operations only (look up an account by phone, send a code, record evidence);
   - the phone plugin keeps working through an adapter layer, never by swapping in a token and hoping.
-- [ ] **1.5 Items in the database:**
-  - items, events, photos, confirmations, updates and follows;
-  - the server functions read and write the database;
-  - fixtures become seed data, still labelled "exemplo".
-- [~] **1.6 Photos in Supabase Storage:** a private `fotos` bucket (created 2026-10-12: 3 MB, WebP and JPEG only). The server strips metadata and stores the photo; `/api/fotos/$key` streams it.
+- [x] **1.5 Items in the database.** Done 2026-10-12, verified end to end in the browser (report, confirm with a photo, reload).
+  - `fala.items` with `item_events` (append-only; updates are `update_added` events), `item_photos`, `item_confirmations`, and `item_authors`, kept apart so it can move into the vault (1.4); follows come with 2.4;
+  - rows store instants; "43 dias", "há 38 min" and "hoje · 13:42" are computed when read, on the municipality's calendar;
+  - confirmations are judged inside a row lock (one per account, never the author, the 72 h rule);
+  - `bun run db:seed` loads the fixtures as rows marked `demo`, each labelled "exemplo" on cards and on the item page.
+- [x] **1.6 Photos in Supabase Storage.** Done 2026-10-12: the private `fotos` bucket (3 MB, WebP and JPEG only, no public reads). The server strips metadata and stores the photo with the secret key; `/api/fotos/$key` streams it; photos of a report that fails to save are removed.
 - [x] **1.7 Waitlist persisted** (rounds 6, 12, 17). Stored in `fala.queue_signups`. Confirmation waits on the WhatsApp and e-mail senders (3.1, 3.2), and the done screen says so.
   - sign-ups stored with an unconfirmed status;
   - per-bairro counts from confirmed sign-ups only;

@@ -31,7 +31,8 @@ export const Route = createFileRoute("/_app/_map/o/$id")({
 function ItemRoute() {
   const { id } = Route.useParams();
   const { data: city } = useSuspenseQuery(cityQuery);
-  const item = city.items.find((i) => i.id === id);
+  // The item query carries the whole history; the city list doesn't.
+  const { data: item } = useSuspenseQuery(itemQuery(id));
   if (!item) return null;
   return <ItemDetail key={item.id} it={item} muni={canoas} viewer={city.viewer} now={new Date(city.now)} />;
 }

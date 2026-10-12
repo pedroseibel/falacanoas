@@ -79,10 +79,12 @@ function LegalDeadline({
   protocol,
   now,
   timezone,
+  demo,
 }: {
   protocol: { number: string; at: string };
   now: Date;
   timezone: string;
+  demo: boolean;
 }) {
   const at = new Date(protocol.at);
   const { due, daysLeft, overdue } = legalDeadline(at, now);
@@ -95,7 +97,7 @@ function LegalDeadline({
     <div className="grid gap-1 border-t border-hairline pt-2.5 text-xs">
       <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          Prazo legal da Ouvidoria <Badge variant="outline">exemplo</Badge>
+          Prazo legal da Ouvidoria {demo && <Badge variant="outline">exemplo</Badge>}
         </span>
         <span className={cn("font-medium tabular-nums", overdue ? "text-signal-text" : "text-foreground")}>
           {status}
@@ -219,14 +221,14 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
 
       <div className="grid gap-4.5 px-4.5 pt-4 pb-7">
         <header>
-          <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} />
+          <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} demo={it.demo} />
           <h2 className="mt-1 text-2xl leading-tight font-semibold tracking-tight text-balance">{it.title}</h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
             por{" "}
             <b className="font-medium text-ink-2">
               {it.visibility === "anonymous" ? "Anônimo" : (it.author ?? viewer.nick)}
             </b>{" "}
-            · {dateAgo(now, it.days)}
+            · {it.createdAt ? day(new Date(it.createdAt), muni.timezone) : dateAgo(now, it.days)}
           </p>
         </header>
 
@@ -243,9 +245,11 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
               ? `Ainda não foi enviado. Entra no próximo resumo diário, às ${muni.digestHour}h, e o relógio começa no envio.`
               : open
                 ? `Enviado à Prefeitura em ${it.sentAt ? localStamp(new Date(it.sentAt), muni.timezone).replace(" · ", ", às ") : `${dateAgo(now, it.days)}, às ${muni.digestHour}:00`}. O relógio conta desde então.`
-                : `Fechado pelos vizinhos em ${dateAgo(now, 0)}.`}
+                : `Fechado pelos vizinhos em ${it.closedAt ? day(new Date(it.closedAt), muni.timezone) : dateAgo(now, 0)}.`}
           </p>
-          {open && it.protocol && <LegalDeadline protocol={it.protocol} now={now} timezone={muni.timezone} />}
+          {open && it.protocol && (
+            <LegalDeadline protocol={it.protocol} now={now} timezone={muni.timezone} demo={Boolean(it.demo)} />
+          )}
         </section>
 
         <section className="grid grid-cols-2 gap-2" aria-label="Situação">
@@ -263,7 +267,7 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           <div className="grid content-start gap-1 rounded-xl border border-hairline bg-card p-3">
             <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               <BadgeCheck className="size-3.5" /> Prefeitura
-              {it.official && <Badge variant="outline">verificada · exemplo</Badge>}
+              {it.official && <Badge variant="outline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>}
             </span>
             <span
               className={cn("text-sm leading-snug font-semibold", !it.official && "font-medium text-muted-foreground")}
@@ -368,7 +372,8 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
                   <div>
                     <p className="font-mono text-2xs text-muted-foreground">{e.at}</p>
                     <p className="text-sm font-semibold">
-                      {e.actor} {official && <Badge variant="outline">verificada · exemplo</Badge>}
+                      {e.actor}{" "}
+                      {official && <Badge variant="outline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>}
                     </p>
                     <p className="text-sm leading-snug text-ink-2">{e.text}</p>
                   </div>

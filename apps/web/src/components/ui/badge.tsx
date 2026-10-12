@@ -17,6 +17,9 @@ const badgeVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         /* Small mono label on a card surface: "exemplo", "ao vivo", "independente". */
         chip: "h-auto border-border bg-card px-2 py-0.5 font-mono text-[0.6875rem] leading-snug font-normal tracking-wide text-muted-foreground",
+        /* The chip inside a 16px line of text (a card's category line): it keeps the line's height. */
+        "chip-inline":
+          "h-auto border-border bg-card px-2 py-0 font-mono text-[0.6875rem] leading-4 font-normal tracking-wide text-muted-foreground",
       },
     },
     defaultVariants: {

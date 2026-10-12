@@ -62,7 +62,7 @@ function MapSettings() {
             ))}
           </ToggleGroup>
           <p className="text-xs text-muted-foreground">
-            Mapa: OpenFreeMap. Troca para CARTO com uma chave. Registros e números do protótipo são fictícios.
+            Mapa: OpenFreeMap. Troca para CARTO com uma chave. Registros marcados como exemplo são fictícios.
           </p>
         </div>
       </PopoverContent>

@@ -1,19 +1,5 @@
-import { readFileSync } from "node:fs";
 import { defineConfig } from "drizzle-kit";
-
-/** The connection string from the environment, or from the gitignored .dev.vars in development. */
-function databaseUrl(): string {
-  if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
-  try {
-    return (
-      readFileSync(".dev.vars", "utf8")
-        .match(/^DATABASE_URL=(.+)$/m)?.[1]
-        ?.trim() ?? ""
-    );
-  } catch {
-    return "";
-  }
-}
+import { databaseUrl } from "./src/server/db/dev-env";
 
 /** Migrations for the app schema only: Supabase's own schemas (auth, storage, vault…) are never touched. */
 export default defineConfig({
