@@ -21,6 +21,7 @@ web
 **Fala, Canoas** is an independent, open-source accountability map for Canoas.
 
 **How it works:**
+
 1. A resident pins a problem with a photo.
 2. Once a day, FalaCanoas sends the new pins to the Prefeitura's Ouvidoria in its own name.
 3. A public clock starts when they are sent.
@@ -28,6 +29,7 @@ web
 5. A public scoreboard shows where problems pile up, how long each secretaria takes and which categories get fixed.
 
 **This deliverable:** the **landing page** only. It is a waitlist by bairro:
+
 - each bairro opens when enough confirmed neighbours join (about 1 per 300 residents, minimum 25);
 - the page always shows how many are still missing.
 
@@ -127,18 +129,18 @@ Success means sign-ups confirmed by WhatsApp or e-mail, spread across all 18 bai
 
 ## Proposed launch categories (to confirm; owners per `research/canoas/`)
 
-| Categoria | Responsável provável |
-|---|---|
-| Buraco na rua | Sec. de Obras e Reconstrução |
-| Rua que alaga toda chuva | Sec. de Obras e Reconstrução (drenagem) |
-| Boca de lobo entupida | Sec. de Obras e Reconstrução (drenagem) |
-| Lixo e descarte irregular | Sec. de Serviços e Zeladoria Urbana |
-| Entulho na calçada ou na rua | Sec. de Serviços e Zeladoria Urbana |
-| Poste apagado | Iluminação pública (IP Canoas, PPP) |
-| Árvore: poda ou risco de queda | Sec. de Serviços e Zeladoria Urbana |
-| Calçada quebrada ou bloqueada | [verificar: owner of the lot + municipal inspection] |
-| Esgoto a céu aberto | [verificar: Corsan/Aegea vs. Prefeitura] |
-| Sinalização e semáforo | Sec. de Mobilidade Urbana |
+| Categoria                      | Responsável provável                                 |
+| ------------------------------ | ---------------------------------------------------- |
+| Buraco na rua                  | Sec. de Obras e Reconstrução                         |
+| Rua que alaga toda chuva       | Sec. de Obras e Reconstrução (drenagem)              |
+| Boca de lobo entupida          | Sec. de Obras e Reconstrução (drenagem)              |
+| Lixo e descarte irregular      | Sec. de Serviços e Zeladoria Urbana                  |
+| Entulho na calçada ou na rua   | Sec. de Serviços e Zeladoria Urbana                  |
+| Poste apagado                  | Iluminação pública (IP Canoas, PPP)                  |
+| Árvore: poda ou risco de queda | Sec. de Serviços e Zeladoria Urbana                  |
+| Calçada quebrada ou bloqueada  | [verificar: owner of the lot + municipal inspection] |
+| Esgoto a céu aberto            | [verificar: Corsan/Aegea vs. Prefeitura]             |
+| Sinalização e semáforo         | Sec. de Mobilidade Urbana                            |
 
 ## Accessibility & Inclusion
 

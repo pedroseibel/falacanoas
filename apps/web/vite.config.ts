@@ -13,10 +13,5 @@ export default defineConfig({
     host: "127.0.0.1",
     allowedHosts: [".ts.net"],
   },
-  plugins: [
-    cloudflare({ viteEnvironment: { name: "ssr" } }),
-    tailwindcss(),
-    tanstackStart(),
-    viteReact(),
-  ],
+  plugins: [cloudflare({ viteEnvironment: { name: "ssr" } }), tailwindcss(), tanstackStart(), viteReact()],
 });

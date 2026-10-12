@@ -1,4 +1,9 @@
-import { BoundaryCollectionSchema, NeighborhoodCollectionSchema, NeighborhoodSchema, defineMunicipality } from "@fala/core";
+import {
+  BoundaryCollectionSchema,
+  NeighborhoodCollectionSchema,
+  NeighborhoodSchema,
+  defineMunicipality,
+} from "@fala/core";
 import { z } from "zod";
 import neighborhoodsGeo from "./geo/bairros.json";
 import boundaryGeo from "./geo/limite.json";
@@ -30,9 +35,27 @@ export const canoas = defineMunicipality({
     { key: "entulho", label: "Entulho", group: "lixo", agency: ZELADORIA, kind: "occurrence" },
     { key: "poste", label: "Poste apagado", group: "luz", agency: "Iluminação pública", kind: "occurrence" },
     { key: "arvore", label: "Árvore: poda ou risco", group: "arvores", agency: ZELADORIA, kind: "occurrence" },
-    { key: "calcada", label: "Calçada quebrada ou bloqueada", group: "ruas", agency: "Fiscalização (a confirmar)", kind: "occurrence" },
-    { key: "esgoto", label: "Esgoto a céu aberto", group: "agua", agency: "Saneamento (a confirmar)", kind: "occurrence" },
-    { key: "sinal", label: "Sinalização e semáforo", group: "ruas", agency: "Secretaria de Mobilidade Urbana", kind: "occurrence" },
+    {
+      key: "calcada",
+      label: "Calçada quebrada ou bloqueada",
+      group: "ruas",
+      agency: "Fiscalização (a confirmar)",
+      kind: "occurrence",
+    },
+    {
+      key: "esgoto",
+      label: "Esgoto a céu aberto",
+      group: "agua",
+      agency: "Saneamento (a confirmar)",
+      kind: "occurrence",
+    },
+    {
+      key: "sinal",
+      label: "Sinalização e semáforo",
+      group: "ruas",
+      agency: "Secretaria de Mobilidade Urbana",
+      kind: "occurrence",
+    },
     { key: "questao", label: "Questão pública", group: "questoes", agency: null, kind: "public_issue" },
   ],
   filterGroups: [

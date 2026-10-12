@@ -17,10 +17,10 @@ There is no build step. The page is `index.html` (inline CSS) plus `assets/app.j
 
 The form runs in **preview mode** until three values are filled in at the bottom of `index.html` (`window.FALACANOAS_CONFIG`):
 
-| Key | What |
-|---|---|
+| Key                              | What                                                                                                                                                            |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `supabaseUrl`, `supabaseAnonKey` | Supabase project in the São Paulo region. Create the tables with `supabase/schema.sql` (insert-only RLS for the page, plus a public view with aggregates only). |
-| `whatsappNumber` | The project's number, digits only with country code (`5551…`), for tap-to-confirm. |
+| `whatsappNumber`                 | The project's number, digits only with country code (`5551…`), for tap-to-confirm.                                                                              |
 
 Still to build outside the page:
 

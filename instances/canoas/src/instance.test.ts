@@ -11,7 +11,10 @@ describe("Canoas instance", () => {
     for (const f of canoas.geo.neighborhoods.features) expect(slugs.has(f.properties.slug)).toBeTrue();
   });
   test("low-population bairros open with the first full queue (null threshold)", () => {
-    const open = canoas.neighborhoods.filter((n) => n.threshold === null).map((n) => n.slug).toSorted();
+    const open = canoas.neighborhoods
+      .filter((n) => n.threshold === null)
+      .map((n) => n.slug)
+      .toSorted();
     expect(open).toEqual(["brigadeira", "ilha-das-garcas", "industrial"]);
   });
   test("every category belongs to a filter group", () => {
@@ -27,7 +30,10 @@ describe("demo fixtures", () => {
     for (const it of fixtures.items) {
       const pt = itemLngLat(it);
       if (!pt || it.scope.type !== "point") continue;
-      expect({ id: it.id, bairro: neighborhoodAt(pt, canoas.geo.neighborhoods) }).toEqual({ id: it.id, bairro: it.neighborhood });
+      expect({ id: it.id, bairro: neighborhoodAt(pt, canoas.geo.neighborhoods) }).toEqual({
+        id: it.id,
+        bairro: it.neighborhood,
+      });
     }
   });
   test("every category in use is configured", () => {

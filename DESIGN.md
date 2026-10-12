@@ -256,6 +256,7 @@ Colour is information. A single bus-shelter orange marks the act (the primary bu
 The density is product-marketing calm: generous section padding, tight internal panel rhythm (10–18px), and wide asymmetric claim/proof grids. The world explicitly rejects the look of an official portal (brasão, flag palette, gov blue) and alarm styling (sirens, red alerts).
 
 **Key Characteristics:**
+
 - One neutral scale, light and dark, with orange as the only hue in chrome.
 - Framed product panels (18px) inside larger radial-ground stages (28px), with long soft shadows.
 - 1px hairlines at 8–34% ink alpha do all the structural work.
@@ -268,12 +269,14 @@ The density is product-marketing calm: generous section padding, tight internal 
 A cool-neutral grey scale with a faint blue cast, plus one saturated orange taken from the credited Canoas bus-shelter photo.
 
 ### Primary
+
 - **Bus-Shelter Orange** (shelter-orange; dark: shelter-orange-dark): the fill of the primary action, the selected bairro's map stroke and lit queue slots, hot map pins with their halo, the over-deadline segment of the scoreboard ruler, and the comma in the wordmark. It is a fill and a stroke colour only.
 - **Shelter Orange Deep** (shelter-orange-hover): primary button hover in light. In dark the hover goes lighter (shelter-orange-hover-dark).
-- **Shelter Orange Text** (shelter-orange-text; dark: shelter-orange-text-dark): every piece of orange *text*: the "dias em aberto" counters, the selected bairro's queue count, and form error messages and error borders.
+- **Shelter Orange Text** (shelter-orange-text; dark: shelter-orange-text-dark): every piece of orange _text_: the "dias em aberto" counters, the selected bairro's queue count, and form error messages and error borders.
 - **Shelter Orange Wash** (shelter-orange-wash; dark: shelter-orange-wash-dark): the tint behind a selected bairro, both its map polygon and its list row, and the highlighted digest row.
 
 ### Neutral
+
 - **Paper** (paper / paper-dark): page background and selection text.
 - **Ground** (ground / ground-dark): the outer tone of stage radial gradients; the floor product panels sit on.
 - **Panel** (panel / panel-dark): framed product surfaces, fields, chips and the selected half of segmented controls.
@@ -286,6 +289,7 @@ A cool-neutral grey scale with a faint blue cast, plus one saturated orange take
 - **Map Line / Map Fill** (map-line, map-fill): bairro boundary stroke and polygon tint.
 
 ### Named Rules
+
 **The Three Places Rule.** Orange marks the action, the clock and the selected place, plus the brand comma. Data visualisations may use it for exactly one "needs attention" category (the over-deadline ruler segment, the hot pin, the "em aberto e atrasadas" stack segment). If a new use is none of these, it is ink.
 
 **The Text-Orange Rule.** Orange text always uses Shelter Orange Text, never the fill orange. The fill fails contrast as text on paper.
@@ -303,6 +307,7 @@ A cool-neutral grey scale with a faint blue cast, plus one saturated orange take
 **Character:** One sans grotesk set tight at display sizes and relaxed in running text, with its mono sibling for anything counted, dated or measured. The two read as one family at different levels of precision.
 
 ### Hierarchy
+
 - **Display** (600, clamp 2.75–3.5rem, 1.0, −0.04em): the single H1, balanced to at most three lines.
 - **Headline** (600, clamp 2.125–3.375rem, 1.02, −0.035em): section H2s, always paired with a graphite paragraph in a 7/5 head grid.
 - **Title** (600, clamp 1.375–1.625rem, 1.15, −0.025em): claim headings beside proofs.
@@ -318,6 +323,7 @@ A cool-neutral grey scale with a faint blue cast, plus one saturated orange take
 Weights in use are 400, 500 (table names, tabs, list names, counters) and 600 (headings, labels, buttons).
 
 ### Named Rules
+
 **The Measurement Rule.** Geist Mono with tabular figures is for things that are measured: counts, days, dates, codes, footnote markers. Words stay in Geist. Mono is for standalone measurements; an identifier inside running text (the masked phone number in a sentence) stays Geist with tabular figures, because mono breaks the line's rhythm.
 
 **The Sentence-Case Rule.** No uppercase, no letter-spaced labels and no eyebrow kickers above headings. Section heads are a headline and a paragraph. The only numbered markers are the four loop steps.
@@ -335,11 +341,13 @@ Breakpoints: at 1080px all grids collapse to one column and the hero stage re-an
 Hybrid. Structure comes from hairlines and tonal steps (paper, ground, panel, recess, well). Lift is reserved for framed product panels and for the selected half of a segmented control. Stages add depth with a radial gradient (bright panel tone at 62% 18% falling to ground) and a fractal-noise grain at 5% (multiply) in light, 3.5% (screen) in dark. The header becomes 94% paper with a hairline only once the page scrolls.
 
 ### Shadow Vocabulary
+
 - **Panel lift** (light: `0 1px 1px rgb(14 15 16 / .04), 0 10px 24px -8px rgb(14 15 16 / .10), 0 36px 72px -28px rgb(14 15 16 / .22)`; dark: `0 0 0 1px rgb(255 255 255 / .02), 0 2px 6px rgb(0 0 0 / .4), 0 32px 64px -24px rgb(0 0 0 / .8)`): every framed product panel.
 - **Control lift** (light: `0 1px 1px rgb(14 15 16 / .05), 0 6px 16px -8px rgb(14 15 16 / .14)`; dark: `0 2px 6px rgb(0 0 0 / .45), 0 10px 24px -12px rgb(0 0 0 / .7)`): the selected segment in segmented controls.
 - **Primary bevel** (`inset 0 1px 0 rgb(255 255 255 / .22), 0 1px 2px rgb(14 15 16 / .18)`): the orange button only.
 
 ### Named Rules
+
 **The Long Soft Shadow Rule.** Shadows are long, low-alpha and negatively spread, so panels float above the ground rather than sitting in boxes. No hard offsets and no coloured glows.
 
 ## Shapes
@@ -349,7 +357,9 @@ The corners are soft and concentric. Stages are 28px, the panels inside them 18p
 ## Components
 
 ### Buttons
+
 Quiet, exact, 48px tall.
+
 - **Shape:** gently rounded (11px; small size 38px tall at 9px).
 - **Primary:** Bus-Shelter Orange fill, ink label at 600, 0 20px padding, primary bevel. In the hero it grows to 52px; in the signup form it is full width at 54px; in the sign-in column it is full width at 52px. Carries a leading WhatsApp icon or a trailing arrow. The orange paints out to the border edge, under the transparent 1px border, so a full-width button lines up exactly with the fields above it.
 - **Hover / Focus / Active:** hover moves to Shelter Orange Deep. Active nudges down 1px. Focus is a 2px ink outline at 3px offset. A loading state dims the label and shows a 16px spinner. Disabled sits at 55% opacity.
@@ -357,17 +367,20 @@ Quiet, exact, 48px tall.
 - **Ink:** ink fill with a paper label. It appears only inside mock product UI (the composer's "Enviar").
 
 ### Chips
+
 - **Exemplo chip:** a mono 11px pill with Hairline Strong border, Slate text and panel fill. It sits at the right of every mock panel bar, or over a photo at 88% panel.
 - **Choice chips (mock):** 12px Geist pills. Unselected is panel with graphite text; selected is inverted to ink fill with paper text.
 - **Choice chips (app):** full pills, 24px tall with 12px Geist for a mouse, 36px with 14px text on touch or narrow screens. Unselected is paper with a Hairline Strong border and an ink label, Panel Recess on hover. Selected inverts to ink fill with a paper label. They are toggles (pressed state) under a field, for suggestions such as apelidos.
 - **Badge:** a mono 11px tag at 6px radius for inline verification marks.
 
 ### Cards / Containers
+
 - **Stage:** 28px radius with a hairline border, radial ground and grain. Inner padding is clamp 20–44px (14px on mobile).
 - **Panel:** 18px radius, panel fill, hairline border, panel lift, clipped content.
 - **Panel bar:** a 44px header row with a hairline below. It holds a bold ink title, meta text in Slate and the exemplo chip pushed right. Footers mirror it on Panel Recess.
 
 ### Inputs / Fields
+
 - **Style:** 48px (52px in the hero), 11px radius, Hairline Strong border, panel fill, 1rem Geist, 14px inset. The native select carries a custom chevron at 14px from the right.
 - **Focus:** the border turns ink with a 3px ring of ink at 14%.
 - **Error:** the border and a 13px message turn Shelter Orange Text.
@@ -375,29 +388,37 @@ Quiet, exact, 48px tall.
 - **Checkbox:** 20px at 6px radius with a Hairline Firm border. Checked is an ink fill with a paper tick.
 
 ### Segmented Channel Control
+
 A Panel Recess track (4px padding, 13px radius, hairline border) holding two 42px options at 9px radius. The checked option lifts to panel fill with ink text and control lift. Unchecked options are Slate. Focus shows a 2px ink outline. A compact 12px variant appears in mock panel bars.
 
 ### Navigation
+
 A sticky 68px header: the wordmark (Geist 600, orange comma), a mono "independente" pill tag, four 15px graphite links (ink on hover, no underline), and a small ghost CTA. Below 900px only the wordmark, tag and CTA remain.
 
 ### Maps
+
 The 18 bairros are drawn as 1px non-scaling Map Line strokes over Map Fill. Hover tints a polygon to ink at 7%, and keyboard focus strokes it 2px ink. The selected bairro takes Shelter Orange Wash fill with a 1.6px orange stroke, and the selection syncs across every map on the page. Pins are ink dots ringed in panel. Done pins are hollow Slate rings. Hot pins are orange, with a single orange halo that pulses three times and then stops. An ink tooltip (9px radius, 7px 10px) names the bairro and its queue count.
 
 ### Pin Card
+
 A panel with a 4:3 credited photo (exemplo chip overlaid), a 12px category line, a 16px/600 title, a Counter in Shelter Orange Text over a hairline with its unit in meta, and a mono-dated timeline in 12px.
 
 ### Scoreboard Ruler
+
 A 22px track with 12 hairline ticks masked to the bottom 7px. An 8px ink fill with 2px radius marks the median days. A 1px Slate reference line marks 30 days, labelled in 10px mono. Fills past the deadline switch to orange at the cut. In tables, numbers are right-aligned mono and names are ink 500.
 
 ### Step Ruler
+
 The sign-in stepper, a variant of the Scoreboard Ruler. It is 18px tall with 13 marks on twelfths, each a 1px box that ends exactly on its position (the first starts on it), so every mark, the line and the needle snap to one pixel grid. Every fourth mark is a 12px step mark in Hairline Firm; the others are 6px minor ticks in Hairline Strong, over a 1px Hairline Strong baseline. Progress is a 2px ink line that ends under a 2px by 18px ink needle resting on the middle tick of the current step, or on the last tick when done. Line and needle move together over 0.7s with the house easing and pick up where the previous page stopped; under reduced motion they jump. Below, three 13px labels sit flush with the step marks: past steps in graphite with a leading check, the current step in ink 500, later steps in Slate. It uses a 2px line and a needle instead of the Scoreboard Ruler's 8px rounded fill because a rounded fill cannot end cleanly on a tick.
 
 ### Bairro Queue List
+
 Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500), a right-aligned mono queue count, and a 20-slot meter of 12px cells at 2px radius on Panel Well, filled with ink as neighbours join. Hover takes Panel Recess. The selected row gets Shelter Orange Wash, orange lit slots and an orange count.
 
 ## Do's and Don'ts
 
 ### Do:
+
 - **Do** frame every product claim with a panel inside a stage, and chip mock data "exemplo" in mono.
 - **Do** set every count, day, date and footnote marker in Geist Mono with tabular figures.
 - **Do** keep orange to the action, the clock, the selected place and the brand comma. Use Shelter Orange Text for any orange words or numbers.
@@ -406,6 +427,7 @@ Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500
 - **Do** use the house easing `cubic-bezier(.16,1,.3,1)`: 0.2s for state changes and a 1.1s rise with blur for entering proofs. Show the final state under reduced motion.
 
 ### Don't:
+
 - **Don't** use red, yellow or green in chrome. Errors use Shelter Orange Text. Those hues may appear only as small data marks.
 - **Don't** put white text on orange.
 - **Don't** add eyebrow kickers, uppercase labels or numbered section markers; numbering belongs only to the four loop steps.
