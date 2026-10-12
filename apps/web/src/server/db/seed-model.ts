@@ -117,6 +117,8 @@ export function seedRows(
       protocolNumber: item.protocol?.number ?? null,
       protocolAt: item.protocol ? new Date(item.protocol.at) : null,
       closedAt,
+      // A demo pin already "parece resolvido" had one neighbour say so, when it was last touched.
+      ...(item.community === "apparently_resolved" ? { resolvedVotes: 1, resolvingSince: updatedAt } : {}),
     },
     events: derived.map((e) => ({
       itemId: item.id,

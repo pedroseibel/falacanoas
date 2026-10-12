@@ -1,11 +1,12 @@
-import { digestDay, itemFromReport, newItemId, reportSchema, stripImageMetadata, type Item } from "@fala/core";
+import { digestDay, itemFromReport, newItemId, reportSchema, type Item } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
 import { createdSince, insertItem, itemExists, joinItem } from "./items";
 import { markNickPublished } from "./nicks";
-import { putPhoto, removePhotos } from "./photos";
-import { getSession } from "./session";
+import { member, type Failure } from "./member";
+import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
+import { removePhotos } from "./photos";
 import { recordEvidence } from "./vault";
 
 /**
@@ -17,7 +18,6 @@ const schema = reportSchema(canoas);
 const HOUR = 3_600_000;
 const PER_HOUR = 10;
 
-type Failure = { ok: false; error: string };
 export type ReportResult = Failure | { ok: true; item: Item; digest: "hoje" | "amanhã" };
 export type JoinResult =
   | Failure
@@ -28,39 +28,15 @@ export type JoinResult =
       confirmation: "counts" | "already" | "too-new";
     };
 
-const formData = (data: FormData) => {
-  if (!(data instanceof FormData)) throw new Error("Envio inválido.");
-  return data;
-};
-
-async function reporter(): Promise<{ id: string; nick: string; phoneVerifiedAt: Date | null } | Failure> {
-  const user = (await getSession())?.user;
-  if (!user || user.isAnonymous || !user.phoneVerifiedAt)
-    return { ok: false, error: "Entre com o seu celular para registrar." };
-  if (!user.nick) return { ok: false, error: "Escolha um apelido antes de registrar." };
-  return { id: user.id, nick: user.nick, phoneVerifiedAt: user.phoneVerifiedAt ?? null };
-}
-
-/** Strips metadata from every photo, then stores them, but only if all of them are images. */
-async function keepPhotos(files: File[]): Promise<{ keys: string[]; srcs: string[] } | null> {
-  const clean = await Promise.all(files.map(async (f) => stripImageMetadata(new Uint8Array(await f.arrayBuffer()))));
-  const images = clean.flatMap((image) => (image ? [image] : []));
-  if (images.length !== files.length) return null;
-  const stored = await Promise.all(images.map((image) => putPhoto(image.bytes, image.type)));
-  return { keys: stored.map((p) => p.key), srcs: stored.map((p) => p.src) };
-}
-
 async function uniqueId(): Promise<string> {
   const id = newItemId(crypto.getRandomValues(new Uint32Array(5)));
   return (await itemExists(id)) ? uniqueId() : id;
 }
 
-const PHOTO_ERROR = "Não deu para ler uma das fotos. Tire outra ou escolha outra da galeria.";
-
 export const createReport = createServerFn({ method: "POST" })
   .inputValidator(formData)
   .handler(async ({ data }): Promise<ReportResult> => {
-    const who = await reporter();
+    const who = await member();
     if ("error" in who) return who;
     const parsed = schema.safeParse(readReportFormData(data));
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." };
@@ -86,7 +62,7 @@ export const createReport = createServerFn({ method: "POST" })
 export const joinReport = createServerFn({ method: "POST" })
   .inputValidator(formData)
   .handler(async ({ data }): Promise<JoinResult> => {
-    const who = await reporter();
+    const who = await member();
     if ("error" in who) return who;
     const parsed = JoinSchema.safeParse(readJoinFormData(data));
     if (!parsed.success) return { ok: false, error: "Confira o registro." };

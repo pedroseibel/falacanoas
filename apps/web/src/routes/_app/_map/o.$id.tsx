@@ -1,9 +1,9 @@
-import { createFileRoute, notFound } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { ItemDetail } from "@/features/item/item-detail";
 import { setMapState } from "@/features/map/map-store";
-import { cityQuery, itemQuery } from "@/lib/city";
+import { accountQuery, cityQuery, itemQuery, memberGate } from "@/lib/city";
 
 export const Route = createFileRoute("/_app/_map/o/$id")({
   loader: async ({ context, params }) => {
@@ -33,6 +33,19 @@ function ItemRoute() {
   const { data: city } = useSuspenseQuery(cityQuery);
   // The item query carries the whole history; the city list doesn't.
   const { data: item } = useSuspenseQuery(itemQuery(id));
+  const { data: account } = useQuery(accountQuery);
+  const navigate = useNavigate();
   if (!item) return null;
-  return <ItemDetail key={item.id} it={item} muni={canoas} viewer={city.viewer} now={new Date(city.now)} />;
+  const gate = memberGate(account ?? null);
+  return (
+    <ItemDetail
+      key={item.id}
+      it={item}
+      muni={canoas}
+      viewer={city.viewer}
+      now={new Date(city.now)}
+      member={gate === null}
+      onSignIn={() => void navigate({ to: gate ?? "/entrar", search: { volta: `/o/${item.id}` } })}
+    />
+  );
 }

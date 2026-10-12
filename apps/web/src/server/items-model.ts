@@ -67,6 +67,8 @@ export function itemFromRows(
       row.protocolNumber && row.protocolAt ? { number: row.protocolNumber, at: row.protocolAt.toISOString() } : null,
     createdAt: row.createdAt.toISOString(),
     closedAt: row.closedAt?.toISOString() ?? null,
+    resolvedVotes: row.resolvedVotes,
+    resolvingSince: row.resolvingSince?.toISOString() ?? null,
     ...(row.guest ? { guest: true } : {}),
     ...(row.demo ? { demo: true } : {}),
     ...(events ? { events: events.map((e): ItemEvent => ({ ...e, at: stamp(e.at) })) } : {}),

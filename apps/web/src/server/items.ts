@@ -1,8 +1,22 @@
-import { confirmationStatus, confirmItem, dateAgo, isOpen, type ConfirmationStatus, type Item } from "@fala/core";
+import {
+  applyAction,
+  confirmationStatus,
+  confirmItem,
+  dateAgo,
+  isOpen,
+  localTime,
+  QUIET_CLOSE_DAYS,
+  quietClose,
+  type ActionRefusal,
+  type ConfirmationStatus,
+  type Item,
+  type ItemAction,
+} from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
-import { and, asc, count, desc, eq, gt } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, lte, sql } from "drizzle-orm";
+import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { db, type Db } from "./db/client";
-import { itemAuthors, itemConfirmations, itemEvents, itemPhotos, items } from "./db/schema";
+import { itemAuthors, itemConfirmations, itemEvents, itemFollows, itemPhotos, items, itemVotes } from "./db/schema";
 import { itemFromRows, newPhotoRows, rowsForNewItem, type PhotoRow } from "./items-model";
 
 /**
@@ -150,4 +164,205 @@ export async function joinItem({
   if (!outcome) return null;
   const item = await findItem(id, now);
   return item ? { item, confirmation: outcome.confirmation } : null;
+}
+
+/* ---------- Structured actions (rounds 4 and 15) ---------- */
+
+/** "Continua acontecendo" counts once a day: the day on the municipality's calendar. */
+const today = (now: Date) => {
+  const t = localTime(now, tz);
+  return `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
+};
+
+const has = async (q: Promise<unknown[]>) => (await q).length > 0;
+
+/** What this account has already done with this item, and whether its word moves the status yet. */
+export interface ViewerState {
+  author: boolean;
+  confirmed: boolean;
+  saidStillToday: boolean;
+  saidResolved: boolean;
+  following: boolean;
+  /** When a phone verified less than 72 h ago starts to count (ISO); null when it already does. */
+  countsFrom: string | null;
+}
+
+async function viewerIn(
+  q: Db | Tx,
+  id: string,
+  accountId: string,
+  round: number,
+  phoneVerifiedAt: Date | null,
+  now: Date,
+): Promise<ViewerState> {
+  const mine = (t: { itemId: AnyPgColumn; accountId: AnyPgColumn }) =>
+    and(eq(t.itemId, id), eq(t.accountId, accountId));
+  const [author, confirmed, still, resolved, following] = await Promise.all([
+    has(q.select({ id: itemAuthors.itemId }).from(itemAuthors).where(mine(itemAuthors))),
+    has(q.select({ id: itemConfirmations.itemId }).from(itemConfirmations).where(mine(itemConfirmations))),
+    has(
+      q
+        .select({ id: itemVotes.itemId })
+        .from(itemVotes)
+        .where(and(mine(itemVotes), eq(itemVotes.kind, "still"), eq(itemVotes.slot, today(now)))),
+    ),
+    has(
+      q
+        .select({ id: itemVotes.itemId })
+        .from(itemVotes)
+        .where(and(mine(itemVotes), eq(itemVotes.kind, "resolved"), eq(itemVotes.slot, String(round)))),
+    ),
+    has(q.select({ id: itemFollows.itemId }).from(itemFollows).where(mine(itemFollows))),
+  ]);
+  const independent = confirmationStatus({ alreadyConfirmed: false, phoneVerifiedAt, now }) === "counts";
+  return {
+    author,
+    confirmed,
+    saidStillToday: still,
+    saidResolved: resolved,
+    following,
+    countsFrom:
+      independent || !phoneVerifiedAt ? null : new Date(phoneVerifiedAt.getTime() + 72 * 3_600_000).toISOString(),
+  };
+}
+
+export async function viewerOf(id: string, accountId: string, phoneVerifiedAt: Date | null, now = new Date()) {
+  const [row] = await db.select({ round: items.round }).from(items).where(eq(items.id, id));
+  return row ? viewerIn(db, id, accountId, row.round, phoneVerifiedAt, now) : null;
+}
+
+export type ActOutcome = { ok: true; item: Item; viewer: ViewerState } | { ok: false; reason: ActionRefusal | "gone" };
+
+/**
+ * One structured action on one item. The row is locked while the action is judged and written, so
+ * two taps can't count twice; history is appended, never rewritten.
+ */
+export async function actOnItem(input: {
+  id: string;
+  accountId: string;
+  by: string;
+  phoneVerifiedAt: Date | null;
+  action: ItemAction;
+  now: Date;
+}): Promise<ActOutcome> {
+  const { id, accountId, by, phoneVerifiedAt, action, now } = input;
+  const result = await db.transaction(async (tx): Promise<ActOutcome> => {
+    const [locked] = await tx.select({ round: items.round }).from(items).where(eq(items.id, id)).for("update");
+    const item = locked ? await readItem(tx, id, now) : null;
+    if (!locked || !item) return { ok: false, reason: "gone" };
+    const viewer = await viewerIn(tx, id, accountId, locked.round, phoneVerifiedAt, now);
+    const already =
+      action.type === "confirm"
+        ? viewer.confirmed
+        : action.type === "still"
+          ? viewer.saidStillToday
+          : action.type === "resolved" && viewer.saidResolved;
+    const out = applyAction(item, action, {
+      by,
+      author: viewer.author,
+      independent: viewer.countsFrom === null && Boolean(phoneVerifiedAt),
+      already,
+      now,
+      timezone: tz,
+    });
+    if (!out.ok) return out;
+    const next = out.item;
+    await tx
+      .update(items)
+      .set({
+        community: next.community,
+        confirmations: next.confirmations,
+        updates: next.updates,
+        disagreeing: next.disagreeing ?? null,
+        resolvedVotes: next.resolvedVotes ?? 0,
+        resolvingSince: next.resolvingSince ? new Date(next.resolvingSince) : null,
+        closedAt: next.closedAt ? new Date(next.closedAt) : null,
+        round: out.reopened ? sql`${items.round} + 1` : items.round,
+        updatedAt: now,
+      })
+      .where(eq(items.id, id));
+    await tx
+      .insert(itemEvents)
+      .values({ itemId: id, at: now, kind: out.event.kind, actor: out.event.actor, text: out.event.text });
+    if (out.photos.length)
+      await tx.insert(itemPhotos).values(
+        newPhotoRows(
+          id,
+          out.photos.map((src) => ({ src, by })),
+          now,
+          item.photos.length,
+        ),
+      );
+    if (action.type === "confirm") await tx.insert(itemConfirmations).values({ itemId: id, accountId, createdAt: now });
+    if (action.type === "still")
+      await tx.insert(itemVotes).values({ itemId: id, accountId, kind: "still", slot: today(now), at: now });
+    if (action.type === "resolved")
+      await tx
+        .insert(itemVotes)
+        .values({ itemId: id, accountId, kind: "resolved", slot: String(locked.round), at: now });
+    return { ok: true, item: next, viewer };
+  });
+  if (!result.ok) return result;
+  const [item, viewer] = await Promise.all([findItem(id, now), viewerOf(id, accountId, phoneVerifiedAt, now)]);
+  return item && viewer ? { ok: true, item, viewer } : { ok: false, reason: "gone" };
+}
+
+/** "Acompanhar": on or off. Returns whether the account now follows the item. */
+export async function setFollowing(id: string, accountId: string, on: boolean): Promise<boolean> {
+  return db.transaction(async (tx) => {
+    if (on) {
+      const added = await tx.insert(itemFollows).values({ itemId: id, accountId }).onConflictDoNothing().returning();
+      if (added.length)
+        await tx
+          .update(items)
+          .set({ followers: sql`${items.followers} + 1` })
+          .where(eq(items.id, id));
+      return true;
+    }
+    const removed = await tx
+      .delete(itemFollows)
+      .where(and(eq(itemFollows.itemId, id), eq(itemFollows.accountId, accountId)))
+      .returning();
+    if (removed.length)
+      await tx
+        .update(items)
+        .set({ followers: sql`greatest(${items.followers} - 1, 0)` })
+        .where(eq(items.id, id));
+    return false;
+  });
+}
+
+/**
+ * The daily job (src/server.ts): pins someone said were fixed, undisputed for 15 days, close on their
+ * own. Runs outside any request, so it takes its own connection.
+ */
+export async function closeQuietItems(d: Db, now: Date, by: string): Promise<number> {
+  const due = await d
+    .select({ id: items.id })
+    .from(items)
+    .where(
+      and(
+        eq(items.community, "apparently_resolved"),
+        lte(items.resolvingSince, new Date(now.getTime() - QUIET_CLOSE_DAYS * 864e5)),
+      ),
+    );
+  let closed = 0;
+  for (const { id } of due) {
+    // One transaction per pin, so one failure doesn't hold back the rest.
+    // oxlint-disable-next-line no-await-in-loop
+    const done = await d.transaction(async (tx) => {
+      const [locked] = await tx.select({ id: items.id }).from(items).where(eq(items.id, id)).for("update");
+      const item = locked ? await readItem(tx, id, now) : null;
+      const out = item ? quietClose(item, now, tz, by) : null;
+      if (!out?.item.closedAt) return false;
+      const at = new Date(out.item.closedAt);
+      await tx.update(items).set({ community: "resolved", closedAt: at, updatedAt: at }).where(eq(items.id, id));
+      await tx
+        .insert(itemEvents)
+        .values({ itemId: id, at, kind: out.event.kind, actor: out.event.actor, text: out.event.text });
+      return true;
+    });
+    if (done) closed++;
+  }
+  return closed;
 }

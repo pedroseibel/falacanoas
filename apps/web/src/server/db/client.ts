@@ -53,3 +53,10 @@ export const db: Db = new Proxy(idle, {
     return typeof value === "function" ? value.bind(target) : value;
   },
 });
+
+/** A connection for work outside any request (the daily job), closed by the caller. */
+export async function openDb(): Promise<{ db: Db; close: () => Promise<void> }> {
+  const client = new Client({ connectionString: connectionString() });
+  await client.connect();
+  return { db: drizzle(client, { schema, casing: "snake_case" }), close: () => client.end() };
+}

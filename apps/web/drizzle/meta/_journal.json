@@ -43,6 +43,13 @@
       "when": 1791845010270,
       "tag": "0005_auth_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791845849871,
+      "tag": "0006_actions",
+      "breakpoints": true
     }
   ]
 }

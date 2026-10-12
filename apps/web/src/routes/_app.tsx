@@ -14,7 +14,7 @@ import { canoas } from "@fala/instance-canoas";
 import { ReportDialog } from "@/features/report/report-dialog";
 import { openReport } from "@/features/report/report-store";
 import { AppShell, type Section } from "@/features/shell/app-shell";
-import { accountQuery, cityQuery, type AccountData } from "@/lib/city";
+import { accountQuery, cityQuery, memberGate } from "@/lib/city";
 
 export const Route = createFileRoute("/_app")({
   loader: ({ context }) =>
@@ -30,9 +30,6 @@ const PATH: Record<Section, "/mapa" | "/placar" | "/bairro" | "/voce"> = {
 };
 
 /** Registrar needs a verified phone and an apelido: /entrar or /bem-vindo first, then straight into the form. */
-const reportGate = (account: AccountData) =>
-  !account || account.guest || !account.phoneVerified ? "/entrar" : !account.nick ? "/bem-vindo" : null;
-
 function AppLayout() {
   const match = useMatchRoute();
   const navigate = useNavigate();
@@ -61,7 +58,7 @@ function AppLayout() {
       nick={account?.nick ?? null}
       onSignIn={() => void navigate({ to: "/entrar", search: { volta: here } })}
       onReport={() => {
-        const gate = reportGate(account);
+        const gate = memberGate(account);
         if (!gate) return openReport();
         void navigate({ to: gate, search: { volta: here, depois: "registrar" } });
       }}

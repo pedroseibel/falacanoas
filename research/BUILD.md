@@ -58,15 +58,21 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 ## 2. Product loop
 
 - [x] **2.1 Placar rule.** An occurrence counts in the statistics after one independent confirmation (Q18). A guest pin needs two (round 2).
-- [ ] **2.2 Closing a pin** (round 4):
-  - The Prefeitura may say "resolvido".
-  - The pin closes when the reporter or two neighbours confirm (ideally with an "after" photo), or after 15 days without dispute.
-  - "Ainda não" reopens it.
-- [ ] **2.3 Structured actions, persisted** (round 15):
-  - Confirmo, Continua acontecendo, Adicionar atualização, Acompanhar;
-  - "Adicionar foto atual" (a photo timeline);
-  - "Isso também me afeta" and "Tenho informação" for questões públicas.
-- [ ] **2.4 Following** (round 15): home, a route, a bairro or a pin, managed in Você.
+- [x] **2.2 Closing a pin** (round 4). Done 2026-10-12, verified in the browser with two accounts and the cron.
+  - "Foi resolvido", with an optional photo of the after, from the action grid or the "Está resolvido?" box;
+  - the reporter's word, or two neighbours in the same round, closes it; the first vote leaves it "parece resolvido";
+  - after 15 days without dispute it closes on its own: a daily cron in the app Worker (`src/server.ts`), dated at the end of the quiet period;
+  - "Ainda não" (or "Voltou a acontecer" on a closed pin) reopens it and starts a new round; against the Prefeitura's "resolvido" it counts as disagreement;
+  - the Prefeitura's own "resolvido" waits for institutional accounts (later); demo data shows it.
+- [x] **2.3 Structured actions, persisted** (round 15). Done 2026-10-12.
+  - Confirmo (once, independent, never the author), Continua acontecendo (once a day), Adicionar atualização, Acompanhar;
+  - "Adicionar foto atual" from the photo timeline;
+  - "Isso também me afeta" and "Tenho informação" for questões públicas;
+  - rules in core (`applyAction`), judged under a row lock; signed out, every action sends the person to sign in and back; access evidence recorded for each.
+- [~] **2.4 Following** (round 15): home, a route, a bairro or a pin, managed in Você.
+  - [x] a single pin ("Acompanhar"), stored in `fala.item_follows`;
+  - [ ] home, route and bairro, and the list in Você;
+  - notifications for followed items come with 4.2.
 - [ ] **2.5 Guest pins** (round 2, Q4):
   - an anonymous session;
   - photo required;

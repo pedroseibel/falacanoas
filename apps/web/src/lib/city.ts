@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getCity, getItem, getThreads } from "@/server/data";
 import { getAccount } from "@/server/account";
+import { getItemViewer } from "@/server/item-actions";
 import { getQueue } from "@/server/queue";
 
 /** Server state lives in TanStack Query. Loaders prefetch, components read. */
@@ -30,3 +31,14 @@ export const accountQuery = queryOptions({
   queryFn: () => getAccount(),
   staleTime: 30_000,
 });
+
+/** What the signed-in neighbour already did with an item (confirmed, follows…); null when signed out. */
+export const itemViewerQuery = (id: string) =>
+  queryOptions({ queryKey: ["item", id, "viewer"], queryFn: () => getItemViewer({ data: id }), staleTime: 30_000 });
+
+/**
+ * Where someone must go before writing anything (round 18, nível 1): sign in with a phone, then
+ * choose an apelido. Null when they can write.
+ */
+export const memberGate = (account: AccountData) =>
+  !account || account.guest || !account.phoneVerified ? "/entrar" : !account.nick ? "/bem-vindo" : null;

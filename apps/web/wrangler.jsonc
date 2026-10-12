@@ -3,8 +3,11 @@
   "name": "falacanoas-web",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  // src/server.ts: TanStack Start's request handler plus the daily job.
+  "main": "src/server.ts",
   "observability": { "enabled": true },
   // The identity vault (apps/vault): the only way the app reaches it.
-  "services": [{ "binding": "VAULT", "service": "falacanoas-vault" }]
+  "services": [{ "binding": "VAULT", "service": "falacanoas-vault" }],
+  // Daily at 03:05 in Canoas (06:05 UTC): pins closed by 15 days without dispute (src/server.ts).
+  "triggers": { "crons": ["5 6 * * *"] }
 }

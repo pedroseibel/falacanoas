@@ -7,9 +7,9 @@ import {
   legalDeadline,
   localStamp,
   relativeTime,
+  UPDATE_MAX,
   type CommunityStatus,
   type Item,
-  type ItemEvent,
   type ItemEventKind,
   type Municipality,
   type OfficialStatus,
@@ -17,10 +17,10 @@ import {
 } from "@fala/core";
 import {
   BadgeCheck,
-  Bell,
   Camera,
   Check,
   Info,
+  Loader2,
   MessageSquare,
   Pencil,
   Repeat2,
@@ -29,7 +29,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { CategoryLine } from "@/components/category";
 import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +37,8 @@ import { Input } from "@/components/ui/input";
 import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
 import { whereOf } from "@/features/map/item-card";
+import { ItemActions, usePhotoInput } from "./item-actions";
+import { useItemActions } from "./use-item-actions";
 
 const EVENT_ICON: Record<ItemEventKind, LucideIcon> = {
   created: Pencil,
@@ -111,54 +112,39 @@ function LegalDeadline({
   );
 }
 
-/** Local, optimistic interactions until the write path (Supabase) exists. */
-function useLocalActions(it: Item, viewer: Viewer) {
-  const [confirmed, setConfirmed] = useState(false);
-  const [following, setFollowing] = useState(false);
-  const [extra, setExtra] = useState<ItemEvent[]>([]);
-  const add = (kind: ItemEventKind, text: string) =>
-    setExtra((e) => [...e, { at: "agora", actor: viewer.nick, kind, text }]);
-  return {
-    confirmed,
-    following,
-    extra,
-    confirmations: it.confirmations + (confirmed ? 1 : 0),
-    toggleConfirm: () => {
-      setConfirmed((c) => !c);
-      if (!confirmed) {
-        add("confirmed", "Confirmou que está acontecendo.");
-        toast("Confirmado. Obrigado.");
-      }
-    },
-    stillHappening: () => {
-      add("confirmed", "Disse que continua acontecendo.");
-      toast("Registrado: continua acontecendo.");
-    },
-    toggleFollow: () => {
-      setFollowing((f) => !f);
-      toast(following ? "Você deixou de acompanhar." : "Você será avisado de cada atualização.");
-    },
-    postUpdate: (text: string) => {
-      add("update_added", text);
-      toast("Atualização publicada no histórico.");
-    },
-  };
-}
-
-export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipality; viewer: Viewer; now: Date }) {
-  const a = useLocalActions(it, viewer);
+export function ItemDetail({
+  it,
+  muni,
+  viewer,
+  now,
+  member,
+  onSignIn,
+}: {
+  it: Item;
+  muni: Municipality;
+  viewer: Viewer;
+  now: Date;
+  /** Signed in at nível 1, with an apelido: can act on the item. */
+  member: boolean;
+  /** Where actions send someone who can't act yet. */
+  onSignIn: () => void;
+}) {
+  const a = useItemActions(it, member, onSignIn);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [draft, setDraft] = useState("");
+  const currentPhoto = usePhotoInput((photos) => a.run({ type: "photo", photos }));
+  const write = () => (member ? document.getElementById("composer")?.focus() : onSignIn());
   const open = isOpen(it);
   const issue = it.kind === "public_issue";
   const photo = it.photos[photoIndex] ?? it.photos[0];
   const over = open && it.days > muni.deadlineDays;
   const disagreement = it.official?.status === "resolved" && it.community === "ongoing";
-  const events = [...deriveEvents(it, (d) => dateAgo(now, d)), ...a.extra];
+  const events = deriveEvents(it, (d) => dateAgo(now, d));
   const unit = issue ? "dias em acompanhamento" : open ? "dias em aberto" : "dias até o conserto";
 
   return (
     <article className="grid">
+      {currentPhoto.element}
       {photo ? (
         <figure className="m-0">
           <div className="relative bg-panel-3">
@@ -199,7 +185,8 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
             <button
               type="button"
               className="grid shrink-0 gap-1 text-left"
-              onClick={() => toast("No app, abre a câmera para a foto atual.")}
+              disabled={a.pending === "photo"}
+              onClick={() => (member ? currentPhoto.open() : onSignIn())}
             >
               <span className="grid h-14 w-19 place-items-center rounded-md border border-dashed border-hairline-strong bg-muted text-muted-foreground">
                 <Camera className="size-4" />
@@ -212,7 +199,12 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
         <div className="grid aspect-video place-items-center content-center gap-2.5 bg-panel-3 text-center text-sm text-muted-foreground">
           <Icon name={categoryIcon(it.category)} size={36} />
           Sem foto ainda.
-          <Button variant="outline" size="sm" onClick={() => toast("No app, abre a câmera.")}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={a.pending === "photo"}
+            onClick={() => (member ? currentPhoto.open() : onSignIn())}
+          >
             <Camera data-icon="inline-start" />
             Adicionar foto
           </Button>
@@ -261,7 +253,7 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
               {issue ? "Isso me afeta" : COMMUNITY_LABEL[it.community]}
             </span>
             <span className="text-xs text-muted-foreground">
-              {communityLine(it, a.confirmations)} · {relativeTime(it.updatedMinutesAgo)}
+              {communityLine(it)} · {relativeTime(it.updatedMinutesAgo)}
             </span>
           </div>
           <div className="grid content-start gap-1 rounded-xl border border-hairline bg-card p-3">
@@ -281,67 +273,13 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           {disagreement && (
             <p className="col-span-2 flex items-start gap-2 text-xs text-ink-2">
               <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />A Prefeitura diz que resolveu;{" "}
-              {it.disagreeing ?? a.confirmations} moradores dizem que continua. O Fala registra as duas coisas e não
+              {it.disagreeing ?? it.confirmations} moradores dizem que continua. O Fala registra as duas coisas e não
               decide quem está certo.
             </p>
           )}
         </section>
 
-        {(disagreement || it.community === "apparently_resolved") && (
-          <section className="grid gap-2.5 rounded-xl border border-dashed border-hairline-strong p-3.5">
-            <p className="text-sm text-ink-2">
-              <b className="text-foreground">Está resolvido?</b> Quem mora perto confirma. Com dois vizinhos, o registro
-              fecha e entra no placar.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" onClick={() => toast("No app, abre a câmera para a foto do depois.")}>
-                <Camera data-icon="inline-start" />
-                Sim, confirmo com foto
-              </Button>
-              <Button size="sm" variant="outline" onClick={a.stillHappening}>
-                Ainda não
-              </Button>
-            </div>
-          </section>
-        )}
-
-        <section className="grid grid-cols-2 gap-2" aria-label="Ações">
-          {issue ? (
-            <>
-              <Button variant="outline" aria-pressed={a.confirmed} onClick={a.toggleConfirm}>
-                <Users data-icon="inline-start" />
-                Isso me afeta <span className="font-mono text-xs opacity-70">{a.confirmations}</span>
-              </Button>
-              <Button variant="outline" onClick={() => document.getElementById("composer")?.focus()}>
-                <Info data-icon="inline-start" />
-                Tenho informação
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant={a.confirmed ? "default" : "outline"}
-                aria-pressed={a.confirmed}
-                onClick={a.toggleConfirm}
-              >
-                <Check data-icon="inline-start" />
-                Confirmo <span className="font-mono text-xs opacity-70">{a.confirmations}</span>
-              </Button>
-              <Button variant="outline" onClick={a.stillHappening}>
-                <Repeat2 data-icon="inline-start" />
-                Continua
-              </Button>
-            </>
-          )}
-          <Button variant="outline" onClick={() => document.getElementById("composer")?.focus()}>
-            <Pencil data-icon="inline-start" />
-            Atualizar
-          </Button>
-          <Button variant={a.following ? "default" : "outline"} aria-pressed={a.following} onClick={a.toggleFollow}>
-            <Bell data-icon="inline-start" />
-            {a.following ? "Acompanhando" : "Acompanhar"}
-          </Button>
-        </section>
+        <ItemActions it={it} muni={muni} actions={a} now={now} onWrite={write} />
 
         <p className="text-sm leading-relaxed text-ink-2">{it.text}</p>
 
@@ -349,7 +287,7 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           <h3 id="hist" className="flex items-baseline justify-between text-sm font-semibold">
             Histórico{" "}
             <small className="text-xs font-normal text-muted-foreground">
-              {it.updates + a.extra.length} atualizações · {relativeTime(it.updatedMinutesAgo)}
+              {it.updates} {it.updates === 1 ? "atualização" : "atualizações"} · {relativeTime(it.updatedMinutesAgo)}
             </small>
           </h3>
           <ol className="mt-2.5 grid">
@@ -391,22 +329,25 @@ export function ItemDetail({ it, muni, viewer, now }: { it: Item; muni: Municipa
           onSubmit={(e) => {
             e.preventDefault();
             const text = draft.trim();
-            if (!text) return;
-            a.postUpdate(text);
-            setDraft("");
+            if (!member) return onSignIn();
+            if (text) a.run({ type: "update", text }, () => setDraft(""));
           }}
         >
           <label className="sr-only" htmlFor="composer">
-            Escrever atualização ou comentário
+            Adicionar atualização
           </label>
           <Input
             id="composer"
             value={draft}
+            maxLength={UPDATE_MAX}
             onChange={(e) => setDraft(e.target.value)}
-            placeholder="Escreva uma atualização ou um comentário"
+            placeholder="Ex.: choveu ontem e a água chegou ao banco"
             autoComplete="off"
           />
-          <Button type="submit">Enviar</Button>
+          <Button type="submit" disabled={a.pending === "update"}>
+            {a.pending === "update" && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
+            Enviar
+          </Button>
         </form>
       </div>
     </article>

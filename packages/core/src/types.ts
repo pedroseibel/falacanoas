@@ -115,6 +115,10 @@ export const ItemSchema = z.object({
    * reference for the legal deadline. It never restarts the public clock (DECISIONS, rounds 5 and 18).
    */
   protocol: z.object({ number: z.string(), at: z.string() }).nullable().optional(),
+  /** Neighbours who said it was fixed in the current round (resets when it reopens). */
+  resolvedVotes: z.number().int().nonnegative().optional(),
+  /** When someone first said it was fixed in this round (ISO): 15 days later it closes, if undisputed. */
+  resolvingSince: z.string().nullable().optional(),
   /** When it was registered (ISO); absent on fixtures. */
   createdAt: z.string().optional(),
   /** When the community closed it (ISO); absent on fixtures. */

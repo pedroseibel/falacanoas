@@ -32,6 +32,9 @@ function stored(row: ReturnType<typeof seedRows>["row"]): ItemRow {
     protocolAt: null,
     closedAt: null,
     ...row,
+    resolvedVotes: row.resolvedVotes ?? 0,
+    resolvingSince: row.resolvingSince ?? null,
+    round: row.round ?? 0,
   };
 }
 

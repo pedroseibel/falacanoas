@@ -134,6 +134,12 @@ export const items = fala
       protocolAt: timestamp({ withTimezone: true }),
       /** When the community closed it. */
       closedAt: timestamp({ withTimezone: true }),
+      /** Neighbours who said it was fixed in the current round (round 4). */
+      resolvedVotes: integer().notNull().default(0),
+      /** When someone first said so in this round: 15 days later it closes, if undisputed. */
+      resolvingSince: timestamp({ withTimezone: true }),
+      /** The resolution round: "ainda não" reopens the pin and starts the next one. */
+      round: integer().notNull().default(0),
     },
     (t) => [index().on(t.category, t.community), index().on(t.neighborhood), index().on(t.updatedAt)],
   )
@@ -213,6 +219,47 @@ export const itemConfirmations = fala
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [primaryKey({ columns: [t.itemId, t.accountId] })],
+  )
+  .enableRLS();
+
+export const voteKind = fala.enum("vote_kind", ["still", "resolved"]);
+
+/**
+ * Per-account marks that make actions once-only: "foi resolvido" once per resolution round,
+ * "continua acontecendo" once a day (`slot` holds the round number or the local date).
+ */
+export const itemVotes = fala
+  .table(
+    "item_votes",
+    {
+      itemId: text()
+        .notNull()
+        .references(() => items.id, { onDelete: "cascade" }),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      kind: voteKind().notNull(),
+      slot: text().notNull(),
+      at: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [primaryKey({ columns: [t.itemId, t.accountId, t.kind, t.slot] })],
+  )
+  .enableRLS();
+
+/** "Acompanhar" a single pin (round 15). Homes, routes and bairros come with BUILD 2.4. */
+export const itemFollows = fala
+  .table(
+    "item_follows",
+    {
+      itemId: text()
+        .notNull()
+        .references(() => items.id, { onDelete: "cascade" }),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [primaryKey({ columns: [t.itemId, t.accountId] }), index().on(t.accountId)],
   )
   .enableRLS();
 
