@@ -138,3 +138,15 @@ export function seedRows(
     })),
   };
 }
+
+/** "há 2 h", "há 40 min", "há 3 dias", "ontem", "agora", read at `now`; null if it isn't one. */
+export function parseAgo(ago: string, now: Date): Date | null {
+  const s = ago.trim();
+  if (s === "agora") return now;
+  if (s === "ontem") return new Date(now.getTime() - DAY);
+  const m = /^há (\d+) (min|h|dias?)$/.exec(s);
+  if (!m) return null;
+  const n = Number(m[1]);
+  const unit = m[2] === "min" ? MINUTE : m[2] === "h" ? HOUR : DAY;
+  return new Date(now.getTime() - n * unit);
+}

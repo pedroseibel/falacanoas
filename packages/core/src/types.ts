@@ -139,7 +139,9 @@ export const ThreadSchema = z.object({
   by: z.string(),
   ago: z.string(),
   pin: z.string().optional(),
-  replies: z.array(z.object({ by: z.string(), ago: z.string(), text: z.string() })),
+  /** Fictional demo data, labelled "exemplo". */
+  demo: z.boolean().optional(),
+  replies: z.array(z.object({ id: z.string().optional(), by: z.string(), ago: z.string(), text: z.string() })),
 });
 export type Thread = z.infer<typeof ThreadSchema>;
 

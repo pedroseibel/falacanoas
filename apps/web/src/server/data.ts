@@ -21,7 +21,3 @@ export const getItem = createServerFn({ method: "GET" })
     const user = (await getSession())?.user;
     return findVisibleItem(data.id.toUpperCase(), { key: data.key, accountId: user?.id ?? null });
   });
-
-export const getThreads = createServerFn({ method: "GET" })
-  .inputValidator((slug: string) => slug.slice(0, 60))
-  .handler(async ({ data }) => fixtures.threads[data] ?? []);

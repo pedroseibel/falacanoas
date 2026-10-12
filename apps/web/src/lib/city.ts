@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
-import { getCity, getItem, getThreads } from "@/server/data";
+import { getCity, getItem } from "@/server/data";
+import { getPinThread, getReportedPosts, getThreads } from "@/server/forum";
 import { getAccount, getAuthConfig } from "@/server/account";
 import { getFollowing } from "@/server/follows";
 import { getItemViewer } from "@/server/item-actions";
@@ -71,4 +72,15 @@ export const isModeratorQuery = queryOptions({
   queryKey: ["moderator"],
   queryFn: () => getIsModerator(),
   staleTime: 60_000,
+});
+
+/** A pin's conversation, or null if nobody has started it. */
+export const pinThreadQuery = (id: string) =>
+  queryOptions({ queryKey: ["item", id, "thread"], queryFn: () => getPinThread({ data: id }), staleTime: 30_000 });
+
+/** Reported forum posts, for moderators. */
+export const reportedPostsQuery = queryOptions({
+  queryKey: ["moderation", "posts"],
+  queryFn: () => getReportedPosts(),
+  staleTime: 15_000,
 });

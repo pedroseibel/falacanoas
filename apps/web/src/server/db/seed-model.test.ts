@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { canoas } from "@fala/instance-canoas";
 import { fixtures } from "@fala/instance-canoas/fixtures";
 import { itemFromRows, rowsForNewItem, type ItemRow } from "../items-model";
-import { parseStamp, seedRows } from "./seed-model";
+import { parseAgo, parseStamp, seedRows } from "./seed-model";
 
 const tz = canoas.timezone;
 const now = new Date(fixtures.now);
@@ -140,5 +140,15 @@ describe("rowsForNewItem", () => {
     expect(back.sentAt).toBeNull();
     expect(back.events?.[0]?.at).toBe("hoje · 15:00");
     expect(back.photos[0]?.takenAt).toBe("hoje · 15:00");
+  });
+});
+
+describe("parseAgo", () => {
+  test("reads the fixtures' relative times", () => {
+    expect(parseAgo("há 40 min", now)?.toISOString()).toBe("2026-10-12T16:40:00.000Z");
+    expect(parseAgo("há 2 h", now)?.toISOString()).toBe("2026-10-12T15:20:00.000Z");
+    expect(parseAgo("há 3 dias", now)?.toISOString()).toBe("2026-10-09T17:20:00.000Z");
+    expect(parseAgo("ontem", now)?.toISOString()).toBe("2026-10-11T17:20:00.000Z");
+    expect(parseAgo("semana passada", now)).toBeNull();
   });
 });

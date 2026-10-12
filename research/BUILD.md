@@ -51,7 +51,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - the confirmation screen stops saying "nothing is stored".
 - [x] **1.8 Round 18 tables.** Done 2026-10-12.
   - [x] apelido reservations (Q28): `fala.nick_reservations`, claimed under a row lock;
-  - [x] `AccessEvidence` (Q21), in the vault (`fala_cofre.access_evidence`): every sign-in (code or passkey), publication and confirmation; comments and guest pins record theirs when 2.6 and 2.5 land. Only Cloudflare's headers are read; until the Transform Rule exists (4.5), the port, edge address and transport are null;
+  - [x] `AccessEvidence` (Q21), in the vault (`fala_cofre.access_evidence`): every sign-in (code or passkey), publication and confirmation; comments (2.6) and guest pins (2.5) record theirs. Only Cloudflare's headers are read; until the Transform Rule exists (4.5), the port, edge address and transport are null;
   - [x] 6-month deletion with preservation holds (Q23): a daily cron in the vault deletes older evidence and old unlinked phone links, sparing what an active hold covers. A hold lapses after 60 days without a court order. Holds are entered by the operator, with grounds and scope; there is no screen for them;
   - [x] room reserved for nível 2 (Q12): `identityVerified` on the account, no flow.
 
@@ -81,7 +81,12 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - access evidence recorded (`guest_pin`);
   - a secret link `/o/ID?chave=…` (only its SHA-256 is stored) is the guest's way back; without it the pin answers 404;
   - published guest pins count in the Placar after two independent confirmations (2.1).
-- [ ] **2.6 Forum** (round 5): threads under each pin and one board per bairro, persisted and moderated.
+- [x] **2.6 Forum** (round 5): threads under each pin and one board per bairro, persisted and moderated. Done 2026-10-12, verified in the browser with a neighbour and a moderator.
+  - `fala.threads`, `fala.posts`, `fala.post_reports`; the demo boards (55 topics, 23 replies) are seeded as `demo` and labelled "exemplo";
+  - the bairro page: open a topic, pick one, reply; the pin's page: "Conversa", which starts with its first reply;
+  - signed with the apelido, nível 1; the pre-screen refuses CPFs, phone numbers, insults and named people before anything is posted, with a sentence that says what to take out;
+  - "Denunciar" on each reply (not your own), once per person; `/moderar` lists reported replies for the moderator's bairros, never their own, to hide or keep. Hidden replies stay in the database and leave every page;
+  - access evidence recorded (`comment`).
 - [x] **2.7 Moderation** (round 5, Q19, Q31). Done 2026-10-12, verified in the browser with an author and two moderators.
   - the pre-screen (core): CPFs (check digits), phone numbers, strong insults, a title before a name, and electoral wording during the instance's campaign window (Canoas 2026: 16 Aug to 25 Oct). Reports it flags wait for a moderator; updates are refused with a sentence that says what to take out; children in photos waits on 2.11's detection service;
   - every guest pin opens a case too;

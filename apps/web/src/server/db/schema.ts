@@ -12,6 +12,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -287,6 +288,74 @@ export const follows = fala
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [index().on(t.accountId)],
+  )
+  .enableRLS();
+
+/* ---------- Forum (round 5): a board per bairro, and a conversation under each pin ---------- */
+
+export const threads = fala
+  .table(
+    "threads",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      /** The bairro board it belongs to; null for a pin's conversation outside any bairro. */
+      neighborhood: text(),
+      /** A pin's conversation: one per pin. */
+      itemId: text()
+        .unique()
+        .references(() => items.id, { onDelete: "cascade" }),
+      title: text().notNull(),
+      authorNick: text().notNull(),
+      /** Closing the account unlinks it; the conversation stays. */
+      accountId: uuid().references(() => users.id, { onDelete: "set null" }),
+      hidden: boolean().notNull().default(false),
+      demo: boolean().notNull().default(false),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+      lastPostAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.neighborhood, t.lastPostAt)],
+  )
+  .enableRLS();
+
+export const posts = fala
+  .table(
+    "posts",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      threadId: uuid()
+        .notNull()
+        .references(() => threads.id, { onDelete: "cascade" }),
+      text: text().notNull(),
+      authorNick: text().notNull(),
+      accountId: uuid().references(() => users.id, { onDelete: "set null" }),
+      /** Hidden by moderation: kept, with the decision, never shown. */
+      hidden: boolean().notNull().default(false),
+      demo: boolean().notNull().default(false),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.threadId, t.createdAt)],
+  )
+  .enableRLS();
+
+export const reportStatus = fala.enum("report_status", ["open", "hidden", "kept"]);
+
+/** "Denunciar" on a post: a moderator hides it or keeps it. */
+export const postReports = fala
+  .table(
+    "post_reports",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      postId: uuid()
+        .notNull()
+        .references(() => posts.id, { onDelete: "cascade" }),
+      reporterId: uuid().references(() => users.id, { onDelete: "set null" }),
+      status: reportStatus().notNull().default("open"),
+      note: text(),
+      decidedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+      decidedAt: timestamp({ withTimezone: true }),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.status), uniqueIndex("post_reports_once").on(t.postId, t.reporterId)],
   )
   .enableRLS();
 

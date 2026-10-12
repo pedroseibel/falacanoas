@@ -1,8 +1,8 @@
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { BairroPage } from "@/features/bairro/bairro-page";
-import { cityQuery, threadsQuery } from "@/lib/city";
+import { accountQuery, cityQuery, memberGate, threadsQuery } from "@/lib/city";
 
 export const Route = createFileRoute("/_app/bairro/$slug")({
   loader: async ({ context, params }) => {
@@ -22,7 +22,9 @@ function BairroRoute() {
   const { slug } = Route.useParams();
   const { data: city } = useSuspenseQuery(cityQuery);
   const { data: threads } = useSuspenseQuery(threadsQuery(slug));
+  const { data: account } = useQuery(accountQuery);
   const navigate = useNavigate();
+  const gate = memberGate(account ?? null);
   return (
     <BairroPage
       key={slug}
@@ -30,9 +32,10 @@ function BairroRoute() {
       items={city.items}
       threads={threads}
       muni={canoas}
-      viewer={city.viewer}
       onBairro={(s) => void navigate({ to: "/bairro/$slug", params: { slug: s } })}
       onOpen={(id) => void navigate({ to: "/o/$id", params: { id } })}
+      member={gate === null}
+      onSignIn={() => void navigate({ to: gate ?? "/entrar", search: { volta: `/bairro/${slug}` } })}
     />
   );
 }

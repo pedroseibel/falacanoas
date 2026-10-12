@@ -39,6 +39,7 @@ import { cn } from "@/lib/utils";
 import { whereOf } from "@/features/map/item-card";
 import { ItemActions, usePhotoInput } from "./item-actions";
 import { ModerationNotice } from "./moderation-notice";
+import { PinConversation } from "./pin-conversation";
 import { useItemActions } from "./use-item-actions";
 
 const EVENT_ICON: Record<ItemEventKind, LucideIcon> = {
@@ -361,6 +362,8 @@ export function ItemDetail({
             </Button>
           </form>
         )}
+
+        {!it.moderation && <PinConversation it={it} member={member} onSignIn={onSignIn} />}
       </div>
     </article>
   );

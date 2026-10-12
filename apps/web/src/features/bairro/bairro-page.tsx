@@ -1,31 +1,41 @@
-import { isOpen, median, type Item, type Municipality, type Thread, type Viewer } from "@fala/core";
+import { isOpen, median, type Item, type Municipality, type Thread } from "@fala/core";
 import { MessageSquare } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 import { Icon, categoryIcon } from "@/components/Icons";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatTile, project } from "@/components/viz";
+import { ThreadView } from "@/features/forum/thread-view";
 import { ItemCard } from "@/features/map/item-card";
+import { threadsQuery } from "@/lib/city";
+import { replyToThread, startThread } from "@/server/forum";
 
 export function BairroPage({
   slug,
   items,
   threads,
   muni,
-  viewer,
   onBairro,
   onOpen,
+  member,
+  onSignIn,
 }: {
   slug: string;
   items: Item[];
   threads: Thread[];
   muni: Municipality;
-  viewer: Viewer;
   onBairro: (slug: string) => void;
   onOpen: (id: string) => void;
+  /** Signed in with an apelido: can post. */
+  member: boolean;
+  onSignIn: () => void;
 }) {
+  const queryClient = useQueryClient();
   const bairro = muni.neighborhoods.find((n) => n.slug === slug);
   const feature = muni.geo.neighborhoods.features.find((f) => f.properties.slug === slug);
   const mine = items.filter((i) => i.neighborhood === slug);
@@ -34,9 +44,29 @@ export function BairroPage({
   const questions = mine.filter((i) => i.kind === "public_issue");
   const medianToFix = median(occurrences.filter((i) => !isOpen(i)).map((i) => i.days));
   const [threadId, setThreadId] = useState(threads[0]?.id ?? null);
-  const [replies, setReplies] = useState<Record<string, Thread["replies"]>>({});
-  const [draft, setDraft] = useState("");
+  const [topic, setTopic] = useState("");
   const thread = threads.find((t) => t.id === threadId) ?? threads[0];
+  const keep = (next: Thread[]) => queryClient.setQueryData(threadsQuery(slug).queryKey, next);
+  const reply = async (text: string) => {
+    if (!thread) return false;
+    const r = await replyToThread({ data: { threadId: thread.id, text } }).catch(() => null);
+    if (!r?.ok) {
+      toast(r?.error ?? "Não deu para enviar agora. Tente de novo.");
+      return false;
+    }
+    keep(threads.map((t) => (t.id === r.thread.id ? r.thread : t)));
+    return true;
+  };
+  const openTopic = useMutation({
+    mutationFn: (title: string) => startThread({ data: { neighborhood: slug, title } }),
+    onSuccess: (r) => {
+      if (!r.ok) return void toast(r.error);
+      keep(r.threads);
+      setThreadId(r.threads[0]?.id ?? null);
+      setTopic("");
+    },
+    onError: () => toast("Não deu para abrir o tópico agora. Tente de novo."),
+  });
   const outline = feature ? project([feature], 200) : null;
   const names = Object.fromEntries(muni.neighborhoods.map((n) => [n.slug, n.name]));
   if (!bairro) return null;
@@ -130,6 +160,27 @@ export function BairroPage({
                 </div>
               </TabsContent>
               <TabsContent value="conversa">
+                <form
+                  className="flex gap-2 pt-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!member) return onSignIn();
+                    if (topic.trim().length >= 8) openTopic.mutate(topic.trim());
+                    else toast("Escreva o assunto em uma frase.");
+                  }}
+                >
+                  <Input
+                    aria-label="Assunto do novo tópico"
+                    value={topic}
+                    maxLength={160}
+                    onChange={(e) => setTopic(e.target.value)}
+                    placeholder="Ex.: a coleta de lixo mudou de dia?"
+                    autoComplete="off"
+                  />
+                  <Button type="submit" variant="outline" disabled={openTopic.isPending}>
+                    Abrir tópico
+                  </Button>
+                </form>
                 <div className="grid pt-2">
                   {threads.map((t) => (
                     <button
@@ -140,10 +191,13 @@ export function BairroPage({
                       className="grid gap-1 border-t border-hairline px-3 py-3.5 text-left first:border-t-0 hover:bg-muted aria-[current=true]:bg-muted"
                     >
                       <span className="text-sm leading-snug font-semibold">{t.title}</span>
-                      <span className="flex gap-2.5 text-xs text-muted-foreground">
+                      <span className="flex min-h-4.5 items-center gap-2.5 text-xs text-muted-foreground">
                         <span>{t.by}</span>
                         <span>{t.ago}</span>
-                        <span>{t.replies.length + (replies[t.id]?.length ?? 0)} respostas</span>
+                        <span>
+                          {t.replies.length} {t.replies.length === 1 ? "resposta" : "respostas"}
+                        </span>
+                        {t.demo && <Badge variant="chip-inline">exemplo</Badge>}
                       </span>
                     </button>
                   ))}
@@ -162,56 +216,21 @@ export function BairroPage({
             Conversa do bairro <span className="font-normal text-muted-foreground">{threads.length} tópicos</span>
           </h2>
           {thread ? (
-            <div className="grid gap-1 p-4.5">
-              <p className="text-xs text-muted-foreground">
-                {thread.by} · {thread.ago}
-              </p>
-              <h3 className="text-xl leading-snug font-semibold tracking-tight">{thread.title}</h3>
-              {[...thread.replies, ...(replies[thread.id] ?? [])].map((r) => (
-                <div
-                  key={`${r.by}|${r.ago}|${r.text}`}
-                  className="flex gap-2.5 border-t border-hairline py-2.5 first-of-type:mt-2"
-                >
-                  <span className="grid size-7 shrink-0 place-items-center rounded-full bg-panel-3 text-2xs font-semibold">
-                    {r.by.slice(0, 2).toUpperCase()}
-                  </span>
-                  <div>
-                    <p className="text-sm">
-                      <b className="font-semibold">{r.by}</b>{" "}
-                      <span className="ml-1.5 text-xs text-muted-foreground">{r.ago}</span>
-                    </p>
-                    <p className="text-sm leading-relaxed text-ink-2">{r.text}</p>
-                  </div>
-                </div>
-              ))}
-              <form
-                className="mt-2 flex gap-2"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const text = draft.trim();
-                  if (!text) return;
-                  setReplies((all) => ({
-                    ...all,
-                    [thread.id]: [...(all[thread.id] ?? []), { by: viewer.nick, ago: "agora", text }],
-                  }));
-                  setDraft("");
-                }}
-              >
-                <Input
-                  aria-label="Responder"
-                  value={draft}
-                  onChange={(e) => setDraft(e.target.value)}
-                  placeholder="Responder para o bairro"
-                  autoComplete="off"
-                />
-                <Button type="submit">Enviar</Button>
-              </form>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Críticas a serviços e órgãos são bem-vindas. Ataques a pessoas, não. Moderado por vizinhos do bairro.
-              </p>
+            <div className="p-4.5">
+              <ThreadView
+                key={thread.id}
+                thread={thread}
+                heading
+                member={member}
+                onSignIn={onSignIn}
+                onReply={reply}
+                placeholder="Responder para o bairro"
+              />
             </div>
           ) : (
-            <p className="p-8 text-center text-sm text-muted-foreground">Nenhuma conversa ainda.</p>
+            <p className="p-8 text-center text-sm text-muted-foreground">
+              Nenhuma conversa ainda. Abra o primeiro tópico do bairro.
+            </p>
           )}
         </section>
       </div>

@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { whereOf } from "@/features/map/item-card";
-import { moderationQueueQuery } from "@/lib/city";
+import { moderationQueueQuery, reportedPostsQuery } from "@/lib/city";
+import { decidePost, type ReportedPost } from "@/server/forum";
 import { decideCase, resolveContest, type QueueCase } from "@/server/moderation";
 
 const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-soft";
@@ -18,7 +19,15 @@ const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-
  * for volunteer moderators. Nobody here sees who posted: a random handle per item and, at most, how
  * many of that author's posts were refused before.
  */
-export function ModerationPage({ cases, muni }: { cases: QueueCase[]; muni: Municipality }) {
+export function ModerationPage({
+  cases,
+  posts,
+  muni,
+}: {
+  cases: QueueCase[];
+  posts: ReportedPost[];
+  muni: Municipality;
+}) {
   return (
     <div className="mx-auto grid max-w-3xl gap-5 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
@@ -32,10 +41,52 @@ export function ModerationPage({ cases, muni }: { cases: QueueCase[]; muni: Muni
         cases.map((c) => <Case key={c.id} c={c} muni={muni} />)
       ) : (
         <p className={`${panel} text-center text-sm text-muted-foreground`}>
-          Nada esperando. Obrigado por cuidar do bairro.
+          {posts.length ? "Nenhum registro esperando." : "Nada esperando. Obrigado por cuidar do bairro."}
         </p>
       )}
+      {posts.length > 0 && (
+        <section aria-labelledby="denuncias" className="mt-3 grid gap-3">
+          <h2 id="denuncias" className="text-lg font-semibold tracking-tight">
+            Conversas denunciadas
+          </h2>
+          {posts.map((p) => (
+            <ReportedPostCard key={p.id} post={p} />
+          ))}
+        </section>
+      )}
     </div>
+  );
+}
+
+/** A reply someone reported in a bairro board or a pin's conversation: hide it, or keep it up. */
+function ReportedPostCard({ post }: { post: ReportedPost }) {
+  const queryClient = useQueryClient();
+  const decide = useMutation({
+    mutationFn: (hide: boolean) => decidePost({ data: { postId: post.id, hide } }),
+    onSuccess: (r, hide) => {
+      toast(r.ok ? (hide ? "Mensagem ocultada." : "Mensagem mantida.") : r.error);
+      if (r.ok) void queryClient.invalidateQueries({ queryKey: reportedPostsQuery.queryKey });
+    },
+  });
+  return (
+    <article className={panel} aria-label={`Mensagem de ${post.by}`}>
+      <div className="grid gap-1">
+        <p className="text-xs text-muted-foreground">
+          Em “{post.threadTitle}” · {post.reports} {post.reports === 1 ? "denúncia" : "denúncias"}
+        </p>
+        <p className="text-sm leading-relaxed break-words">
+          <b className="font-semibold">{post.by}</b>: {post.text}
+        </p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate(true)}>
+          Ocultar
+        </Button>
+        <Button size="sm" variant="outline" disabled={decide.isPending} onClick={() => decide.mutate(false)}>
+          Manter
+        </Button>
+      </div>
+    </article>
   );
 }
 
