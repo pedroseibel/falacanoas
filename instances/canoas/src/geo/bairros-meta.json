@@ -1,0 +1,274 @@
+{
+"bairros": [
+{
+"slug": "brigadeira",
+"name": "Brigadeira",
+"threshold": null,
+"center": [
+-51.15553,
+-29.87413
+],
+"bbox": [
+-51.18072,
+-29.88365,
+-51.11819,
+-29.85925
+]
+},
+{
+"slug": "centro",
+"name": "Centro",
+"threshold": 52,
+"center": [
+-51.18205,
+-29.91611
+],
+"bbox": [
+-51.19309,
+-29.93167,
+-51.176,
+-29.89666
+]
+},
+{
+"slug": "estancia-velha",
+"name": "Estância Velha",
+"threshold": 102,
+"center": [
+-51.14187,
+-29.91758
+],
+"bbox": [
+-51.15594,
+-29.92869,
+-51.13116,
+-29.9054
+]
+},
+{
+"slug": "fatima",
+"name": "Fátima",
+"threshold": 65,
+"center": [
+-51.18968,
+-29.94103
+],
+"bbox": [
+-51.20474,
+-29.95746,
+-51.17665,
+-29.92693
+]
+},
+{
+"slug": "guajuviras",
+"name": "Guajuviras",
+"threshold": 136,
+"center": [
+-51.13665,
+-29.89564
+],
+"bbox": [
+-51.14633,
+-29.91549,
+-51.10601,
+-29.87675
+]
+},
+{
+"slug": "harmonia",
+"name": "Harmonia",
+"threshold": 116,
+"center": [
+-51.21431,
+-29.91106
+],
+"bbox": [
+-51.24216,
+-29.92297,
+-51.19129,
+-29.90467
+]
+},
+{
+"slug": "igara",
+"name": "Igara",
+"threshold": 67,
+"center": [
+-51.15993,
+-29.9001
+],
+"bbox": [
+-51.177,
+-29.9056,
+-51.1426,
+-29.89266
+]
+},
+{
+"slug": "ilha-das-garcas",
+"name": "Ilha das Garças",
+"threshold": null,
+"center": [
+-51.21599,
+-29.95452
+],
+"bbox": [
+-51.23119,
+-29.96676,
+-51.20346,
+-29.9407
+]
+},
+{
+"slug": "industrial",
+"name": "Industrial",
+"threshold": null,
+"center": [
+-51.20847,
+-29.87823
+],
+"bbox": [
+-51.24838,
+-29.88535,
+-51.17943,
+-29.86231
+]
+},
+{
+"slug": "marechal-rondon",
+"name": "Marechal Rondon",
+"threshold": 51,
+"center": [
+-51.16604,
+-29.91896
+],
+"bbox": [
+-51.17793,
+-29.92832,
+-51.15339,
+-29.90386
+]
+},
+{
+"slug": "mathias-velho",
+"name": "Mathias Velho",
+"threshold": 144,
+"center": [
+-51.20853,
+-29.90194
+],
+"bbox": [
+-51.24096,
+-29.90799,
+-51.17706,
+-29.89566
+]
+},
+{
+"slug": "mato-grande",
+"name": "Mato Grande",
+"threshold": 55,
+"center": [
+-51.20852,
+-29.92956
+],
+"bbox": [
+-51.24804,
+-29.95768,
+-51.179,
+-29.90703
+]
+},
+{
+"slug": "niteroi",
+"name": "Niterói",
+"threshold": 110,
+"center": [
+-51.15649,
+-29.95704
+],
+"bbox": [
+-51.17725,
+-29.96774,
+-51.12848,
+-29.93637
+]
+},
+{
+"slug": "nossa-senhora-das-gracas",
+"name": "Nossa Senhora das Graças",
+"threshold": 49,
+"center": [
+-51.15267,
+-29.9341
+],
+"bbox": [
+-51.17771,
+-29.95779,
+-51.12511,
+-29.92316
+]
+},
+{
+"slug": "olaria",
+"name": "Olaria",
+"threshold": 53,
+"center": [
+-51.12978,
+-29.92093
+],
+"bbox": [
+-51.13441,
+-29.93351,
+-51.11321,
+-29.90636
+]
+},
+{
+"slug": "rio-branco",
+"name": "Rio Branco",
+"threshold": 95,
+"center": [
+-51.19087,
+-29.96149
+],
+"bbox": [
+-51.20823,
+-29.97149,
+-51.17617,
+-29.95051
+]
+},
+{
+"slug": "sao-jose",
+"name": "São José",
+"threshold": 61,
+"center": [
+-51.15512,
+-29.88593
+],
+"bbox": [
+-51.18052,
+-29.89378,
+-51.14047,
+-29.8779
+]
+},
+{
+"slug": "sao-luis",
+"name": "São Luís",
+"threshold": 25,
+"center": [
+-51.21537,
+-29.89444
+],
+"bbox": [
+-51.24958,
+-29.90788,
+-51.17596,
+-29.88072
+]
+}
+]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "fala",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.4.0",
+  "description": "Fala Core e a instância Fala, Canoas: mapa cívico independente e de código aberto.",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "dev": "bun --filter @fala/web dev",
+    "build": "bun --filter @fala/web build",
+    "preview": "bun --filter @fala/web preview",
+    "deploy": "bun --filter @fala/web deploy",
+    "test": "bun test",
+    "typecheck": "bun --filter '*' typecheck",
+    "lint": "oxlint",
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*",
+    "instances/*"
+  ],
+  "trustedDependencies": [
+    "esbuild",
+    "workerd",
+    "sharp"
+  ],
+  "devDependencies": {
+    "@shadcn/lint": "^0.2.1",
+    "oxlint": "^1.83.0",
+    "prettier": "^3.9.10",
+    "typescript": "7.0.2"
+  }
+}

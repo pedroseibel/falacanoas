@@ -1,0 +1,36 @@
+# deps / builds
+node_modules/
+dist/
+.output/
+.vinxi/
+.wrangler/
+.tanstack/
+.nitro/
+*.tsbuildinfo
+.vite/
+
+# env & secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+*.local
+
+# OS / tooling
+.DS_Store
+.venv/
+__pycache__/
+
+# impeccable working files
+.impeccable/config.local.json
+.impeccable/review/
+.impeccable/quality-bar/
+.impeccable/mocks/
+.impeccable/*-round.json
+
+# large or re-downloadable research sources (documented in each SOURCE.md / CREDITS.md)
+research/maps/data/**/*.zip
+research/maps/data/canoas-bairros-simplified.geojson
+research/brand/photos/*.jpg
+research/**/*.draft.md
+research/**/*draft*

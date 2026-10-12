@@ -1,0 +1,40 @@
+import type { Municipality, Viewer } from "@fala/core";
+import { useRef } from "react";
+import { useMountEffect } from "@/hooks/use-mount-effect";
+import { PHONE_QUERY } from "@/lib/use-media-query";
+import { mountMap } from "./map-engine";
+import { setMapState, type MapState } from "./map-store";
+
+/** The map is an imperative island: mounted once, then driven by mapStore (see map-engine.ts). */
+export function MapView({ muni, viewer, initial, onPick }: { muni: Municipality; viewer: Viewer; initial: Pick<MapState, "visible" | "selectedId">; onPick: (id: string) => void }) {
+  const host = useRef<HTMLDivElement>(null);
+  useMountEffect(() => {
+    // Route lifecycle hooks don't run on hydration: seed the store from the server-rendered state.
+    const theme = document.documentElement.getAttribute("data-theme");
+    setMapState({ ...initial, dark: theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches });
+    let dispose: (() => void) | null = null;
+    let cancelled = false;
+    void Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl-worker.mjs?url")]).then(([ml, worker]) => {
+      if (cancelled || !host.current) return;
+      ml.setWorkerUrl(worker.default);
+      dispose = mountMap(ml, host.current, {
+        muni,
+        viewer,
+        onPick,
+        isPhone: () => matchMedia(PHONE_QUERY).matches,
+        railHeight: () => document.querySelector("[data-rail]")?.getBoundingClientRect().height ?? 170,
+      });
+    });
+    return () => {
+      cancelled = true;
+      dispose?.();
+    };
+  });
+  // MapLibre's unlayered CSS sets position:relative on its container, beating layered utilities,
+  // so positioning lives on a wrapper it doesn't touch.
+  return (
+    <div className="absolute inset-0">
+      <div ref={host} className="size-full" role="region" aria-label={`Mapa de ${muni.name} com os registros`} />
+    </div>
+  );
+}

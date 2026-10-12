@@ -1,0 +1,59 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "react", "react-hooks", "import", "unicorn"],
+  "jsPlugins": ["@shadcn/lint"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "pedantic": "off",
+    "style": "off",
+    "restriction": "off",
+    "perf": "warn",
+    "nursery": "off"
+  },
+  "settings": {
+    "shadcn": {
+      "ui": "@/components/ui",
+      "note": "Ver DESIGN.md (tokens, Regra dos Três Lugares do laranja) e CLAUDE.md."
+    }
+  },
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off",
+    "react/react-in-jsx-scope": "off",
+    "typescript/consistent-type-assertions": ["error", { "assertionStyle": "never" }],
+    "unicorn/no-null": "off",
+    "unicorn/filename-case": "off",
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "react",
+            "importNames": ["useEffect"],
+            "message": "useEffect é proibido. Use estado derivado, handlers, TanStack Query/Store, remount por key, ref callback ou useMountEffect (apps/web/src/hooks/use-mount-effect.ts)."
+          }
+        ]
+      }
+    ],
+    "react/no-unstable-nested-components": ["error", { "allowAsProps": true }],
+    "react/incompatible-library": "warn",
+    "react/jsx-no-constructed-context-values": "error",
+    "shadcn/no-raw-colors": "error",
+    "shadcn/no-arbitrary-values": "warn",
+    "shadcn/no-restyle": ["error", { "allow": ["layout"] }],
+    "shadcn/no-unknown-classes": "error",
+    "shadcn/require-static-classes": "error"
+  },
+  "overrides": [
+    {
+      "files": ["apps/*/src/hooks/use-mount-effect.ts"],
+      "rules": { "no-restricted-imports": "off" }
+    },
+    {
+      "files": ["apps/web/src/components/ui/**"],
+      "rules": { "shadcn/no-restyle": "off", "shadcn/no-arbitrary-values": "off", "shadcn/require-static-classes": "off" }
+    }
+  ],
+  "ignorePatterns": ["node_modules", "dist", ".output", ".wrangler", "apps/landing/**", "research/**", "routeTree.gen.ts", "*.config.ts", "*.config.js"]
+}

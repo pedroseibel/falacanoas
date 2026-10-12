@@ -1,0 +1,126 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "./tokens.css";
+
+/* Dark follows the system unless the person picked a theme (data-theme on <html>). */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+@theme inline {
+  --font-sans: "Geist", "Geist Fallback", ui-sans-serif, system-ui, sans-serif;
+  --font-heading: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", "Geist Mono Fallback", ui-monospace, monospace;
+  --text-2xs: 0.625rem;
+  --text-2xs--line-height: 1;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-signal: var(--signal);
+  --color-signal-foreground: var(--signal-ink);
+  --color-signal-text: var(--signal-text);
+  --color-signal-wash: var(--signal-wash);
+  --color-ink-2: var(--ink-2);
+  --color-panel-3: var(--panel-3);
+  --color-ground: var(--ground);
+  --color-hairline: var(--line);
+  --color-hairline-strong: var(--line-3);
+  --color-seq-0: var(--seq-0);
+  --color-seq-1: var(--seq-1);
+  --color-seq-2: var(--seq-2);
+  --color-seq-3: var(--seq-3);
+  --color-seq-4: var(--seq-4);
+  --color-seq-5: var(--seq-5);
+  --color-track: var(--track);
+  --shadow-panel: var(--shadow);
+  --shadow-soft: var(--shadow-sm);
+  --shadow-float: var(--shadow-float);
+  --color-chart-1: var(--seq-1);
+  --color-chart-2: var(--seq-2);
+  --color-chart-3: var(--seq-3);
+  --color-chart-4: var(--seq-4);
+  --color-chart-5: var(--seq-5);
+  --color-sidebar: var(--paper);
+  --color-sidebar-foreground: var(--ink);
+  --color-sidebar-primary: var(--ink);
+  --color-sidebar-primary-foreground: var(--paper);
+  --color-sidebar-accent: var(--panel-2);
+  --color-sidebar-accent-foreground: var(--ink);
+  --color-sidebar-border: var(--line);
+  --color-sidebar-ring: var(--ink);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* shadcn roles mapped onto DESIGN.md tokens (defined in app.css, light and dark).
+   Ink is primary. Orange is "signal": the main action, the clock, the selected place. */
+:root {
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --popover: var(--panel);
+  --popover-foreground: var(--ink);
+  --primary: var(--ink);
+  --primary-foreground: var(--paper);
+  --secondary: var(--panel-2);
+  --secondary-foreground: var(--ink);
+  --muted: var(--panel-2);
+  --muted-foreground: var(--ink-3);
+  --accent: var(--panel-2);
+  --accent-foreground: var(--ink);
+  /* No-Alarm rule: errors use the text orange, never red. */
+  --destructive: var(--signal-text);
+  --border: var(--line-2);
+  --input: var(--line-2);
+  --ring: var(--ink);
+  --radius: 0.6875rem;
+}
+
+/* Safe-area padding for phones with notches and home indicators. */
+@utility pt-safe {
+  padding-top: max(0.625rem, env(safe-area-inset-top));
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+@utility scrollbar-none {
+  scrollbar-width: none;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
