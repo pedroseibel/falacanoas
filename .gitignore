@@ -34,3 +34,7 @@ research/maps/data/canoas-bairros-simplified.geojson
 research/brand/photos/*.jpg
 research/**/*.draft.md
 research/**/*draft*
+
+# Claude Code: local skills and settings (the impeccable skill is installed per machine)
+.claude/skills/
+.claude/settings.local.json
