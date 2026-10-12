@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { onPlacar } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { fixtures } from "@fala/instance-canoas/fixtures";
 import { overDeadlineByBairro, placarKpis, placarRows, weeklyNew } from "./placar-model";
@@ -17,7 +18,9 @@ describe("placar", () => {
     const k = placarKpis(items, 30);
     const total = Object.values(overDeadlineByBairro(items, 30)).reduce((a, b) => a + b, 0);
     expect(total).toBe(k.overDeadline);
-    expect(k.open + k.fixed).toBe(items.filter((i) => i.kind === "occurrence").length);
+    // Only occurrences with an independent confirmation count (DECISIONS round 18, Q18).
+    expect(k.open + k.fixed).toBe(items.filter(onPlacar).length);
+    expect(k.open + k.fixed).toBeLessThan(items.filter((i) => i.kind === "occurrence").length);
   });
   test("weekly series has 12 points ending in the current week", () => {
     const w = weeklyNew(items);

@@ -133,8 +133,8 @@ export function PlacarPage({
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">Placar</h1>
           <p className="mt-1.5 max-w-150 text-sm text-muted-foreground">
-            Mediana de dias entre o envio à Prefeitura e o conserto confirmado pelos vizinhos. Protótipo: os números vêm
-            dos dados fictícios do mapa.
+            Mediana de dias entre o envio à Prefeitura e o conserto confirmado pelos vizinhos. Só entram registros que
+            pelo menos um vizinho confirmou. Protótipo: os números vêm dos dados fictícios do mapa.
           </p>
         </div>
       </header>
@@ -268,10 +268,15 @@ export function PlacarPage({
             aria-labelledby="week-t"
           >
             <h2 id="week-t" className="border-b border-hairline px-4 py-3 text-sm font-semibold">
-              Novos registros por semana <span className="font-normal text-muted-foreground">últimas 12</span>
+              Novos registros confirmados por semana{" "}
+              <span className="font-normal text-muted-foreground">últimas 12</span>
             </h2>
             <div className="chart-ink px-2 pt-2 pb-3">
-              <Chart definition={chart} height={220} ariaLabel="Novos registros por semana nas últimas 12 semanas" />
+              <Chart
+                definition={chart}
+                height={220}
+                ariaLabel="Novos registros confirmados por semana nas últimas 12 semanas"
+              />
             </div>
           </section>
         </div>

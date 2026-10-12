@@ -1,4 +1,13 @@
-import { categoryOf, groupStats, isOpen, median, type GroupStat, type Item, type Municipality } from "@fala/core";
+import {
+  categoryOf,
+  groupStats,
+  isOpen,
+  median,
+  onPlacar,
+  type GroupStat,
+  type Item,
+  type Municipality,
+} from "@fala/core";
 import { z } from "zod";
 
 export const PlacarViewSchema = z.enum(["tipo", "orgao", "bairro"]);
@@ -29,7 +38,7 @@ export function placarRows(items: Item[], muni: Municipality, view: PlacarView):
 }
 
 export function placarKpis(items: Item[], deadline: number) {
-  const occ = items.filter((i) => i.kind === "occurrence");
+  const occ = items.filter(onPlacar);
   const open = occ.filter(isOpen);
   const fixed = occ.filter((i) => !isOpen(i)).map((i) => i.days);
   return {
@@ -44,15 +53,15 @@ export function placarKpis(items: Item[], deadline: number) {
 export function overDeadlineByBairro(items: Item[], deadline: number): Record<string, number> {
   const out: Record<string, number> = {};
   for (const it of items)
-    if (it.kind === "occurrence" && isOpen(it) && it.days > deadline && it.neighborhood)
+    if (onPlacar(it) && isOpen(it) && it.days > deadline && it.neighborhood)
       out[it.neighborhood] = (out[it.neighborhood] ?? 0) + 1;
   return out;
 }
 
-/** New records per week, oldest first, for the last `weeks` weeks. Week 0 is the current week. */
+/** New confirmed records per week, oldest first, for the last `weeks` weeks. Week 0 is the current week. */
 export function weeklyNew(items: Item[], weeks = 12): { week: string; count: number }[] {
   const counts = Array.from({ length: weeks }, () => 0);
-  for (const it of items) {
+  for (const it of items.filter(onPlacar)) {
     const w = Math.floor(it.days / 7);
     if (w < weeks) counts[w] = (counts[w] ?? 0) + 1;
   }

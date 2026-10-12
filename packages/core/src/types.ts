@@ -115,6 +115,8 @@ export const ItemSchema = z.object({
    * reference for the legal deadline. It never restarts the public clock (DECISIONS, rounds 5 and 18).
    */
   protocol: z.object({ number: z.string(), at: z.string() }).nullable().optional(),
+  /** Dropped by a guest (no account): held for moderation and needs two independent confirmations to count. */
+  guest: z.boolean().optional(),
   events: z.array(ItemEventSchema).optional(),
 });
 export type Item = z.infer<typeof ItemSchema>;

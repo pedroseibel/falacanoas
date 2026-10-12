@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { communityLine, deriveEvents, groupStats, isOverDeadline, itemLngLat, median } from "./logic";
+import { communityLine, deriveEvents, groupStats, isOverDeadline, itemLngLat, median, onPlacar } from "./logic";
 import type { Item } from "./types";
 
 const base: Item = {
@@ -99,4 +99,21 @@ describe("deriveEvents", () => {
         .map((e) => e.kind)
         .slice(0, 2),
     ).toEqual(["created", "sent_to_authority"]));
+});
+
+describe("onPlacar", () => {
+  test("an occurrence counts after one independent confirmation", () => {
+    expect(onPlacar(item({ confirmations: 0 }))).toBeFalse();
+    expect(onPlacar(item({ confirmations: 1 }))).toBeTrue();
+  });
+  test("a guest pin needs two", () => {
+    expect(onPlacar(item({ guest: true, confirmations: 1 }))).toBeFalse();
+    expect(onPlacar(item({ guest: true, confirmations: 2 }))).toBeTrue();
+  });
+  test("questões públicas never enter the scoreboard", () =>
+    expect(onPlacar(item({ kind: "public_issue", confirmations: 9 }))).toBeFalse());
+  test("unconfirmed occurrences stay out of the group statistics", () => {
+    const [stat] = groupStats([item({ id: "A" }), item({ id: "B", confirmations: 0 })], (i) => i.category, 30);
+    expect(stat?.total).toBe(1);
+  });
 });

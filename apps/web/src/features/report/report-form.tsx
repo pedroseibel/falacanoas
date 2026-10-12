@@ -575,6 +575,19 @@ export function ReportForm({
             {problem}
           </p>
         )}
+
+        {/* Round 11: chronic problems, never emergencies. Plain information, no alarm styling. */}
+        <p className="border-t border-hairline pt-4 text-caption text-muted-foreground">
+          O Fala não é canal de emergência. Em emergência, ligue para a Defesa Civil,{" "}
+          <a href="tel:199" className="font-medium text-foreground tabular-nums underline-offset-3 hover:underline">
+            199
+          </a>
+          , ou para os Bombeiros,{" "}
+          <a href="tel:193" className="font-medium text-foreground tabular-nums underline-offset-3 hover:underline">
+            193
+          </a>
+          .
+        </p>
       </div>
 
       <div

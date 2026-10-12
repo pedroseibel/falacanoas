@@ -10,6 +10,14 @@ export function defineMunicipality(m: Municipality): Municipality {
 }
 
 export const isOpen = (it: Item) => it.community !== "resolved";
+
+/**
+ * Independent confirmations an occurrence needs before it counts in the Placar: one for an account's
+ * report, two for a guest pin (DECISIONS rounds 2 and 18, Q18). Until then one person can't move a
+ * bairro's numbers; the item is still on the map and still in the daily digest.
+ */
+export const placarThreshold = (it: Item) => (it.guest ? 2 : 1);
+export const onPlacar = (it: Item) => it.kind === "occurrence" && it.confirmations >= placarThreshold(it);
 export const isOverDeadline = (it: Item, deadline: number) => isOpen(it) && it.days > deadline;
 
 export function itemLngLat(it: Item): LngLat | null {
@@ -65,7 +73,7 @@ export function groupStats(
 ): GroupStat[] {
   const g = new Map<string, { open: number; over: number; fixed: number[]; total: number }>();
   for (const it of items) {
-    if (it.kind !== "occurrence") continue;
+    if (!onPlacar(it)) continue;
     const k = keyOf(it);
     if (!k) continue;
     const x = g.get(k) ?? { open: 0, over: 0, fixed: [], total: 0 };
