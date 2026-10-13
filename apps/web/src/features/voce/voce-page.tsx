@@ -8,6 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { textLink } from "@/features/landing/bits";
 import { ItemCard } from "@/features/map/item-card";
 import { followingQuery, isModeratorQuery } from "@/lib/city";
+import { SanctionNotices } from "./sanction-notice";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
 import { Following } from "./following";
@@ -108,6 +109,7 @@ export function VocePage({
       </header>
       <div className="grid grid-cols-12 items-start gap-5 max-split:grid-cols-1">
         <div className="col-span-5 grid gap-5 max-split:col-span-1">
+          {account && !account.guest && <SanctionNotices timezone={muni.timezone} />}
           {account && !account.guest ? (
             <section
               className="grid gap-4 rounded-2xl border border-hairline bg-card p-5 shadow-soft"
@@ -169,7 +171,7 @@ export function VocePage({
                 Moderação
               </h2>
               <p className="text-sm text-ink-2">
-                Você modera. A fila tem o que a verificação automática segurou e os registros sem conta.
+                Você modera. A fila tem denúncias, fotos novas, registros segurados, contestações e sanções.
               </p>
               <Button variant="outline" className="justify-self-start" onClick={onModerate}>
                 Abrir a fila

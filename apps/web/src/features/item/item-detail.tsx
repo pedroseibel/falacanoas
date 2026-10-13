@@ -362,6 +362,11 @@ export function ItemDetail({
             </Button>
           </form>
         )}
+        {!it.moderation && (
+          <p className="-mt-2.5 text-xs text-muted-foreground">
+            Fale do problema, não de pessoas: não identifique vizinhos, casas ou carros.
+          </p>
+        )}
 
         {!it.moderation && <PinConversation it={it} member={member} onSignIn={onSignIn} />}
 

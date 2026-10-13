@@ -390,11 +390,13 @@ export const moderators = fala
 
 /**
  * Why a case exists: a guest pin, the text pre-screen, a photo waiting for its first look, a report
- * ("Denunciar"), or a moderator taking something down on their own.
+ * ("Denunciar"), a moderator taking something down on their own, or a pin from a muted account.
  */
-export const caseReason = fala.enum("case_reason", ["guest_pin", "prescreen", "photo", "report", "takedown"]);
+export const caseReason = fala.enum("case_reason", ["guest_pin", "prescreen", "photo", "report", "takedown", "muted"]);
 export const caseStatus = fala.enum("case_status", ["open", "published", "rejected", "republish"]);
 export const contestStatus = fala.enum("contest_status", ["open", "upheld", "overturned"]);
+/** What a removal weighs against whoever sent it (core's RemovalWeight, round 19). */
+export const removalWeight = fala.enum("removal_weight", ["none", "strike", "grave"]);
 
 /** One decision to make about one item, and its contestation. */
 export const moderationCases = fala
@@ -424,9 +426,51 @@ export const moderationCases = fala
       contestedAt: timestamp({ withTimezone: true }),
       contestStatus: contestStatus(),
       contestNote: text(),
+      /** A removal's weight against whoever sent the thing: honest mistakes weigh nothing. */
+      weight: removalWeight().notNull().default("strike"),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [index().on(t.status), index().on(t.itemId), index().on(t.photoId), index().on(t.eventId)],
+  )
+  .enableRLS();
+
+export const sanctionKind = fala.enum("sanction_kind", ["mute", "suspend"]);
+export const sanctionSource = fala.enum("sanction_source", ["auto", "moderator", "controller"]);
+
+/**
+ * Mutes and suspensions (round 19). Never public, never shown to moderators as a person: they see the
+ * sanction's own code. A moderator mutes; a suspension a moderator proposes counts only once another
+ * confirms it; only the controller gives a permanent one. The person is told why and can contest.
+ */
+export const sanctions = fala
+  .table(
+    "sanctions",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      kind: sanctionKind().notNull(),
+      source: sanctionSource().notNull(),
+      /** Shown to the person, never in public. */
+      reason: text().notNull(),
+      startsAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+      /** Null: permanent, and only the controller gives those. */
+      endsAt: timestamp({ withTimezone: true }),
+      createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+      /** Null while a proposed suspension waits for a second moderator. */
+      confirmedAt: timestamp({ withTimezone: true }),
+      confirmedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+      liftedAt: timestamp({ withTimezone: true }),
+      liftedBy: uuid().references(() => users.id, { onDelete: "set null" }),
+      liftNote: text(),
+      contestText: text(),
+      contestedAt: timestamp({ withTimezone: true }),
+      contestStatus: contestStatus(),
+      contestNote: text(),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.accountId)],
   )
   .enableRLS();
 

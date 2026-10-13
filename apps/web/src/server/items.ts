@@ -159,6 +159,30 @@ async function addPhotos(
   );
 }
 
+/** How many photos this account sent in the last `ms` (round 19's daily limits). */
+export async function photosSince(accountId: string, ms: number, now = new Date()): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(itemPhotos)
+    .where(and(eq(itemPhotos.accountId, accountId), gt(itemPhotos.takenAt, new Date(now.getTime() - ms))));
+  return row?.n ?? 0;
+}
+
+/** How many updates this account wrote in the last `ms`. */
+export async function updatesSince(accountId: string, ms: number, now = new Date()): Promise<number> {
+  const [row] = await db
+    .select({ n: count() })
+    .from(itemEvents)
+    .where(
+      and(
+        eq(itemEvents.accountId, accountId),
+        eq(itemEvents.kind, "update_added"),
+        gt(itemEvents.at, new Date(now.getTime() - ms)),
+      ),
+    );
+  return row?.n ?? 0;
+}
+
 /**
  * A new report, its first event and photos, and who is behind it, all or nothing. A published one
  * opens a first-look case per photo; a held one is judged whole, photos included.

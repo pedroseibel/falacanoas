@@ -64,8 +64,9 @@ export type CaseTarget = "item" | "photo" | "update";
 export const targetOf = (c: Pick<CaseRow, "photoId" | "eventId">): CaseTarget =>
   c.photoId ? "photo" : c.eventId ? "update" : "item";
 
-/** Whether the case judges an item before it ever went public (a guest pin, or text the pre-screen held). */
-const heldItem = (c: Pick<CaseRow, "reason">) => c.reason === "guest_pin" || c.reason === "prescreen";
+/** Whether the case judges an item before it ever went public: a guest pin, held text, or a muted account's. */
+export const heldItem = (c: Pick<CaseRow, "reason">) =>
+  c.reason === "guest_pin" || c.reason === "prescreen" || c.reason === "muted";
 
 /**
  * The account behind what a case is about: who sent the photo, who wrote the update, or who posted the

@@ -13,7 +13,9 @@ import { moderationQueueQuery, reportedPostsQuery } from "@/lib/city";
 import { cn } from "@/lib/utils";
 import { decidePost, type ReportedPost } from "@/server/forum";
 import { decideCase, resolveContest, type QueueCase, type QueuePhoto, type ReportSummary } from "@/server/moderation";
-import { RemovalNote } from "./removal-note";
+import { type QueueSanction } from "@/server/sanctions";
+import { emptyRemoval, RemovalNote, type Removal } from "./removal-note";
+import { SanctionActions, SanctionCard } from "./sanction-cards";
 
 const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-soft";
 
@@ -37,17 +39,21 @@ function firstLooks(cases: QueueCase[]): { itemId: string; cases: PhotoCase[] }[
 export function ModerationPage({
   cases,
   posts,
+  sanctions,
   muni,
 }: {
   cases: QueueCase[];
   posts: ReportedPost[];
+  sanctions: QueueSanction[];
   muni: Municipality;
 }) {
   const reports = cases.filter((c) => !c.contest && (c.reason === "report" || c.reason === "takedown"));
   const contests = cases.filter((c) => c.contest);
-  const held = cases.filter((c) => !c.contest && (c.reason === "guest_pin" || c.reason === "prescreen"));
+  const held = cases.filter(
+    (c) => !c.contest && (c.reason === "guest_pin" || c.reason === "prescreen" || c.reason === "muted"),
+  );
   const photos = firstLooks(cases.filter((c) => !c.contest));
-  const empty = !cases.length && !posts.length;
+  const empty = !cases.length && !posts.length && !sanctions.length;
   return (
     <div className="mx-auto grid max-w-3xl gap-8 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
@@ -72,12 +78,21 @@ export function ModerationPage({
           <CaseCard key={c.id} c={c} muni={muni} />
         ))}
       </Section>
+      <Section id="sancoes" title="Sanções" count={sanctions.length}>
+        {sanctions.map((s) => (
+          <SanctionCard key={s.id} s={s} />
+        ))}
+      </Section>
       <Section id="em-analise" title="Registros em análise" count={held.length}>
         {held.map((c) => (
           <CaseCard key={c.id} c={c} muni={muni} />
         ))}
       </Section>
       <Section id="fotos-novas" title="Fotos novas" count={photos.reduce((n, g) => n + g.cases.length, 0)}>
+        <p className="-mt-1 text-sm text-pretty text-muted-foreground">
+          Enquanto o borrão automático não existe, remova fotos com rosto ou placa legível e fotos com crianças, pedindo
+          outra enquadrada só no problema. Isso não conta contra quem enviou.
+        </p>
         {photos.map((g) => (
           <FirstLook key={g.itemId} cases={g.cases} muni={muni} />
         ))}
@@ -169,6 +184,7 @@ const REASON_LABEL: Record<QueueCase["reason"], string> = {
   photo: "Foto nova",
   report: "Denúncia",
   takedown: "Removido pela moderação",
+  muted: "Conta silenciada",
 };
 
 /** The pin a case belongs to, for context: category, place, title, code, byline, and a link. */
@@ -203,6 +219,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>(null);
   const [note, setNote] = useState("");
+  const [removal, setRemoval] = useState<Removal>(emptyRemoval);
   const done = () => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
   const decide = useMutation({
     mutationFn: (d: Parameters<typeof decideCase>[0]["data"]) => decideCase({ data: d }),
@@ -224,8 +241,10 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
   const removeLabel = c.target === "item" ? (held ? "Recusar" : "Retirar do mapa") : "Remover";
 
   const submitNote = () => {
-    if (note.trim().length < 3) return void toast("Escreva o motivo: ele aparece para quem publicou.");
-    if (step === "reject" || step === "republish") decide.mutate({ caseId: c.id, decision: step, note: note.trim() });
+    const text = (step === "reject" ? removal.note : note).trim();
+    if (text.length < 3) return void toast("Escreva o motivo: ele aparece para quem publicou.");
+    if (step === "reject") decide.mutate({ caseId: c.id, decision: "reject", note: text, weight: removal.weight });
+    if (step === "republish") decide.mutate({ caseId: c.id, decision: "republish", note: text });
     if (step === "uphold" || step === "overturn") contest.mutate(step === "overturn");
   };
 
@@ -287,7 +306,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
       )}
 
       {step === "reject" ? (
-        <RemovalNote id={`nota-${c.id}`} value={note} onChange={setNote} />
+        <RemovalNote id={`nota-${c.id}`} value={removal} onChange={setRemoval} />
       ) : step ? (
         <div className="grid gap-2">
           <label htmlFor={`nota-${c.id}`} className="text-sm font-medium">
@@ -364,6 +383,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
           </>
         )}
       </div>
+      {!c.decidedByYou && <SanctionActions caseId={c.id} />}
     </article>
   );
 }
@@ -375,7 +395,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
 function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) {
   const queryClient = useQueryClient();
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set());
-  const [note, setNote] = useState("");
+  const [removal, setRemoval] = useState<Removal>(emptyRemoval);
   const first = cases[0];
   const decide = useMutation({
     mutationFn: async () => {
@@ -383,7 +403,7 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
         cases.map((c) =>
           decideCase({
             data: removed.has(c.id)
-              ? { caseId: c.id, decision: "reject", note: note.trim() }
+              ? { caseId: c.id, decision: "reject", note: removal.note.trim(), weight: removal.weight }
               : { caseId: c.id, decision: "publish" },
           }),
         ),
@@ -442,11 +462,11 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
         })}
       </ul>
       <PinContext c={first} muni={muni} full={false} />
-      {removing && <RemovalNote id={`nota-${first.id}`} value={note} onChange={setNote} />}
+      {removing && <RemovalNote id={`nota-${first.id}`} value={removal} onChange={setRemoval} />}
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
-          disabled={decide.isPending || (removing && note.trim().length < 3)}
+          disabled={decide.isPending || (removing && removal.note.trim().length < 3)}
           onClick={() => decide.mutate()}
         >
           {decide.isPending ? (
@@ -463,6 +483,7 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
               : "Remover marcadas e aprovar o resto"}
         </Button>
       </div>
+      <SanctionActions caseId={first.id} />
     </article>
   );
 }

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { db } from "./db/client";
 import { items, postReports, posts, threads } from "./db/schema";
 import { boardThreads, pinThread } from "./forum-store";
-import { member, type Failure } from "./member";
+import { member, mutedRefusal, type Failure } from "./member";
 import { isModerator, moderatorOf } from "./moderation-store";
 import { markNickPublished } from "./nicks";
 import { getSession } from "./session";
@@ -39,6 +39,8 @@ export const startThread = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Failure | { ok: true; threads: Thread[] }> => {
     const who = await member("conversar");
     if ("error" in who) return who;
+    const muted = mutedRefusal(who);
+    if (muted) return muted;
     if (!canoas.neighborhoods.some((n) => n.slug === data.neighborhood))
       return { ok: false, error: "Bairro desconhecido." };
     const refused = screened(data.title);
@@ -62,6 +64,8 @@ export const replyToThread = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Failure | { ok: true; thread: Thread }> => {
     const who = await member("conversar");
     if ("error" in who) return who;
+    const muted = mutedRefusal(who);
+    if (muted) return muted;
     const refused = screened(data.text);
     if (refused) return refused;
     const now = new Date();

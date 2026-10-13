@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hasInsult } from "./moderation";
 
 /** Accounts: a phone to sign in (never shown), a public apelido, a bairro. See research/DECISIONS.md, rounds 2 and 15. */
 
@@ -31,8 +32,51 @@ export const maskedPhone = (e164: string) => {
 };
 
 /**
+ * Words an apelido can't carry (round 19): it would read as a public body, the police, or the Fala's
+ * own team. Whole words only, accents ignored, so "garça-do-parque" is fine and "ouvidoria-canoas" isn't.
+ */
+const OFFICIAL_WORDS = new Set([
+  "prefeitura",
+  "prefeito",
+  "prefeita",
+  "ouvidoria",
+  "ouvidor",
+  "ouvidora",
+  "secretaria",
+  "secretario",
+  "camara",
+  "vereador",
+  "vereadora",
+  "governo",
+  "governador",
+  "governadora",
+  "oficial",
+  "policia",
+  "brigada",
+  "moderacao",
+  "moderador",
+  "moderadora",
+  "fala",
+  "admin",
+  "administrador",
+  "administracao",
+  "suporte",
+  "equipe",
+]);
+const OFFICIAL_PHRASES = ["defesa-civil", "guarda-municipal"];
+
+/** Why an apelido can't be used, beyond its shape: an insult, or an official-sounding name. */
+export function nickProblem(nick: string): "offensive" | "official" | null {
+  const plain = nick.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
+  if (hasInsult(plain.replaceAll("-", " "))) return "offensive";
+  if (plain.split("-").some((w) => OFFICIAL_WORDS.has(w)) || OFFICIAL_PHRASES.some((p) => plain.includes(p)))
+    return "official";
+  return null;
+}
+
+/**
  * The public apelido: lower case, words joined by hyphens, accents allowed. No long digit runs,
- * so a phone number or CPF can't become someone's name.
+ * so a phone number or CPF can't become someone's name; no insults or official-sounding names.
  */
 export const NickSchema = z
   .string()
@@ -41,7 +85,12 @@ export const NickSchema = z
   .min(3, "Use pelo menos 3 letras.")
   .max(28, "Use no máximo 28 caracteres.")
   .regex(/^[a-zà-öø-ÿ0-9]+(?:-[a-zà-öø-ÿ0-9]+)*$/, "Use letras, números e hífens, como garça-do-sinos.")
-  .refine((v) => !/\d{4,}/.test(v), "Evite sequências de números no apelido.");
+  .refine((v) => !/\d{4,}/.test(v), "Evite sequências de números no apelido.")
+  .refine((v) => nickProblem(v) !== "offensive", "Esse apelido pode ofender alguém. Escolha outro.")
+  .refine(
+    (v) => nickProblem(v) !== "official",
+    "Esse apelido parece de um órgão público ou da equipe do Fala. Escolha outro.",
+  );
 
 const BIRDS = [
   "garça",

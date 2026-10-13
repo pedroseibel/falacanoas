@@ -6,6 +6,7 @@ import { getFollowing } from "@/server/follows";
 import { getItemViewer } from "@/server/item-actions";
 import { getIsModerator, getModerationQueue } from "@/server/moderation";
 import { getQueue } from "@/server/queue";
+import { getMySanctions, getSanctionQueue } from "@/server/sanctions";
 
 /** Server state lives in TanStack Query. Loaders prefetch, components read. */
 export const cityQuery = queryOptions({
@@ -83,4 +84,18 @@ export const reportedPostsQuery = queryOptions({
   queryKey: ["moderation", "posts"],
   queryFn: () => getReportedPosts(),
   staleTime: 15_000,
+});
+
+/** Suspensions to confirm and contested sanctions, for moderators (null for anyone else). */
+export const sanctionQueueQuery = queryOptions({
+  queryKey: ["moderation", "sanctions"],
+  queryFn: () => getSanctionQueue(),
+  staleTime: 15_000,
+});
+
+/** The signed-in person's sanctions in force (round 19), for Você. */
+export const mySanctionsQuery = queryOptions({
+  queryKey: ["account", "sanctions"],
+  queryFn: () => getMySanctions(),
+  staleTime: 30_000,
 });

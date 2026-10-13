@@ -1,4 +1,11 @@
-import { FLAG_LABEL, ReportReasonSchema, type Item, type ModerationFlag, type ReportReason } from "@fala/core";
+import {
+  FLAG_LABEL,
+  ReportReasonSchema,
+  weightOf,
+  type Item,
+  type ModerationFlag,
+  type ReportReason,
+} from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
@@ -10,6 +17,7 @@ import { member, type Failure } from "./member";
 import {
   ACTOR,
   applyDecision,
+  heldItem,
   isModerator,
   moderatorOf,
   restore,
@@ -19,6 +27,7 @@ import {
   type CaseTarget,
 } from "./moderation-store";
 import { notifyFollowers, notifyPlaces } from "./push-send";
+import { recheck, strike } from "./sanctions-store";
 import { getSession } from "./session";
 
 /**
@@ -204,9 +213,16 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
   return out.toSorted((a, b) => Number(urgent(b)) - Number(urgent(a)));
 });
 
+const Weight = z.enum(["none", "strike", "grave"]);
 const DecisionSchema = z.discriminatedUnion("decision", [
   z.object({ caseId: z.uuid(), decision: z.literal("publish") }),
-  z.object({ caseId: z.uuid(), decision: z.literal("reject"), note: z.string().trim().min(3).max(280) }),
+  z.object({
+    caseId: z.uuid(),
+    decision: z.literal("reject"),
+    note: z.string().trim().min(3).max(280),
+    /** What the removal weighs against whoever sent it; by default, what its reason weighs. */
+    weight: Weight.optional(),
+  }),
   z.object({ caseId: z.uuid(), decision: z.literal("republish"), note: z.string().trim().min(3).max(280) }),
 ]);
 
@@ -215,7 +231,7 @@ const DecisionSchema = z.discriminatedUnion("decision", [
  * those following its place (BUILD 4.2); a photo past its first look, to the pin's followers.
  */
 async function announce(c: CaseRow): Promise<void> {
-  const held = c.reason === "guest_pin" || c.reason === "prescreen";
+  const held = heldItem(c);
   if (!held && c.reason !== "photo") return;
   const [item, account] = await Promise.all([findItem(c.itemId), targetAccount(db, c)]);
   if (!item || item.moderation) return;
@@ -239,11 +255,19 @@ export const decideCase = createServerFn({ method: "POST" })
         return { ok: false, error: "Só um registro inteiro pode ser republicado." };
       const note = data.decision === "publish" ? null : data.note;
       const status = data.decision === "publish" ? "published" : data.decision === "reject" ? "rejected" : "republish";
+      // Asking to republish signed is not a refusal of the person (round 19).
+      const weight =
+        data.decision === "reject"
+          ? (data.weight ?? weightOf(data.note))
+          : data.decision === "republish"
+            ? "none"
+            : "strike";
       await tx
         .update(moderationCases)
-        .set({ status, note, decidedBy: user.id, decidedAt: now })
+        .set({ status, note, weight, decidedBy: user.id, decidedAt: now })
         .where(eq(moderationCases.id, c.id));
       await applyDecision(tx, c, data.decision, note, now);
+      if (data.decision === "reject" && weight !== "none") await strike(tx, await targetAccount(tx, c), now);
       return { ok: true, c };
     });
     if (!result.ok) return result;
@@ -267,8 +291,10 @@ export const resolveContest = createServerFn({ method: "POST" })
         .update(moderationCases)
         .set({ contestStatus: data.overturn ? "overturned" : "upheld", contestNote: data.note })
         .where(eq(moderationCases.id, c.id));
-      if (data.overturn) await restore(tx, c, data.note, now);
-      else
+      if (data.overturn) {
+        await restore(tx, c, data.note, now);
+        await recheck(tx, await targetAccount(tx, c), now);
+      } else
         await tx.insert(itemEvents).values({
           itemId: c.itemId,
           at: now,

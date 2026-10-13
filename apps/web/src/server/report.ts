@@ -3,7 +3,9 @@ import {
   holdsPublication,
   inElection,
   itemFromReport,
+  limitMessage,
   newItemId,
+  postingLimits,
   prescreen,
   reportSchema,
   type Item,
@@ -13,7 +15,7 @@ import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
 import { db } from "./db/client";
-import { createdSince, findItem, hashKey, insertItem, itemExists, joinItem } from "./items";
+import { createdSince, findItem, hashKey, insertItem, itemExists, joinItem, photosSince } from "./items";
 import { openCase } from "./moderation-store";
 import { markNickPublished } from "./nicks";
 import { member, type Failure } from "./member";
@@ -30,8 +32,6 @@ import { isHuman, recordEvidence } from "./vault";
  */
 
 const schema = reportSchema(canoas);
-const HOUR = 3_600_000;
-const PER_HOUR = 10;
 
 export type ReportResult =
   | Failure
@@ -69,23 +69,29 @@ export const createReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = schema.safeParse(readReportFormData(data));
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." };
-    if ((await createdSince(who.id, HOUR)) >= PER_HOUR)
-      return { ok: false, error: "Você fez muitos registros na última hora. Tente de novo mais tarde." };
+    const now = new Date();
+    // Daily limits (round 19): far lower for an account whose phone is less than 72 h old.
+    const limits = postingLimits(who.phoneVerifiedAt, now);
+    if ((await createdSince(who.id, DAY, now)) >= limits.pins)
+      return { ok: false, error: limitMessage("pins", limits) };
+    if ((await photosSince(who.id, DAY, now)) + parsed.data.photos.length > limits.photos)
+      return { ok: false, error: limitMessage("photos", limits) };
     const photos = await keepPhotos(parsed.data.photos);
     if (!photos) return { ok: false, error: PHOTO_ERROR };
-    const now = new Date();
     const id = await uniqueId();
     // The pre-screen (round 5): personal data, insults, named people, anonymous propaganda in a
-    // campaign. Anything it flags waits for a moderator instead of going out.
+    // campaign. Anything it flags waits for a moderator instead of going out; so does everything a
+    // muted account sends (round 19).
     const flags = prescreen(`${parsed.data.title} ${parsed.data.text}`, { electoral: inElection(canoas, now) });
-    const held = holdsPublication(flags, parsed.data.visibility);
+    const muted = who.standing.kind === "mute";
+    const held = muted || holdsPublication(flags, parsed.data.visibility);
     const item: Item = {
       ...itemFromReport(parsed.data, canoas, { id, nick: who.nick, photos: photos.srcs, now }),
       ...(held ? { moderation: "pending" } : {}),
     };
     try {
       await insertItem(item, who.id, now);
-      if (held) await openCase(db, id, "prescreen", flags);
+      if (held) await openCase(db, id, muted ? "muted" : "prescreen", flags);
     } catch (e) {
       await removePhotos(photos.keys);
       throw e;
@@ -107,6 +113,9 @@ export const joinReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = JoinSchema.safeParse(readJoinFormData(data));
     if (!parsed.success) return { ok: false, error: "Confira o registro." };
+    const limits = postingLimits(who.phoneVerifiedAt, new Date());
+    if (parsed.data.photos.length && (await photosSince(who.id, DAY)) + parsed.data.photos.length > limits.photos)
+      return { ok: false, error: limitMessage("photos", limits) };
     const photos = await keepPhotos(parsed.data.photos);
     if (!photos) return { ok: false, error: PHOTO_ERROR };
     // Independent confirmations only (round 18, Q17): one per account, phone verified ≥72 h ago.

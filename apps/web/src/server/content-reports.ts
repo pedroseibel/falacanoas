@@ -1,4 +1,12 @@
-import { CONTENT_REPORT_ACTION, hidesAtOnce, ReportReasonSchema } from "@fala/core";
+import {
+  CONTENT_REPORT_ACTION,
+  hidesAtOnce,
+  limitMessage,
+  postingLimits,
+  ReportReasonSchema,
+  standingMessage,
+  weightOf,
+} from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, gte, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
@@ -6,6 +14,7 @@ import { db } from "./db/client";
 import { contentReports, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
 import type { Failure } from "./member";
 import { applyDecision, moderatorOf, openCase, targetAccount } from "./moderation-store";
+import { dayOf, standingOf, strike } from "./sanctions-store";
 import { getSession } from "./session";
 import { isHuman } from "./vault";
 
@@ -24,8 +33,6 @@ const TargetSchema = z.discriminatedUnion("type", [
 ]);
 type Target = z.infer<typeof TargetSchema>;
 
-/** Reports a neighbour can send in a day: plenty for real problems, not enough to bury the queue. */
-const DAILY_PER_ACCOUNT = 30;
 const DAY = 86_400_000;
 
 /** The target, if it's something everyone can see right now on this published item. */
@@ -76,15 +83,19 @@ export const reportContent = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<Failure | { ok: true; hidden: boolean }> => {
     const user = (await getSession())?.user;
     const member = user && !user.isAnonymous && user.phoneVerifiedAt ? user : null;
+    let muted = false;
     if (member) {
+      const standing = await standingOf(db, member.id);
+      if (standing.kind === "suspend") return { ok: false, error: standingMessage(standing, dayOf) };
+      muted = standing.kind === "mute";
+      const limits = postingLimits(member.phoneVerifiedAt ?? null, new Date());
       const [sent] = await db
         .select({ n: count() })
         .from(contentReports)
         .where(
           and(eq(contentReports.reporterId, member.id), gte(contentReports.createdAt, new Date(Date.now() - DAY))),
         );
-      if ((sent?.n ?? 0) >= DAILY_PER_ACCOUNT)
-        return { ok: false, error: "Você já mandou muitas denúncias hoje. A moderação vai olhar as que chegaram." };
+      if ((sent?.n ?? 0) >= limits.reports) return { ok: false, error: limitMessage("reports", limits) };
     } else if (!(await isHuman(data.turnstile, CONTENT_REPORT_ACTION))) {
       return { ok: false, error: "Não deu para confirmar que a denúncia veio de uma pessoa. Tente de novo." };
     }
@@ -115,12 +126,7 @@ export const reportContent = createServerFn({ method: "POST" })
           ),
         )
         .limit(1);
-      const hide = hidesAtOnce({
-        target: "photo",
-        reason: data.reason,
-        member: Boolean(member),
-        keptBefore: Boolean(kept),
-      });
+      const hide = hidesAtOnce({ target: "photo", reason: data.reason, muted, keptBefore: Boolean(kept) });
       if (hide) await tx.update(itemPhotos).set({ review: "pending" }).where(eq(itemPhotos.id, data.target.id));
       return hide;
     });
@@ -137,6 +143,7 @@ export const takeDown = createServerFn({ method: "POST" })
       itemId: z.string().min(4).max(12),
       target: TargetSchema,
       note: z.string().trim().min(3).max(280),
+      weight: z.enum(["none", "strike", "grave"]).optional(),
     }),
   )
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
@@ -163,11 +170,13 @@ export const takeDown = createServerFn({ method: "POST" })
       const caseId = open?.id ?? (await openCase(tx, itemId, "takedown", [], refs(data.target)));
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, caseId));
       if (!c) throw new Error("caso não encontrado");
+      const weight = data.weight ?? weightOf(data.note);
       await tx
         .update(moderationCases)
-        .set({ status: "rejected", note: data.note, decidedBy: user.id, decidedAt: now })
+        .set({ status: "rejected", note: data.note, weight, decidedBy: user.id, decidedAt: now })
         .where(eq(moderationCases.id, caseId));
       await applyDecision(tx, c, "reject", data.note, now);
+      if (weight !== "none") await strike(tx, await targetAccount(tx, c), now);
       return { ok: true };
     });
   });

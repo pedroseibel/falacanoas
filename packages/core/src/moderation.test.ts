@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
+  hasInsult,
   hidesAtOnce,
   holdsPublication,
   inElection,
   isValidCpf,
   prescreen,
+  refusalFor,
   refusedInUpdates,
   ReportReasonSchema,
   shieldsModerator,
@@ -65,19 +67,19 @@ describe("what holds publication", () => {
 });
 
 describe("reports", () => {
-  const photo = { target: "photo" as const, member: true, keptBefore: false };
+  const photo = { target: "photo" as const, muted: false, keptBefore: false };
 
-  test("a member's report of nudity or a child takes a photo down at once", () => {
+  test("a report of nudity or a child takes a photo down at once, from a member or a visitor", () => {
     expect(hidesAtOnce({ ...photo, reason: "sexual" })).toBeTrue();
     expect(hidesAtOnce({ ...photo, reason: "child" })).toBeTrue();
   });
 
-  test("other reasons, other targets and visitors wait for a moderator", () => {
+  test("other reasons, other targets and muted accounts wait for a moderator", () => {
     expect(hidesAtOnce({ ...photo, reason: "person" })).toBeFalse();
     expect(hidesAtOnce({ ...photo, reason: "spam" })).toBeFalse();
     expect(hidesAtOnce({ ...photo, target: "update", reason: "sexual" })).toBeFalse();
     expect(hidesAtOnce({ ...photo, target: "item", reason: "child" })).toBeFalse();
-    expect(hidesAtOnce({ ...photo, member: false, reason: "sexual" })).toBeFalse();
+    expect(hidesAtOnce({ ...photo, muted: true, reason: "sexual" })).toBeFalse();
   });
 
   test("once a moderator kept a photo, reports no longer take it down by themselves", () => {
@@ -93,5 +95,36 @@ describe("reports", () => {
   test("only the known reasons parse", () => {
     expect(ReportReasonSchema.safeParse("sexual").success).toBeTrue();
     expect(ReportReasonSchema.safeParse("feio").success).toBeFalse();
+  });
+});
+
+const flags = (t: string) => prescreen(t, off);
+
+describe("pointing at one person (round 19)", () => {
+  test("a neighbour in the singular, someone tied to a house or a car, a plate", () => {
+    expect(flags("Quem joga o entulho é o morador da casa amarela do 145.")).toContain("person");
+    expect(flags("O vizinho deixa o lixo na calçada toda noite")).toContain("person");
+    expect(flags("é a vizinha do 32 que joga água na rua")).toContain("person");
+    expect(flags("O dono do Gol prata estaciona em cima da calçada")).toContain("person");
+    expect(flags("carro abandonado, placa IZA3B21, há meses")).toContain("person");
+    expect(flags("placa antiga IZA-3021")).toContain("person");
+  });
+
+  test("where a problem is, and neighbours in general, stay allowed", () => {
+    expect(flags("Buraco em frente ao 145 da Rua Brasil")).toEqual([]);
+    expect(flags("Os vizinhos reclamam há meses")).toEqual([]);
+    expect(flags("Alaga na ERS-118 e na BR-116 toda chuva")).toEqual([]);
+    expect(flags("A vizinhança inteira ficou sem luz")).toEqual([]);
+  });
+
+  test("updates are refused with a sentence that says what to take out", () => {
+    const f = refusedInUpdates(flags("o vizinho do 145"));
+    expect(f).toContain("person");
+    expect(refusalFor(f)).toContain("vizinho, casa, carro ou placa");
+  });
+
+  test("insults are found whatever the case or accents", () => {
+    expect(hasInsult("Que DESGRAÇADO")).toBeTrue();
+    expect(hasInsult("descaso absurdo")).toBeFalse();
   });
 });

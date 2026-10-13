@@ -541,7 +541,10 @@ export function ReportForm({
                   onChange={(e) => field.handleChange(e.target.value)}
                 />
                 <p id="r-texto-nota" className="flex justify-between gap-3 text-caption text-muted-foreground">
-                  <span>{issue ? "" : "A primeira frase vira o título."}</span>
+                  <span>
+                    {issue ? "" : "A primeira frase vira o título. "}O Fala é sobre a cidade, não sobre pessoas: não
+                    identifique vizinhos, casas ou carros.
+                  </span>
                   <span className="font-mono tabular-nums">
                     {field.state.value.length}/{REPORT.maxText}
                   </span>

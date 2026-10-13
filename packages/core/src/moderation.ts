@@ -7,13 +7,14 @@ import type { Municipality, Visibility } from "./types";
  * publication until someone has looked.
  */
 
-export type ModerationFlag = "cpf" | "phone" | "insult" | "name" | "electoral";
+export type ModerationFlag = "cpf" | "phone" | "insult" | "name" | "person" | "electoral";
 
 export const FLAG_LABEL: Record<ModerationFlag, string> = {
   cpf: "CPF",
   phone: "Telefone",
   insult: "Ofensa",
   name: "Nome de pessoa",
+  person: "Expõe uma pessoa",
   electoral: "Propaganda eleitoral",
 };
 
@@ -54,9 +55,29 @@ const INSULTS = [
   "puta",
   "viado",
 ];
+/** Whether these words carry one of the strong insults (accents and case ignored). */
+export function hasInsult(text: string): boolean {
+  const p = ` ${plain(text).replace(/[^a-z0-9]+/g, " ")} `;
+  return INSULTS.some((w) => p.includes(` ${w} `));
+}
+
 /** A title before a capitalised word: "vereador Fulano", "dona Maria". The scoreboard names bodies, never people. */
 const NAME =
   /\b(?:sr|sra|seu|dona|dr|dra|vereador|vereadora|prefeito|prefeita|secretario|secretaria|deputado|deputada|senador|senadora|governador|governadora)\.?\s+(?:[A-ZÁÉÍÓÚÂÊÔÃÕÇ][a-záéíóúâêôãõç]+)/;
+/**
+ * Pointing at one person without naming them (round 19): a neighbour in the singular, someone tied to
+ * a house, a number or a car, or a licence plate. A house number alone stays allowed: "em frente ao
+ * 145" is how people say where a pothole is. Matched on plain text (lower case, no accents).
+ */
+const NEIGHBOUR = /\b(?:o|a|meu|minha|esse|essa|este|esta|aquele|aquela|do|da|pro|pra)\s+vizinh[oa]\b/;
+const PERSON = String.raw`(?:morador|moradora|dono|dona|proprietari[oa]|inquilin[oa]|vizinh[oa]|cara|homem|mulher|senhor|senhora|velho|velha|guri|guria|sujeito)`;
+const COLOUR = String.raw`(?:prata|preto|preta|branco|branca|vermelho|vermelha|azul|cinza|verde|amarelo|amarela|bege|marrom)`;
+const PERSON_AT = new RegExp(
+  String.raw`\b${PERSON}\s+(?:que mora\s+)?(?:d[oa]s?|n[oa])\s+(?:\d|(?:casa|numero|n|apartamento|apto|ap|predio|terreno|lote|carro|moto|caminhao|caminhonete)\b|\w+\s+${COLOUR}\b)`,
+);
+/** Mercosul (ABC1D23) and the older grey plates (ABC-1234). */
+const PLATE = /\b[a-z]{3}-?\d[a-z0-9]\d{2}\b/i;
+
 const ELECTORAL = /\b(?:vote|votem|votar em|vote em|eleja|elejam|candidat[oa]s?|numero \d{2,5}|reeleicao|reeleger)\b/;
 
 /** Inside one of the instance's campaign periods (round 18, Q31: 2026 included). */
@@ -73,8 +94,10 @@ export function prescreen(text: string, opts: { electoral: boolean }): Moderatio
   const withoutCpf = text.replace(CPF, " ");
   if ([...withoutCpf.matchAll(PHONE)].some((m) => m[0].replace(/\D/g, "").length >= 8)) flags.add("phone");
   const p = ` ${plain(text).replace(/[^a-z0-9]+/g, " ")} `;
-  if (INSULTS.some((w) => p.includes(` ${w} `))) flags.add("insult");
+  if (hasInsult(text)) flags.add("insult");
   if (NAME.test(text)) flags.add("name");
+  const words = p.trim();
+  if (NEIGHBOUR.test(words) || PERSON_AT.test(words) || PLATE.test(text)) flags.add("person");
   if (opts.electoral && ELECTORAL.test(plain(text))) flags.add("electoral");
   return [...flags];
 }
@@ -99,6 +122,8 @@ export function refusalFor(flags: ModerationFlag[]): string {
   if (flags.includes("cpf") || flags.includes("phone"))
     return "Tire o CPF ou o telefone do texto: dados pessoais não aparecem no Fala.";
   if (flags.includes("name")) return "Tire o nome da pessoa: o Fala fala de órgãos públicos, não de pessoas.";
+  if (flags.includes("person"))
+    return "Tire o que aponta para uma pessoa (vizinho, casa, carro ou placa): o Fala fala da cidade, não de pessoas.";
   return "Tire a ofensa do texto e envie de novo.";
 }
 
@@ -125,17 +150,18 @@ const URGENT: ReadonlySet<ReportReason> = new Set(["sexual", "child"]);
 
 /**
  * Whether a report takes the thing down before anyone looks. Only a photo, only for nudity or a
- * child, only from a neighbour at nível 1 (a phone verified, so a burst of fake reports costs real
- * numbers), and never again once a moderator looked at a report on that photo and kept it.
- * Everything else stays up and waits in the queue.
+ * child, and from anyone who got this far (a neighbour at nível 1, or a visitor past the robot check):
+ * the person shown may have no account, and the law expects intimate images down promptly once
+ * they're notified (Marco Civil art. 21; round 19). Never from a muted account, and never again once
+ * a moderator looked at a report on that photo and kept it. Everything else waits in the queue.
  */
 export function hidesAtOnce(r: {
   target: ReportTarget;
   reason: ReportReason;
-  member: boolean;
+  muted: boolean;
   keptBefore: boolean;
 }): boolean {
-  return r.target === "photo" && URGENT.has(r.reason) && r.member && !r.keptBefore;
+  return r.target === "photo" && URGENT.has(r.reason) && !r.muted && !r.keptBefore;
 }
 
 /** Whether a moderator should see this case's images blurred until they choose to look. */

@@ -6,6 +6,7 @@ import {
   maskedPhone,
   nickAvailable,
   nickKey,
+  nickProblem,
   suggestNicks,
   toE164BR,
 } from "./identity";
@@ -40,6 +41,23 @@ describe("NickSchema", () => {
     expect(NickSchema.safeParse("ana paula").success).toBe(false);
     expect(NickSchema.safeParse("ab").success).toBe(false);
     expect(NickSchema.safeParse("vizinho-51999998888").success).toBe(false);
+  });
+});
+
+describe("nickProblem (round 19)", () => {
+  test("insults and official-sounding names are refused, accents and case ignored", () => {
+    expect(nickProblem("fdp-do-bairro")).toBe("offensive");
+    expect(nickProblem("ouvidoria-canoas")).toBe("official");
+    expect(nickProblem("Prefeitura")).toBe("official");
+    expect(nickProblem("câmara-de-canoas")).toBe("official");
+    expect(nickProblem("defesa-civil-rs")).toBe("official");
+    expect(nickProblem("fala-canoas")).toBe("official");
+    expect(NickSchema.safeParse("moderador-centro").success).toBe(false);
+  });
+  test("whole words only: ordinary apelidos pass", () => {
+    expect(nickProblem("garça-do-parque")).toBeNull();
+    expect(nickProblem("rafaela-da-praça")).toBeNull();
+    expect(nickProblem("falante-do-sinos")).toBeNull();
   });
 });
 

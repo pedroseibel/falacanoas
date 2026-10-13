@@ -16,7 +16,7 @@ import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { reportContent, takeDown } from "@/server/content-reports";
 import { closeContentReport, contentReportStore, type ReportSubject } from "./content-report-store";
-import { RemovalNote } from "./removal-note";
+import { emptyRemoval, RemovalNote, type Removal } from "./removal-note";
 
 const REASONS = ReportReasonSchema.options;
 const asReason = (v: unknown) => ReportReasonSchema.safeParse(v).data;
@@ -78,6 +78,7 @@ function ReportFlow({
   const [mode, setMode] = useState<"report" | "remove">("report");
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [note, setNote] = useState("");
+  const [removal, setRemoval] = useState<Removal>(emptyRemoval);
   const { mount: mountRobot, token: robotToken } = useTurnstile(turnstileSiteKey ?? "", CONTENT_REPORT_ACTION);
   const target = subject.target === "item" ? { type: subject.target } : { type: subject.target, id: subject.id };
 
@@ -85,7 +86,9 @@ function ReportFlow({
     mutationFn: async () => {
       const r =
         mode === "remove"
-          ? await takeDown({ data: { itemId: subject.itemId, target, note: note.trim() } })
+          ? await takeDown({
+              data: { itemId: subject.itemId, target, note: removal.note.trim(), weight: removal.weight },
+            })
           : await reportContent({
               data: {
                 itemId: subject.itemId,
@@ -131,7 +134,7 @@ function ReportFlow({
       </div>
     );
 
-  const ready = mode === "remove" ? note.trim().length >= 3 : Boolean(reason);
+  const ready = mode === "remove" ? removal.note.trim().length >= 3 : Boolean(reason);
   const urgent = subject.target === "photo" && (reason === "sexual" || reason === "child");
   return (
     <form
@@ -159,7 +162,7 @@ function ReportFlow({
         )}
 
         {mode === "remove" ? (
-          <RemovalNote id="remover-motivo" value={note} onChange={setNote} />
+          <RemovalNote id="remover-motivo" value={removal} onChange={setRemoval} />
         ) : (
           <>
             <RadioGroup aria-label="Motivo" value={reason} onValueChange={(v) => setReason(asReason(v) ?? null)}>
@@ -177,10 +180,8 @@ function ReportFlow({
             </RadioGroup>
             {urgent && (
               <p className="flex gap-2 text-caption text-ink-2">
-                <EyeOff className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-                {member
-                  ? "A foto sai do ar assim que você enviar, até alguém da moderação olhar."
-                  : "Denúncias de nudez e de crianças são as primeiras que a moderação olha."}
+                <EyeOff className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />A foto sai do ar
+                assim que você enviar, até alguém da moderação olhar.
               </p>
             )}
             {reason === "person" && (

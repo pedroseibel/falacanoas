@@ -2,7 +2,7 @@ import { canoas } from "@fala/instance-canoas";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { ModerationPage } from "@/features/moderation/moderation-page";
-import { moderationQueueQuery, reportedPostsQuery } from "@/lib/city";
+import { moderationQueueQuery, reportedPostsQuery, sanctionQueueQuery } from "@/lib/city";
 
 export const Route = createFileRoute("/_app/moderar")({
   // Only moderators: anyone else lands on the map, as if the page didn't exist.
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_app/moderar")({
     const [queue] = await Promise.all([
       context.queryClient.ensureQueryData(moderationQueueQuery),
       context.queryClient.ensureQueryData(reportedPostsQuery),
+      context.queryClient.ensureQueryData(sanctionQueueQuery),
     ]);
     if (!queue) throw redirect({ to: "/mapa", replace: true });
   },
@@ -20,5 +21,6 @@ export const Route = createFileRoute("/_app/moderar")({
 function ModerarRoute() {
   const { data } = useSuspenseQuery(moderationQueueQuery);
   const { data: posts } = useSuspenseQuery(reportedPostsQuery);
-  return <ModerationPage cases={data ?? []} posts={posts ?? []} muni={canoas} />;
+  const { data: sanctions } = useSuspenseQuery(sanctionQueueQuery);
+  return <ModerationPage cases={data ?? []} posts={posts ?? []} sanctions={sanctions ?? []} muni={canoas} />;
 }

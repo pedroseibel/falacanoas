@@ -120,6 +120,13 @@
       "when": 1791923956439,
       "tag": "0016_content_safety",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791926040765,
+      "tag": "0017_sanctions",
+      "breakpoints": true
     }
   ]
 }
