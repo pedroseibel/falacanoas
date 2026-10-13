@@ -1,6 +1,10 @@
 /** The Worker bindings the app uses (wrangler.jsonc). */
 declare module "cloudflare:workers" {
   export const env: {
+    /** The share-card renderer (apps/cards): draws what the app describes, nothing else. */
+    CARDS?: {
+      render(card: import("@fala/core").ShareCard): Promise<Uint8Array>;
+    };
     /** The identity vault (apps/vault), through a service binding. */
     VAULT?: {
       fetch(request: Request): Promise<Response>;

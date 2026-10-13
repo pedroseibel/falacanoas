@@ -2,19 +2,30 @@ import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { BairroPage } from "@/features/bairro/bairro-page";
+import { isOpen } from "@fala/core";
 import { accountQuery, cityQuery, memberGate, threadsQuery } from "@/lib/city";
+import { bairroShareMeta } from "@/lib/share-meta";
 
 export const Route = createFileRoute("/_app/bairro/$slug")({
   loader: async ({ context, params }) => {
     const bairro = canoas.neighborhoods.find((n) => n.slug === params.slug);
     if (!bairro) throw notFound();
-    await Promise.all([
+    const [city] = await Promise.all([
       context.queryClient.ensureQueryData(cityQuery),
       context.queryClient.ensureQueryData(threadsQuery(params.slug)),
     ]);
-    return { name: bairro.name };
+    // What the shared link says, counted as on the page: open occurrences, and those past the deadline.
+    const mine = city.items.filter((i) => i.neighborhood === params.slug && i.kind === "occurrence");
+    const open = mine.filter(isOpen);
+    return {
+      name: bairro.name,
+      slug: params.slug,
+      open: open.length,
+      overdue: open.filter((i) => i.days > canoas.deadlineDays).length,
+      demo: mine.some((i) => i.demo),
+    };
   },
-  head: ({ loaderData }) => ({ meta: loaderData ? [{ title: `${loaderData.name} · Fala, Canoas` }] : [] }),
+  head: ({ loaderData }) => (loaderData ? bairroShareMeta(loaderData, canoas) : {}),
   component: BairroRoute,
 });
 

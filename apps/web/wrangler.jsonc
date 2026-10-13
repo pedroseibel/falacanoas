@@ -6,8 +6,12 @@
   // src/server.ts: TanStack Start's request handler plus the daily job.
   "main": "src/server.ts",
   "observability": { "enabled": true },
-  // The identity vault (apps/vault): the only way the app reaches it.
-  "services": [{ "binding": "VAULT", "service": "falacanoas-vault" }],
+  // The identity vault (apps/vault), the only way the app reaches it; and the share-card renderer
+  // (apps/cards), which draws what the app describes.
+  "services": [
+    { "binding": "VAULT", "service": "falacanoas-vault" },
+    { "binding": "CARDS", "service": "falacanoas-cards" }
+  ],
   // Daily at 03:05 in Canoas (06:05 UTC): pins closed by 15 days without dispute (src/server.ts).
   "triggers": { "crons": ["5 6 * * *"] }
 }

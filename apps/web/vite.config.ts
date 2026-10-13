@@ -15,7 +15,10 @@ export default defineConfig({
   },
   plugins: [
     // The identity vault runs beside the app in development, reached through the VAULT service binding.
-    cloudflare({ viteEnvironment: { name: "ssr" }, auxiliaryWorkers: [{ configPath: "../vault/wrangler.jsonc" }] }),
+    cloudflare({
+      viteEnvironment: { name: "ssr" },
+      auxiliaryWorkers: [{ configPath: "../vault/wrangler.jsonc" }, { configPath: "../cards/wrangler.jsonc" }],
+    }),
     tailwindcss(),
     tanstackStart(),
     viteReact(),

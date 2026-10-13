@@ -1,0 +1,11 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Share cards (DECISIONS rounds 11 and 15): draws the PNG a pin or bairro link shows in WhatsApp.
+  // Its own Worker, beside the app: no database, no secrets, only what the app describes over the
+  // CARDS service binding. Rendering takes CPU time beyond the free plan's 10 ms per request, so it
+  // needs Workers Paid in production; the app falls back to the photo or og.png when it fails.
+  "name": "falacanoas-cards",
+  "compatibility_date": "2026-10-01",
+  "main": "src/index.ts",
+  "observability": { "enabled": true }
+}

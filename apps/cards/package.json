@@ -1,0 +1,27 @@
+{
+  "name": "@fala/cards",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit -p .",
+    "preview": "bun scripts/preview.ts"
+  },
+  "dependencies": {
+    "@fala/core": "workspace:*",
+    "@jsquash/webp": "1.5.0",
+    "@resvg/resvg-wasm": "2.6.2",
+    "react": "^19.3.0",
+    "satori": "0.32.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@fala/instance-canoas": "workspace:*",
+    "@types/bun": "latest",
+    "@types/react": "^19.2.0",
+    "typescript": "7.0.2",
+    "wrangler": "^4.149.0"
+  }
+}

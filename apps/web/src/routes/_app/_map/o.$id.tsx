@@ -5,6 +5,7 @@ import { z } from "zod";
 import { ItemDetail } from "@/features/item/item-detail";
 import { setMapState } from "@/features/map/map-store";
 import { accountQuery, cityQuery, itemQuery, memberGate } from "@/lib/city";
+import { itemShareMeta } from "@/lib/share-meta";
 
 export const Route = createFileRoute("/_app/_map/o/$id")({
   // A guest pin's tracking link: /o/ID?chave=… opens it while it waits for moderation.
@@ -15,24 +16,20 @@ export const Route = createFileRoute("/_app/_map/o/$id")({
     if (!item) throw notFound();
     return item;
   },
-  head: ({ loaderData }) => ({
-    meta: loaderData?.moderation
-      ? [
-          {
-            title: `Registro ${loaderData.moderation === "pending" ? "em análise" : "não publicado"} · Fala, Canoas`,
-          },
-          { name: "robots", content: "noindex" },
-        ]
+  // A shared pin gets its card (rounds 11 and 15); one in moderation, or refused, stays out of previews.
+  head: ({ loaderData }) =>
+    loaderData?.moderation
+      ? {
+          meta: [
+            {
+              title: `Registro ${loaderData.moderation === "pending" ? "em análise" : "não publicado"} · Fala, Canoas`,
+            },
+            { name: "robots", content: "noindex" },
+          ],
+        }
       : loaderData
-        ? [
-            { title: `${loaderData.title} · Fala, Canoas` },
-            { name: "description", content: `${loaderData.days} dias em aberto. ${loaderData.text}` },
-            { property: "og:title", content: `${loaderData.title} · ${loaderData.days} dias` },
-            { property: "og:description", content: loaderData.text },
-            ...(loaderData.photos[0] ? [{ property: "og:image", content: loaderData.photos[0].src }] : []),
-          ]
-        : [],
-  }),
+        ? itemShareMeta(loaderData, canoas)
+        : {},
   onEnter: ({ params }) => setMapState({ selectedId: params.id, focusId: null }),
   onStay: ({ params }) => setMapState({ selectedId: params.id }),
   onLeave: () => setMapState({ selectedId: null }),
