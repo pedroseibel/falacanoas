@@ -9,7 +9,7 @@ import { GhostPin } from "./ghost-pin";
 export function PinNotFound({ code, onClose }: { code: string; onClose: () => void }) {
   const shown = code.length > 12 ? `${code.slice(0, 11)}…` : code.toUpperCase();
   return (
-    <div className="grid gap-6 p-5 pb-8">
+    <div className="grid gap-6 p-5 pt-16 pb-8">
       <div className="grid aspect-4/3 place-content-center max-phone:aspect-video justify-items-center gap-3.5 rounded-xl border border-dashed border-foreground/20 bg-muted">
         <GhostPin />
         <span className="font-mono text-sm tracking-wide text-muted-foreground">{shown}</span>

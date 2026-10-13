@@ -19,7 +19,7 @@ function Detail({ error }: { error: unknown }) {
 /** A failure inside a part of a page (the detail panel, a section): it says so in place, and retries. */
 export function ErrorState({ error, onRetry }: { error: unknown; onRetry: () => void }) {
   return (
-    <div role="alert" className="grid content-start gap-5 p-5 pb-8">
+    <div role="alert" className="grid content-start gap-5 p-5 pt-16 pb-8">
       <div className="grid gap-2.5">
         <h2 className="text-heading font-semibold text-balance">{TITLE}</h2>
         <p className="text-ui text-pretty text-ink-2">{BODY}</p>

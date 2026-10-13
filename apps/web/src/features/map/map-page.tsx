@@ -1,6 +1,6 @@
 import type { Item, Municipality, Viewer } from "@fala/core";
 import { useSelector } from "@tanstack/react-store";
-import { Locate, Minus, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Locate, Minus, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,19 @@ export interface MapPageProps {
   onClose: () => void;
   /** Detail content (the /o/$id child route), or null. */
   detail: ReactNode;
+}
+
+/** The detail's way back to the whole map: pinned to the panel's corner while it scrolls. */
+function CloseDetail({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="sticky top-0 z-20 h-0">
+      <span className="absolute top-3 right-3">
+        <Button variant="floating" size="icon-lg" aria-label="Fechar e voltar ao mapa" onClick={onClose}>
+          <X />
+        </Button>
+      </span>
+    </div>
+  );
 }
 
 const PIN_MODES: { v: PinMode; label: string }[] = [
@@ -157,7 +170,11 @@ export function MapPage({
         <section
           className="relative z-10 w-110 shrink-0 overflow-y-auto overscroll-contain border-r border-hairline bg-card"
           aria-label="Registro"
+          onKeyDown={(e) => {
+            if (e.key === "Escape" && !e.defaultPrevented) onClose();
+          }}
         >
+          <CloseDetail onClose={onClose} />
           {detail}
         </section>
       )}
@@ -214,7 +231,10 @@ export function MapPage({
         >
           <DrawerContent>
             <DrawerTitle className="sr-only">Registro</DrawerTitle>
-            <div className="overflow-y-auto overscroll-contain">{detail}</div>
+            <div className="overflow-y-auto overscroll-contain">
+              <CloseDetail onClose={onClose} />
+              {detail}
+            </div>
           </DrawerContent>
         </Drawer>
       )}
