@@ -130,6 +130,9 @@ export const auth = betterAuth({
     // Every sign-in, passkeys included, keeps the account out of the 180-day dormancy rule (Q20).
     session: {
       create: {
+        // No IP or browser on the session: the connection is recorded once, in the vault, kept
+        // 6 months (round 18, Q21), and nowhere in the app's tables.
+        before: async (session) => ({ data: { ...session, ipAddress: null, userAgent: null } }),
         after: async (session, ctx) => noteSignIn(session.userId, ctx?.headers ?? ctx?.request?.headers ?? null),
       },
     },

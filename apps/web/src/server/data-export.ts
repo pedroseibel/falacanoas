@@ -75,12 +75,7 @@ export async function collectMyData(accountId: string, now = new Date()) {
       .from(passkeys)
       .where(eq(passkeys.userId, accountId)),
     db
-      .select({
-        createdAt: sessions.createdAt,
-        expiresAt: sessions.expiresAt,
-        ip: sessions.ipAddress,
-        userAgent: sessions.userAgent,
-      })
+      .select({ createdAt: sessions.createdAt, expiresAt: sessions.expiresAt })
       .from(sessions)
       .where(eq(sessions.userId, accountId)),
     db
@@ -142,12 +137,7 @@ export async function collectMyData(accountId: string, now = new Date()) {
       tipo: k.deviceType,
       sincronizada: k.backedUp,
     })),
-    sessoesAbertas: logins.map((s) => ({
-      desde: iso(s.createdAt),
-      ate: iso(s.expiresAt),
-      ip: s.ip,
-      navegador: s.userAgent,
-    })),
+    sessoesAbertas: logins.map((s) => ({ desde: iso(s.createdAt), ate: iso(s.expiresAt) })),
     pedidosDeDados: requests.map((r) => ({
       protocolo: r.protocol,
       pedido: r.kind,
