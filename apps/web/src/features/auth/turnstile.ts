@@ -3,7 +3,8 @@ import { useCallback, useRef } from "react";
 /**
  * Cloudflare Turnstile (DECISIONS round 18, Q16): no sign-in code is sent without a token, and the
  * server checks it with Siteverify. The widget runs invisibly ("execute" mode, interaction only) and
- * shows itself only when Cloudflare wants a person to interact.
+ * shows itself only when Cloudflare wants a person to interact. Its slot is `hidden has-[iframe]:block`: before
+ * a check the widget leaves only a hidden input there, which still took a gap in the forms' grids.
  */
 interface TurnstileApi {
   render: (el: HTMLElement, options: Record<string, unknown>) => string;

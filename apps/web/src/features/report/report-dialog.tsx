@@ -1,14 +1,14 @@
 import type { Item, Municipality } from "@fala/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "@tanstack/react-store";
-import { Copy, Map as MapIcon, Share2 } from "lucide-react";
+import { Copy, Map as MapIcon, Share2, X } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { SuccessMark } from "@/components/success-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { whereOf } from "@/features/map/item-card";
 import { cityQuery, itemQuery } from "@/lib/city";
 import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
@@ -46,8 +46,16 @@ export function ReportDialog({ author, ...props }: ReportDialogProps) {
   const flow = (head: Head) => <ReportFlow key={session} {...props} author={author} phone={phone} head={head} />;
   if (phone)
     return (
-      <Drawer open={open} onOpenChange={onOpenChange} showSwipeHandle>
-        <DrawerContent>{flow({ Title: DrawerTitle, Description: DrawerDescription })}</DrawerContent>
+      // Like the dialog: a stray tap on the scrim must not throw away photos already picked. Swiping
+      // down (a deliberate gesture), Esc and Fechar still close it.
+      <Drawer open={open} onOpenChange={onOpenChange} showSwipeHandle disablePointerDismissal>
+        <DrawerContent>
+          <DrawerClose render={<Button variant="ghost" size="icon-sm" className="absolute top-5 right-3 z-20" />}>
+            <X />
+            <span className="sr-only">Fechar</span>
+          </DrawerClose>
+          {flow({ Title: DrawerTitle, Description: DrawerDescription })}
+        </DrawerContent>
       </Drawer>
     );
   return (
@@ -162,7 +170,7 @@ function ReportDone({
   const held = item.moderation === "pending";
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Header head={head} title={held ? "Recebido" : "Registrado"}>
+      <Header head={head} title={held ? "Recebido" : "Registrado"} focus>
         {held
           ? "Fica em análise até alguém da moderação olhar. Depois, entra no mapa e no resumo diário."
           : item.pendingPhotos
@@ -198,7 +206,7 @@ function ReportDone({
       <div
         className={cn(
           "shrink-0 gap-2 border-t border-hairline bg-muted px-5 py-3.5",
-          phone ? "pb-safe grid" : "flex justify-end",
+          phone ? "pb-safe-3.5 grid" : "flex justify-end",
         )}
       >
         {!held && (
@@ -251,7 +259,7 @@ function GuestDone({
     );
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <Header head={head} title="Recebido">
+      <Header head={head} title="Recebido" focus>
         Fica em análise até a moderação aprovar. Depois, entra no mapa e no resumo diário à Prefeitura.
       </Header>
       <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
@@ -287,7 +295,7 @@ function GuestDone({
       <div
         className={cn(
           "shrink-0 gap-2 border-t border-hairline bg-muted px-5 py-3.5",
-          phone ? "pb-safe grid" : "flex justify-end",
+          phone ? "pb-safe-3.5 grid" : "flex justify-end",
         )}
       >
         <Button

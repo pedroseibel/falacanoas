@@ -78,11 +78,11 @@ export function PhotoViewer({
                 draggable={false}
                 className="aspect-4/3 w-full object-cover select-none"
               />
-              <span className="absolute top-3 left-3 rounded-md bg-foreground/70 px-2 py-1.5 font-mono text-xs text-background">
+              <span className="absolute top-3 left-3 max-w-3/4 truncate rounded-md bg-foreground/70 px-2 py-1.5 font-mono text-xs text-background">
                 {p.takenAt} · {p.by}
               </span>
               {p.credit && (
-                <span className="absolute right-2.5 bottom-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 text-2xs text-background">
+                <span className="absolute right-2.5 bottom-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 text-micro leading-snug text-background">
                   {p.credit}
                 </span>
               )}
@@ -103,7 +103,7 @@ export function PhotoViewer({
             </span>
             <span
               aria-hidden="true"
-              className="absolute bottom-2.5 left-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 font-mono text-2xs text-background tabular-nums"
+              className="absolute bottom-2.5 left-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 font-mono text-micro text-background tabular-nums"
             >
               {current + 1}/{count}
             </span>
@@ -111,7 +111,11 @@ export function PhotoViewer({
         )}
       </div>
       <div className="flex items-start gap-2 border-b border-hairline bg-card py-2.5 pr-2.5 pl-4">
-        <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto" role="group" aria-label="Fotos ao longo do tempo">
+        <div
+          className="-m-1.5 flex min-w-0 flex-1 gap-2 overflow-x-auto p-1.5"
+          role="group"
+          aria-label="Fotos ao longo do tempo"
+        >
           {photos.map((p, k) => (
             <button
               key={`${p.src}|${p.takenAt}`}
@@ -130,7 +134,9 @@ export function PhotoViewer({
                   k === current ? "ring-2 ring-foreground" : "opacity-80 hover:opacity-100",
                 )}
               />
-              <small className="font-mono text-2xs leading-4 text-muted-foreground">{p.takenAt.split(" · ")[0]}</small>
+              <small className="font-mono text-micro leading-4 text-muted-foreground">
+                {p.takenAt.split(" · ")[0]}
+              </small>
             </button>
           ))}
           {pending > 0 && (
@@ -138,7 +144,7 @@ export function PhotoViewer({
               <span className="grid h-14 w-19 place-items-center rounded-md border border-dashed border-hairline-strong bg-panel-3 text-muted-foreground">
                 <ScanEye className="size-4" aria-hidden="true" />
               </span>
-              <small className="font-mono text-2xs leading-4 text-muted-foreground">
+              <small className="font-mono text-micro leading-4 text-muted-foreground">
                 {pending === 1 ? "em análise" : `${pending} em análise`}
               </small>
             </span>
@@ -152,7 +158,7 @@ export function PhotoViewer({
             <span className="grid h-14 w-19 place-items-center rounded-md border border-dashed border-hairline-strong bg-muted text-muted-foreground transition-colors duration-200 ease-fluid group-hover/thumb:text-foreground group-focus-visible/thumb:ring-3 group-focus-visible/thumb:ring-ring/50">
               <Camera className="size-4" />
             </span>
-            <small className="font-mono text-2xs leading-4 text-muted-foreground">foto atual</small>
+            <small className="font-mono text-micro leading-4 text-muted-foreground">foto atual</small>
           </button>
         </div>
         {onReport && shown?.id && (

@@ -154,7 +154,8 @@ async function createGuestPin(data: FormData, guestId: string): Promise<ReportRe
   if (!(await isHuman(typeof token === "string" ? token : null)))
     return {
       ok: false,
-      error: "Não conseguimos confirmar que é uma pessoa enviando. Recarregue a página e tente de novo.",
+      error:
+        "A verificação anti-robô não passou. Tente publicar de novo; se continuar, recarregue a página (as fotos escolhidas se perdem).",
     };
   if ((await createdSince(guestId, DAY)) >= GUEST_PER_DAY)
     return { ok: false, error: "Sem conta, são até 3 registros por dia. Entre com o celular para registrar mais." };

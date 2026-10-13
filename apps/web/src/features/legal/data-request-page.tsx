@@ -251,7 +251,7 @@ export function DataRequestPage({
           }}
         </form.Field>
 
-        {!signedIn && turnstileSiteKey && <div ref={mountRobot} className="empty:hidden" />}
+        {!signedIn && turnstileSiteKey && <div ref={mountRobot} className="hidden has-[iframe]:block" />}
         {failure && (
           <p role="alert" className="text-caption text-signal-text">
             {failure}

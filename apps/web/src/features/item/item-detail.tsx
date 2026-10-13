@@ -1,4 +1,5 @@
 import {
+  plural,
   awaitingDigest,
   communityLine,
   dateAgo,
@@ -78,6 +79,10 @@ const COMMUNITY_LABEL: Record<CommunityStatus, string> = {
 };
 
 const day = (d: Date, timezone: string) => localStamp(d, timezone).split(" · ")[0];
+/** "hoje", "há 1 dia", "há 5 dias". */
+const ago = (days: number) => (days === 0 ? "hoje" : `há ${days} ${plural(days, "dia", "dias")}`);
+/** "1 vizinho diz que continua", "3 vizinhos dizem que continua". */
+const continuing = (n: number) => `${n} ${plural(n, "vizinho diz", "vizinhos dizem")} que continua`;
 
 /**
  * The Ouvidoria's legal deadline (Lei 13.460, art. 16), counted from the protocol. It sits apart from
@@ -105,7 +110,7 @@ function LegalDeadline({
     <div className="grid gap-1 border-t border-hairline pt-2.5 text-xs">
       <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="flex items-center gap-1.5 text-muted-foreground">
-          Prazo legal da Ouvidoria {demo && <Badge variant="outline">exemplo</Badge>}
+          Prazo legal da Ouvidoria {demo && <Badge variant="chip-inline">exemplo</Badge>}
         </span>
         <span className={cn("font-medium tabular-nums", overdue ? "text-signal-text" : "text-foreground")}>
           {status}
@@ -194,10 +199,14 @@ export function ItemDetail({
         </div>
       )}
 
-      <div className="grid gap-4.5 px-4.5 pt-4 pb-7">
-        <header>
+      {/* min-w-0 twice: the category line truncates, and a truncated line would otherwise still hold the
+          column open at its full length (a 320px phone got a 382px panel). */}
+      <div className="grid min-w-0 gap-4.5 px-4.5 pt-4 pb-7">
+        <header className="min-w-0">
           <CategoryLine muni={muni} category={it.category} where={whereOf(it, muni)} demo={it.demo} />
-          <h2 className="mt-1 text-2xl leading-tight font-semibold tracking-tight text-balance">{it.title}</h2>
+          <h2 className="mt-1 text-2xl leading-tight font-semibold tracking-tight text-balance wrap-anywhere">
+            {it.title}
+          </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
             por{" "}
             <b className="font-medium text-ink-2">
@@ -244,7 +253,7 @@ export function ItemDetail({
           <div className="grid content-start gap-1 rounded-xl border border-hairline bg-card p-3">
             <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
               <BadgeCheck className="size-3.5" /> Prefeitura
-              {it.official && <Badge variant="outline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>}
+              {it.official && <Badge variant="chip-inline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>}
             </span>
             <span
               className={cn("text-sm leading-snug font-semibold", !it.official && "font-medium text-muted-foreground")}
@@ -252,14 +261,14 @@ export function ItemDetail({
               {it.official ? OFFICIAL_LABEL[it.official.status] : "Sem resposta registrada"}
             </span>
             <span className="text-xs text-muted-foreground">
-              {it.official ? `${it.official.agency} · há ${it.official.daysAgo} dias` : "Recebe o resumo diário."}
+              {it.official ? `${it.official.agency} · ${ago(it.official.daysAgo)}` : "Recebe o resumo diário."}
             </span>
           </div>
           {disagreement && (
             <p className="col-span-2 flex items-start gap-2 text-xs text-ink-2">
               <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" />A Prefeitura diz que resolveu;{" "}
-              {it.disagreeing ?? it.confirmations} moradores dizem que continua. O Fala registra as duas coisas e não
-              decide quem está certo.
+              {continuing(it.disagreeing ?? it.confirmations)}. O Fala registra as duas coisas e não decide quem está
+              certo.
             </p>
           )}
         </section>
@@ -271,7 +280,7 @@ export function ItemDetail({
         )}
         {member && <RemovalNotices it={it} />}
 
-        <p className="text-sm leading-relaxed text-ink-2">{it.text}</p>
+        <p className="text-sm leading-relaxed text-ink-2 wrap-anywhere">{it.text}</p>
 
         <section aria-labelledby="hist">
           <h3 id="hist" className="flex items-baseline justify-between text-sm font-semibold">
@@ -302,10 +311,12 @@ export function ItemDetail({
                     <EventIcon className="size-3" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="font-mono text-2xs text-muted-foreground">{e.at}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{e.at}</p>
                     <p className="text-sm font-semibold">
                       {e.actor}{" "}
-                      {official && <Badge variant="outline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>}
+                      {official && (
+                        <Badge variant="chip-inline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>
+                      )}
                     </p>
                     {e.removed ? (
                       <p className="text-sm leading-snug text-muted-foreground">Removida pela moderação.</p>

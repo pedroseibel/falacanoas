@@ -103,7 +103,7 @@ export function LandingPage({
   };
 
   return (
-    <div data-landing className="text-body text-foreground antialiased">
+    <div data-landing className="text-body text-foreground">
       <a
         href="#conteudo"
         className="absolute -top-15 left-gutter z-50 rounded-lg bg-foreground px-3.5 py-2.5 font-semibold text-background no-underline focus:top-3"

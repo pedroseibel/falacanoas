@@ -43,6 +43,7 @@
   --color-signal-foreground: var(--signal-ink);
   --color-signal-text: var(--signal-text);
   --color-signal-wash: var(--signal-wash);
+  --color-signal-hover: var(--signal-hover);
   --color-ink-2: var(--ink-2);
   --color-panel-3: var(--panel-3);
   --color-ground: var(--ground);
@@ -87,6 +88,8 @@
   --breakpoint-compact: 43.75rem;
   --breakpoint-phone: 56.25rem;
   --breakpoint-split: 67.5rem;
+  /* Room for the list, an open pin and a usable map side by side. */
+  --breakpoint-wide: 75rem;
 
   --container-wrap: 77.5rem;
   --container-headline: 12ch;
@@ -196,6 +199,15 @@
 @utility pb-safe {
   padding-bottom: env(safe-area-inset-bottom);
 }
+/* A floor and the safe area, whichever is larger: a drawer's footer keeps its padding on phones
+   without a home indicator, where the inset is 0. */
+@utility pb-safe-* {
+  padding-bottom: max(--spacing(--value(number)), env(safe-area-inset-bottom));
+}
+/* A phone rail card: 20rem, or narrower so the next card peeks past the 14px gutters (320px screens). */
+@utility w-rail-card {
+  width: min(20rem, calc(100vw - 3.25rem));
+}
 /* TanStack Charts reads its palette from --ts-chart-*. One series → ink (dataviz: single series, one color). */
 @utility chart-ink {
   --ts-chart-1: var(--ink);
@@ -258,7 +270,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
   }
   /* The landing page scrolls the document; anchors clear the sticky header. */
   html:has([data-landing]) {
@@ -326,5 +338,37 @@
     .queue-row[data-leaving] > * {
       scale: 1;
     }
+  }
+}
+
+/*
+ * Reduced motion for the overlay primitives (shadcn on Base UI): no zoom, no slide, a fade only.
+ * Unlayered, so it beats the utility classes that set these variables.
+ */
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="dialog-content"],
+  [data-slot="popover-content"],
+  [data-slot="select-content"],
+  [data-slot="tooltip-content"] {
+    --tw-enter-scale: 1;
+    --tw-exit-scale: 1;
+    --tw-enter-translate-x: 0;
+    --tw-enter-translate-y: 0;
+    --tw-exit-translate-x: 0;
+    --tw-exit-translate-y: 0;
+  }
+  [data-slot="drawer-popup"] {
+    --closed-transform: none;
+  }
+  [data-slot="drawer-popup"][data-starting-style],
+  [data-slot="drawer-popup"][data-ending-style] {
+    opacity: 0;
+  }
+}
+
+/* Phones: the rail covers the map's bottom edge, so the map credit (OSM, OpenFreeMap) sits above it. */
+@media (width < 56.25rem) {
+  [data-main-map] .maplibregl-ctrl-bottom-right {
+    bottom: 11rem;
   }
 }

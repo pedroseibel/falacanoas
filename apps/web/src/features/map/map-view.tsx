@@ -51,7 +51,13 @@ export function MapView({
   // so positioning lives on a wrapper it doesn't touch.
   return (
     <div className="absolute inset-0">
-      <div ref={host} className="size-full" role="region" aria-label={`Mapa de ${muni.name} com os registros`} />
+      <div
+        ref={host}
+        data-main-map
+        className="size-full"
+        role="region"
+        aria-label={`Mapa de ${muni.name} com os registros`}
+      />
     </div>
   );
 }

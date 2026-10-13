@@ -44,7 +44,7 @@ function RadioGroupSegment({ className, ...props }: RadioPrimitive.Root.Props) {
     <RadioPrimitive.Root
       data-slot="radio-group-segment"
       className={cn(
-        "flex h-10.5 cursor-pointer items-center justify-center gap-2 rounded-lg text-[0.9375rem] font-medium text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-muted data-checked:bg-card data-checked:text-foreground data-checked:shadow-soft [&_svg]:size-4.5 [&_svg]:shrink-0",
+        "flex min-h-10.5 cursor-pointer items-center justify-center gap-2 rounded-lg py-1.5 text-center text-[0.9375rem] leading-tight font-medium text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-muted data-checked:bg-card data-checked:text-foreground data-checked:shadow-soft [&_svg]:size-4.5 [&_svg]:shrink-0",
         className,
       )}
       {...props}

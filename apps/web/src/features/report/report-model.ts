@@ -67,7 +67,7 @@ export function missingParts(v: ReportFields): string[] {
     if (!v.location) out.push("lugar");
     return out;
   }
-  if (v.title.trim().length < REPORT.minTitle) out.push("a questão");
+  if (v.title.trim().length < REPORT.minTitle) out.push("questão");
   if (v.reach === "place" && !v.location) out.push("lugar");
   if (v.reach === "neighborhood" && !v.neighborhood) out.push("bairro");
   return out;
@@ -104,7 +104,7 @@ export function pickerStart({
 /** What happened when a neighbour joined an existing problem, in the toast's words. */
 export function joinMessage(confirmation: "counts" | "already" | "too-new", withPhoto: boolean): string {
   if (confirmation === "counts") return "Somado ao registro que já existia. Obrigado.";
-  const photo = withPhoto ? "Sua foto entrou no registro que já existia. " : "";
+  const photo = withPhoto ? "Sua foto foi para o registro que já existia e aparece depois que a moderação olhar. " : "";
   if (confirmation === "already") return withPhoto ? photo.trim() : "Você já tinha confirmado este registro.";
   return `${photo}Sua confirmação passa a contar 72 horas depois de você confirmar o celular.`;
 }

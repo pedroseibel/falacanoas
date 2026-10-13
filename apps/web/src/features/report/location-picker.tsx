@@ -91,10 +91,12 @@ export function LocationPicker({
       // The drawer on phones closes on a downward swipe; dragging the map must not count as one.
       data-base-ui-swipe-ignore
       tabIndex={-1}
+      role="group"
+      aria-labelledby="r-onde"
       aria-invalid={invalid}
       aria-describedby={describedBy}
       className={cn(
-        "relative h-60 overflow-hidden rounded-xl border border-hairline bg-ground outline-none max-compact:h-52",
+        "relative h-60 overflow-hidden rounded-xl border border-hairline bg-ground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 max-compact:h-52",
         invalid && "border-signal-text",
       )}
     >

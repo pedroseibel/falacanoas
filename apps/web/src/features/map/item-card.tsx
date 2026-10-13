@@ -35,6 +35,7 @@ export function ItemCard({
     <button
       type="button"
       data-id={it.id}
+      aria-current={selected || undefined}
       onClick={() => onOpen(it.id)}
       onPointerEnter={() => onHover?.(it.id)}
       onPointerLeave={() => onHover?.(null)}
@@ -42,9 +43,9 @@ export function ItemCard({
         // A press answers at once, barely (tens of taps a day): 99%, back on release.
         "flex w-full gap-3 rounded-xl border p-2.5 text-left transition duration-160 ease-fluid outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-99 motion-reduce:active:scale-100",
         layout === "rail"
-          ? "w-80 shrink-0 snap-start border-hairline bg-card shadow-float"
+          ? "w-rail-card shrink-0 snap-start border-hairline bg-card shadow-float"
           : "border-transparent hover:bg-muted",
-        selected && (layout === "rail" ? "border-foreground" : "border-border bg-card shadow-soft"),
+        selected && (layout === "rail" ? "border-foreground" : "border-foreground bg-card shadow-soft"),
       )}
     >
       <span className="relative grid size-21 shrink-0 place-items-center overflow-hidden rounded-lg border border-hairline bg-panel-3 text-muted-foreground">
@@ -77,7 +78,7 @@ export function ItemCard({
           extra={distance}
           wrap={layout === "rail"}
         />
-        <span className="line-clamp-2 text-sm leading-snug font-semibold tracking-tight">{it.title}</span>
+        <span className="line-clamp-2 text-sm leading-snug font-semibold tracking-tight wrap-anywhere">{it.title}</span>
         <span className="mt-0.5 flex min-w-0 items-baseline gap-2 text-xs whitespace-nowrap text-muted-foreground">
           {open ? (
             <span className="inline-flex items-baseline gap-1 text-ink-2">
@@ -90,11 +91,13 @@ export function ItemCard({
                 {it.days}
               </b>
               {it.days === 1 ? "dia" : "dias"}
+              {it.days > muni.deadlineDays && <span className="sr-only">, acima do prazo de referência</span>}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1">
               <Check className="size-3.5" />
-              <b className="text-base font-semibold">{it.days}</b>dias
+              <b className="text-base font-semibold">{it.days}</b>
+              {it.days === 1 ? "dia" : "dias"}
             </span>
           )}
           <span className="text-hairline-strong">·</span>

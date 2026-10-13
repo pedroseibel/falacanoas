@@ -102,7 +102,7 @@ export function SignInPage({
         />
       )}
       {/* Turnstile's widget: invisible unless Cloudflare asks for an interaction. */}
-      {turnstileSiteKey && <div ref={mountTurnstile} className="empty:hidden" />}
+      {turnstileSiteKey && <div ref={mountTurnstile} className="hidden has-[iframe]:block" />}
     </AuthFrame>
   );
 }

@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { contestDecision, getDecision, getMyRemovals, type Removal } from "@/server/moderation";
 
 const SENT = "Contestação enviada. Outra pessoa da moderação vai olhar.";
+/** The text stays in the field, so trying again costs nothing. */
+const UNSENT = "Não deu para enviar a contestação agora. Confira a conexão e tente de novo.";
 
 /** Why a decision is wrong, in a few words; someone other than whoever decided reads it. */
 function ContestForm({
@@ -27,7 +29,8 @@ function ContestForm({
       className="grid gap-2"
       onSubmit={(e) => {
         e.preventDefault();
-        if (text.trim().length < 10) return void toast("Conte em poucas palavras por que a decisão está errada.");
+        if (text.trim().length < 10)
+          return void toast("Escreva pelo menos 10 letras sobre por que a decisão está errada.");
         onSend(text);
       }}
     >
@@ -83,6 +86,7 @@ export function ModerationNotice({ it, trackingKey }: { it: Item; trackingKey: s
       toast(r.ok ? SENT : r.error);
       if (r.ok) void queryClient.invalidateQueries({ queryKey: ["item", it.id, "decision"] });
     },
+    onError: () => toast(UNSENT),
   });
   const d = decision.data;
 
@@ -135,6 +139,7 @@ export function RemovalNotices({ it }: { it: Item }) {
       toast(r.ok ? SENT : r.error);
       if (r.ok) void queryClient.invalidateQueries({ queryKey: key });
     },
+    onError: () => toast(UNSENT),
   });
   if (!removals.data?.length) return null;
   return removals.data.map((r) => (

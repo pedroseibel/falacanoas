@@ -75,7 +75,7 @@ function Action({
 }) {
   return (
     <Button
-      size="lg"
+      size="action"
       variant={done ? "default" : "outline"}
       aria-pressed={done}
       aria-expanded={expanded}
@@ -117,7 +117,7 @@ export function ItemActions({
 
   const follow = (
     <Button
-      size="lg"
+      size="action"
       variant={v?.following ? "default" : "outline"}
       aria-pressed={Boolean(v?.following)}
       disabled={busy("follow")}
@@ -140,7 +140,7 @@ export function ItemActions({
         >
           Isso me afeta <span className="font-mono text-xs opacity-70">{it.confirmations}</span>
         </Action>
-        <Button size="lg" variant="outline" onClick={onWrite}>
+        <Button size="action" variant="outline" onClick={onWrite}>
           <Info data-icon="inline-start" />
           Tenho informação
         </Button>
@@ -150,7 +150,7 @@ export function ItemActions({
   else if (!open)
     grid = (
       <>
-        <Button size="lg" variant="outline" disabled={busy("still")} onClick={() => a.run({ type: "still" })}>
+        <Button size="action" variant="outline" disabled={busy("still")} onClick={() => a.run({ type: "still" })}>
           {busy("still") ? <Spin /> : <RotateCcw data-icon="inline-start" />}
           Voltou a acontecer
         </Button>
@@ -161,7 +161,7 @@ export function ItemActions({
     grid = (
       <>
         {v?.author ? (
-          <Button size="lg" variant="outline" onClick={onWrite}>
+          <Button size="action" variant="outline" onClick={onWrite}>
             <Pencil data-icon="inline-start" />
             Atualizar
           </Button>

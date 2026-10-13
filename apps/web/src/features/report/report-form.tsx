@@ -67,14 +67,31 @@ export interface Head {
 export type Created = Extract<ReportResult, { ok: true }>;
 export type Joined = Extract<JoinResult, { ok: true }> & { withPhoto: boolean };
 
+/** The robot check failed: a new try gets a fresh token, so retrying comes before reloading. */
+const ROBOT_CHECK_FAILED =
+  "A verificação anti-robô não passou. Tente publicar de novo; se continuar, recarregue a página (as fotos escolhidas se perdem).";
 const asKind = (v: unknown) => ItemKindSchema.safeParse(v).data;
 const asReach = (v: unknown) => ReachSchema.safeParse(v).data;
 const asVisibility = (v: unknown) => VisibilitySchema.safeParse(v).data;
 
-export function Header({ head, title, children }: { head: Head; title: string; children: ReactNode }) {
+/** Stable, so React calls it once, when the title mounts, and never pulls focus back later. */
+const focusOnMount = (el: HTMLElement | null) => el?.focus({ preventScroll: true });
+
+export function Header({
+  head,
+  title,
+  focus,
+  children,
+}: {
+  head: Head;
+  title: string;
+  /** A result screen replacing the form: focus moves to its title, so it's announced. */
+  focus?: boolean;
+  children: ReactNode;
+}) {
   return (
     <div className="grid shrink-0 gap-1 border-b border-hairline px-5 pt-4.5 pr-12 pb-3.5">
-      <head.Title>{title}</head.Title>
+      <head.Title {...(focus && { ref: focusOnMount, tabIndex: -1, className: "outline-none" })}>{title}</head.Title>
       <head.Description>{children}</head.Description>
     </div>
   );
@@ -155,8 +172,7 @@ export function ReportForm({
     onSubmit: async ({ value }) => {
       setProblem(null);
       const token = guest ? await robotToken().catch(() => null) : null;
-      if (guest && !token)
-        return setProblem("Não conseguimos confirmar que é uma pessoa enviando. Recarregue a página e tente de novo.");
+      if (guest && !token) return setProblem(ROBOT_CHECK_FAILED);
       const r = await create.mutateAsync({ v: value, token }).catch(() => null);
       if (!r) return setProblem("Não deu para publicar agora. Confira a conexão e tente de novo.");
       if (!r.ok) return setProblem(r.error);
@@ -187,7 +203,7 @@ export function ReportForm({
     if (files.length > room)
       toast(
         room > 0
-          ? `Cabe só mais ${room} ${plural(room, "foto", "fotos")} neste registro.`
+          ? `${plural(room, "Cabe", "Cabem")} só mais ${room} ${plural(room, "foto", "fotos")} neste registro.`
           : `Cabem ${REPORT.maxPhotos} fotos por registro.`,
       );
     const picked = files.slice(0, Math.max(0, room));
@@ -245,7 +261,7 @@ export function ReportForm({
       </Header>
 
       <div className="grid min-h-0 flex-1 content-start gap-6 overflow-y-auto overscroll-contain px-5 py-5">
-        {guest?.turnstileSiteKey && <div ref={mountRobot} className="empty:hidden" />}
+        {guest?.turnstileSiteKey && <div ref={mountRobot} className="hidden has-[iframe]:block" />}
         {!guest && (
           <form.Field name="kind">
             {(field) => (
@@ -417,7 +433,7 @@ export function ReportForm({
               const errors = show(field.state.meta.errors);
               const agency = occurrences.find((c) => c.key === field.state.value)?.agency;
               return (
-                <Part id="r-tipo" title="O que é?">
+                <Part id="r-tipo" title="Tipo de problema">
                   <RadioGroupTiles
                     aria-labelledby="r-tipo"
                     value={field.state.value}
@@ -634,7 +650,7 @@ export function ReportForm({
       <div
         className={cn(
           "shrink-0 gap-3 border-t border-hairline bg-muted px-5 py-3.5",
-          phone ? "pb-safe grid" : "flex items-center justify-between",
+          phone ? "pb-safe-3.5 grid" : "flex items-center justify-between",
         )}
       >
         <p className="text-caption text-muted-foreground" aria-live="polite">

@@ -155,7 +155,7 @@
   border: 3px solid var(--panel);
   box-shadow:
     0 0 0 6px var(--signal-wash),
-    0 4px 10px rgb(14 15 16 / 0.25);
+    var(--shadow-sm);
 }
 .fc-selpin > span:last-child {
   font: 600 0.75rem/1 var(--font);

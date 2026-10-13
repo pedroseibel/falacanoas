@@ -227,8 +227,11 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
       for (const it of s.visible)
         if (isOpen(it) && it.neighborhood) counts.set(it.neighborhood, (counts.get(it.neighborhood) ?? 0) + 1);
     const max = Math.max(1, ...counts.values());
+    // One open record must read differently from none, however busy the busiest bairro is: a floor of
+    // 12% of the ramp (fill 6%), then proportional up to the maximum (50%). The legend draws the same.
+    const shade = (n: number) => (n ? 0.12 + (0.88 * n) / max : 0);
     for (const n of muni.neighborhoods)
-      map.setFeatureState({ source: "bairros", id: n.slug }, { v: byBairro ? (counts.get(n.slug) ?? 0) / max : 0 });
+      map.setFeatureState({ source: "bairros", id: n.slug }, { v: byBairro ? shade(counts.get(n.slug) ?? 0) : 0 });
   }
 
   function marker(className: string, html: string, lngLat: [number, number], anchor: "left" | "center") {

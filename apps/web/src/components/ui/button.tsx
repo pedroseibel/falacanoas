@@ -10,7 +10,7 @@ const buttonVariants = cva(
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
         /* Orange: the main action only (Three Places Rule, DESIGN.md). */
         /* Painted to the border edge, so it lines up with the fields above it. */
-        signal: "bg-signal bg-clip-border text-signal-foreground shadow-xs hover:bg-signal/90",
+        signal: "bg-signal bg-clip-border text-signal-foreground shadow-xs hover:bg-signal-hover",
         /* Controls floating over the map: raised card surface. */
         floating: "border-hairline bg-card text-foreground shadow-soft hover:bg-muted",
         outline:
@@ -30,6 +30,9 @@ const buttonVariants = cva(
         xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
         sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+        /* A pin's actions, two to a row: lg's height, wrapping to a second line where a narrow phone can't fit the label. */
+        action:
+          "min-h-9 gap-1.5 px-2.5 py-1.5 text-center leading-tight whitespace-normal has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
         /* The landing page's comfortable call to action (52px). */
         xl: "h-13 gap-2.5 px-5.5 text-[0.96875rem] font-semibold tracking-tight [&_svg:not([class*='size-'])]:size-4.5",
         /* Choice chip (DESIGN.md): a compact pill for a mouse, a 36px pill under a finger or on a phone. */

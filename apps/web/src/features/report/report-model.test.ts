@@ -59,7 +59,7 @@ describe("missingParts", () => {
   test("nothing is missing from a complete problem", () => expect(missingParts(fields())).toEqual([]));
   test("a questão about a bairro asks for the bairro, not the map", () =>
     expect(missingParts(fields({ kind: "public_issue", title: "", reach: "neighborhood", location: null }))).toEqual([
-      "a questão",
+      "questão",
       "bairro",
     ]));
 });
@@ -96,11 +96,15 @@ describe("joinMessage", () => {
     expect(joinMessage("too-new", false)).toBe(
       "Sua confirmação passa a contar 72 horas depois de você confirmar o celular.",
     );
-    expect(joinMessage("too-new", true)).toStartWith("Sua foto entrou no registro que já existia. ");
+    expect(joinMessage("too-new", true)).toStartWith(
+      "Sua foto foi para o registro que já existia e aparece depois que a moderação olhar. ",
+    );
   });
   test("a repeat confirmation says so, unless a photo was added", () => {
     expect(joinMessage("already", false)).toBe("Você já tinha confirmado este registro.");
-    expect(joinMessage("already", true)).toBe("Sua foto entrou no registro que já existia.");
+    expect(joinMessage("already", true)).toBe(
+      "Sua foto foi para o registro que já existia e aparece depois que a moderação olhar.",
+    );
   });
 });
 

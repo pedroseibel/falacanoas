@@ -101,7 +101,7 @@ export function SwipeRail({ items, muni, viewer, selectedId, onOpen }: RailProps
       ref={rail}
       onScroll={focusNearest}
       data-rail
-      className="flex snap-x snap-mandatory gap-2.5 overflow-x-auto px-3.5 scrollbar-none pt-0.5 pb-3"
+      className="flex snap-x snap-mandatory scroll-px-3.5 gap-2.5 overflow-x-auto overscroll-x-contain px-3.5 scrollbar-none pt-0.5 pb-3"
     >
       {items.slice(0, limit).map((it) => (
         <ItemCard

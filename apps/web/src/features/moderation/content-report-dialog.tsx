@@ -114,7 +114,7 @@ function ReportFlow({
   const noun = NOUN[subject.target];
   const footer = cn(
     "shrink-0 gap-2 border-t border-hairline bg-muted px-5 py-3.5",
-    phone ? "pb-safe grid" : "flex justify-end",
+    phone ? "pb-safe-3.5 grid" : "flex justify-end",
   );
   const size = phone ? "xl" : "lg";
 
@@ -228,7 +228,7 @@ function ReportFlow({
                 placeholder="Ex.: a foto mostra o rosto de uma criança no portão da escola."
               />
             </div>
-            {!member && turnstileSiteKey && <div ref={mountRobot} className="empty:hidden" />}
+            {!member && turnstileSiteKey && <div ref={mountRobot} className="hidden has-[iframe]:block" />}
           </>
         )}
         {send.isError && (

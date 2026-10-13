@@ -14,25 +14,38 @@ export function FilterChips({
   onChange: (f: string) => void;
 }) {
   return (
-    <ToggleGroup
-      aria-label="Filtrar registros"
-      variant="outline"
-      size="sm"
-      value={[value]}
-      onValueChange={(v) => onChange(v[0] ?? "tudo")}
-      className="w-full overflow-x-auto"
-    >
-      {muni.filterGroups.map((g) => (
-        <ToggleGroupItem key={g.key} value={g.key} aria-label={g.label}>
-          {g.icon && isIconName(g.icon) && <Icon name={g.icon} size={14} />}
-          {g.label}
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
+    // The scroller pads itself by the focus ring's width (and pulls back by as much), so a focused chip's
+    // ring isn't cut by the overflow.
+    <div className="-m-1 overflow-x-auto p-1 scrollbar-none">
+      <ToggleGroup
+        aria-label="Filtrar registros"
+        variant="outline"
+        size="sm"
+        value={[value]}
+        onValueChange={(v) => onChange(v[0] ?? "tudo")}
+        className="w-max"
+      >
+        {muni.filterGroups.map((g) => (
+          <ToggleGroupItem key={g.key} value={g.key} aria-label={g.label}>
+            {g.icon && isIconName(g.icon) && <Icon name={g.icon} size={14} />}
+            {g.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </div>
   );
 }
 
-export function SortSelect({ value, onChange }: { value: Sort; onChange: (s: Sort) => void }) {
+export function SortSelect({
+  value,
+  onChange,
+  floating,
+}: {
+  value: Sort;
+  onChange: (s: Sort) => void;
+  /** Over the map (phones), where it needs its own surface. */
+  floating?: boolean;
+}) {
   return (
     <Select
       items={SORT_LABEL}
@@ -42,7 +55,7 @@ export function SortSelect({ value, onChange }: { value: Sort; onChange: (s: Sor
         if (parsed.success) onChange(parsed.data);
       }}
     >
-      <SelectTrigger size="sm" aria-label="Ordenar registros">
+      <SelectTrigger size="sm" variant={floating ? "floating" : "default"} aria-label="Ordenar registros">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
