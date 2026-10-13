@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { toast } from "sonner";
+import { turnOffPush } from "@/features/voce/push-device";
 import { VocePage } from "@/features/voce/voce-page";
 import { authClient } from "@/lib/auth-client";
 import { accountQuery, cityQuery } from "@/lib/city";
@@ -43,10 +44,14 @@ function VoceRoute() {
         toast("Conta encerrada. Obrigado por cuidar do bairro.");
       }}
       onSignOut={() =>
-        void authClient.signOut().then(() => {
-          queryClient.setQueryData(accountQuery.queryKey, null);
-          toast("Você saiu.");
-        })
+        // This device stops receiving the account's notices before the session ends.
+        void turnOffPush()
+          .catch(() => undefined)
+          .then(() => authClient.signOut())
+          .then(() => {
+            queryClient.setQueryData(accountQuery.queryKey, null);
+            toast("Você saiu.");
+          })
       }
     />
   );

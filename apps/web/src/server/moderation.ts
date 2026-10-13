@@ -7,6 +7,7 @@ import { itemAuthors, itemEvents, items, moderationCases } from "./db/schema";
 import { findItem, hashKey } from "./items";
 import { member, type Failure } from "./member";
 import { isModerator, moderatorOf } from "./moderation-store";
+import { notifyPlaces } from "./push-send";
 import { getSession } from "./session";
 
 /**
@@ -98,6 +99,15 @@ const EVENT_TEXT = {
   republish: (note: string) => `Pedido de republicação, assinada com apelido: ${note}`,
 };
 
+/** A held pin just went public: the neighbours following its place hear of it now (BUILD 4.2). */
+async function announce(itemId: string): Promise<void> {
+  const [item, author] = await Promise.all([
+    findItem(itemId),
+    db.select({ id: itemAuthors.accountId }).from(itemAuthors).where(eq(itemAuthors.itemId, itemId)),
+  ]);
+  if (item && !item.moderation) notifyPlaces(item, author[0]?.id ?? null);
+}
+
 /** A moderator's decision on an open case, appended to the item's history. */
 export const decideCase = createServerFn({ method: "POST" })
   .validator(DecisionSchema)
@@ -105,7 +115,7 @@ export const decideCase = createServerFn({ method: "POST" })
     const user = (await getSession())?.user;
     if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
     const now = new Date();
-    return db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx): Promise<Failure | { ok: true; itemId: string }> => {
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
       if (!c || c.status !== "open") return { ok: false, error: "Esse caso já foi decidido." };
       const note = data.decision === "publish" ? null : data.note;
@@ -129,8 +139,11 @@ export const decideCase = createServerFn({ method: "POST" })
         actor: ACTOR,
         text: data.decision === "publish" ? EVENT_TEXT.publish() : EVENT_TEXT[data.decision](note ?? ""),
       });
-      return { ok: true };
+      return { ok: true, itemId: c.itemId };
     });
+    if (!result.ok) return result;
+    if (data.decision === "publish") await announce(result.itemId);
+    return { ok: true };
   });
 
 /** A contest, judged again: overturned publishes the item, upheld keeps it out. */
@@ -140,7 +153,7 @@ export const resolveContest = createServerFn({ method: "POST" })
     const user = (await getSession())?.user;
     if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
     const now = new Date();
-    return db.transaction(async (tx) => {
+    const result = await db.transaction(async (tx): Promise<Failure | { ok: true; itemId: string }> => {
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
       if (!c || c.contestStatus !== "open") return { ok: false, error: "Essa contestação já foi analisada." };
       // Whoever decided the first time doesn't judge the contest of it.
@@ -160,8 +173,11 @@ export const resolveContest = createServerFn({ method: "POST" })
           ? `Contestação aceita: publicado. ${data.note}`
           : `Contestação analisada: a decisão fica. ${data.note}`,
       });
-      return { ok: true };
+      return { ok: true, itemId: c.itemId };
     });
+    if (!result.ok) return result;
+    if (data.overturn) await announce(result.itemId);
+    return { ok: true };
   });
 
 /**

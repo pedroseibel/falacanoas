@@ -20,11 +20,15 @@ const rounded = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><re
 const bleed = (scale: number) =>
   `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#0E0F10"/><g transform="translate(32 32) scale(${scale}) translate(-32 -32)">${comma}</g></svg>`;
 
+/** Android's status-bar badge: the comma alone, white on transparency (the system tints it). */
+const badge = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><g transform="translate(32 32) scale(1.45) translate(-32 -32)">${comma.replaceAll("#F05A1A", "#FFFFFF")}</g></svg>`;
+
 const icons: [string, string, number][] = [
   ["icon-192.png", rounded, 192],
   ["icon-512.png", rounded, 512],
   ["icon-maskable-512.png", bleed(0.8), 512],
   ["apple-touch-icon.png", bleed(0.9), 180],
+  ["badge-96.png", badge, 96],
 ];
 
 await Promise.all(

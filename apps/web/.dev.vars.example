@@ -19,3 +19,8 @@ VAULT_VERIFY_KEY=
 # Supabase API, server-side only (Storage). The secret key never reaches the browser.
 SUPABASE_URL=
 SUPABASE_SECRET_KEY=
+
+# Web push (VAPID, RFC 8292): `bun run push:keys` writes both. VAPID_PRIVATE_KEY is a JWK; the public
+# key is the raw point, base64url, which browsers subscribe with.
+VAPID_PRIVATE_KEY=
+VAPID_PUBLIC_KEY=

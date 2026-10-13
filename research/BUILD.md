@@ -72,7 +72,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - [x] **2.4 Following** (round 15). Done 2026-10-12, verified in the browser.
   - a single pin ("Acompanhar"), in `fala.item_follows`;
   - a home (a point and a radius of 300 m, 500 m or 1 km), bairros and a route (two ends, a 400 m corridor along the line between them), in `fala.follows`; core's `covers` decides what each one holds;
-  - Você lists them with how many problems are open in each, adds and removes them, and says plainly that no notice is sent yet: delivery comes with 3.2 and 4.2;
+  - Você lists them with how many problems are open in each, adds and removes them; notices go by web push (4.2), and by WhatsApp once 3.2 lands;
   - "Meus registros" now comes from the server by authorship, so "Anônimo em público" reports show to their owner.
 - [x] **2.5 Guest pins** (round 2, Q4). Done 2026-10-12, verified in the browser.
   - "Registrar sem conta" on /entrar, below the phone sign-in, opens an anonymous session (limited per IP);
@@ -132,7 +132,12 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - `manifest.webmanifest` (start at /mapa, standalone, shortcuts to Mapa, Placar and Você); icons drawn from the favicon's mark by `bun --filter @fala/cards icons` (any, maskable, Apple touch);
   - `public/sw.js`, registered in production builds only: pages from the network with `/offline` when there's none; the build's hashed assets, fonts and icons cached as they're used. No data, server functions, photos or other origins are cached;
   - the photo field already offers camera or gallery (`accept="image/*"`); locating retries with the network's position when a cheap phone's GPS times out.
-- [ ] **4.2 Web push** for followed items.
+- [x] **4.2 Web push** for followed items. Done 2026-10-12, verified end to end against a stand-in push service (it decrypted each message as a browser would and checked the VAPID signature), and the Você control in the browser.
+  - triggers: a followed pin gets an update, a photo, or is closed by neighbours (confirmations and "continua acontecendo" stay quiet); a new pin is published inside a followed place (at once, or when moderation publishes it). Never to whoever did it;
+  - RFC 8291 encryption and RFC 8292 VAPID on WebCrypto (`src/server/web-push.ts`, tested against the RFC's worked example): push services carry the message but can't read it. The wording is core's (`notices.ts`); one notice per pin (`tag` and `topic`), so a newer one replaces an older one;
+  - sent after the response (`waitUntil`, through `src/server/background.ts`); dead subscriptions (404/410) are deleted; closing the account deletes them all; signing out stops this device's first;
+  - Você → Acompanhando: "Avisos neste aparelho", on or off, or why not (unsupported, iPhone outside the installed app, blocked, not configured);
+  - keys: `bun run push:keys` in development; production stores VAPID_PRIVATE_KEY and VAPID_PUBLIC_KEY as Worker secrets (4.5).
 - [ ] **4.3 Icons to a signage norm** (round 16): CONTRAN, ISO 7001, AIGA/DOT or NBR 9050, kept behind `<Icon>`.
 - [ ] **4.4 CARTO basemap** (round 14). ⛔ Needs the key.
 - [ ] **4.5 Cloudflare deploy:**

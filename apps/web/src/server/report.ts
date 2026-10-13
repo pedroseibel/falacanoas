@@ -20,6 +20,7 @@ import { member, type Failure } from "./member";
 import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
 import { removePhotos } from "./photos";
 import { getSession } from "./session";
+import { notifyPlaces } from "./push-send";
 import { isHuman, recordEvidence } from "./vault";
 
 /**
@@ -91,6 +92,8 @@ export const createReport = createServerFn({ method: "POST" })
     }
     if (parsed.data.visibility === "pseudonymous") await markNickPublished(who.id);
     await recordEvidence("publication", who.id, item.id);
+    // Published at once: the neighbours following this place hear of it. A held report waits for moderation.
+    if (!held) notifyPlaces(item, who.id);
     return { ok: true, item, digest: digestDay(now, canoas) };
   });
 

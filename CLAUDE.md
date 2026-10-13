@@ -24,11 +24,12 @@ bun run db:migrate     # apply the app's and the vault's migrations (admin conne
 bun run db:roles       # after migrating: the app and vault roles get their logins (writes .dev.vars in dev)
 bun run db:seed        # replace the demo items (demo = true) with the fixtures; real reports are untouched
 bun run vault:keys     # development: the vault's keys, and the app's copy of its public key, into .dev.vars
+bun run push:keys      # development: the VAPID key pair web push signs with, into apps/web/.dev.vars
 bun --filter @fala/web moderator:add <apelido> [bairro…]   # who moderates (all bairros, or some); moderator:remove
 bun --filter @fala/web requests                             # open data-subject requests; `requests answered <protocolo> [nota]`
 ```
 
-First run: copy `apps/web/.dev.vars.example` to `apps/web/.dev.vars` and fill `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `DATABASE_URL` (the `postgres` pooler string) and the Supabase keys. Then `bun run vault:keys`, `bun run db:migrate`, `bun run db:roles` and `bun run db:seed`.
+First run: copy `apps/web/.dev.vars.example` to `apps/web/.dev.vars` and fill `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `DATABASE_URL` (the `postgres` pooler string) and the Supabase keys. Then `bun run vault:keys`, `bun run push:keys`, `bun run db:migrate`, `bun run db:roles` and `bun run db:seed`.
 
 The landing page is the web app's `/` route; the app's map is `/mapa`. The static landing and the clickable prototype were retired once ported (they live in git history).
 

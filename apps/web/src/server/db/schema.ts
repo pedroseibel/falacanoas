@@ -409,6 +409,30 @@ export const moderationCases = fala
   )
   .enableRLS();
 
+/* ---------- Web push (round 15: following; BUILD 4.2) ---------- */
+
+/**
+ * One browser's push subscription, for one account. The endpoint is the push service's URL for that
+ * browser; the keys encrypt what's sent to it (RFC 8291). Dead ones (404/410) are deleted on the next
+ * send; closing the account deletes them all.
+ */
+export const pushSubscriptions = fala
+  .table(
+    "push_subscriptions",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      endpoint: text().notNull().unique(),
+      p256dh: text().notNull(),
+      auth: text().notNull(),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.accountId)],
+  )
+  .enableRLS();
+
 /* ---------- The data-subject channel (round 18; LGPD art. 18) ---------- */
 
 export const requester = fala.enum("requester", ["account", "guest", "in_content", "former", "other"]);

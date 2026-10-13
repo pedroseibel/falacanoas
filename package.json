@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "packageManager": "bun@1.4.0",
-  "description": "Fala Core e a instância Fala, Canoas: mapa cívico independente e de código aberto.",
+  "description": "Fala Core e a inst\u00e2ncia Fala, Canoas: mapa c\u00edvico independente e de c\u00f3digo aberto.",
   "license": "AGPL-3.0-only",
   "scripts": {
     "dev": "bun --filter @fala/web dev",
@@ -18,7 +18,8 @@
     "db:migrate": "bun --filter @fala/web db:migrate && bun --filter @fala/vault db:migrate",
     "db:seed": "bun --filter @fala/web db:seed",
     "db:roles": "bun --filter @fala/web db:roles",
-    "vault:keys": "bun --filter @fala/vault keys"
+    "vault:keys": "bun --filter @fala/vault keys",
+    "push:keys": "bun apps/web/scripts/push-keys.ts"
   },
   "workspaces": [
     "apps/*",

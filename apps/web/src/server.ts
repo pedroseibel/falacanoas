@@ -1,6 +1,7 @@
 import { canoas } from "@fala/instance-canoas";
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server";
 import { lt } from "drizzle-orm";
+import { runWith } from "./server/background";
 import { openDb } from "./server/db/client";
 import { rateLimits } from "./server/db/schema";
 import { closeQuietItems } from "./server/items";
@@ -11,7 +12,11 @@ import { closeQuietItems } from "./server/items";
  * rate-limit rows, which Better Auth keys by IP and never deletes, go once a day old (the longest
  * window is 15 minutes).
  */
-const fetch = createStartHandler(defaultStreamHandler);
+const handler = createStartHandler(defaultStreamHandler);
+
+/** Each request runs with its execution context at hand, so work can finish after the response. */
+const fetch = (request: Request, _env: unknown, ctx: { waitUntil: (p: Promise<unknown>) => void }) =>
+  runWith(ctx, () => handler(request));
 
 async function daily(now: Date): Promise<void> {
   const { db, close } = await openDb();

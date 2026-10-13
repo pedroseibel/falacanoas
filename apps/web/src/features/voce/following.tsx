@@ -20,6 +20,7 @@ import { LocationPicker } from "@/features/report/location-picker";
 import { followingQuery } from "@/lib/city";
 import { followItem } from "@/server/item-actions";
 import { followPlace, unfollowPlace, type Following as FollowingData } from "@/server/follows";
+import { PushToggle } from "./push-toggle";
 
 const ICON: Record<FollowPlace["kind"], LucideIcon> = { home: House, neighborhood: Shapes, route: RouteIcon };
 
@@ -166,9 +167,9 @@ export function Following({
         </div>
       )}
 
+      <PushToggle />
       <p className="text-xs text-muted-foreground">
-        Os avisos ainda não são enviados: o envio por WhatsApp e as notificações entram depois. Para acompanhar um
-        registro, use “Acompanhar” na página dele.
+        Por WhatsApp, os avisos entram depois. Para acompanhar um registro, use “Acompanhar” na página dele.
       </p>
     </div>
   );

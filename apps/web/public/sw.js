@@ -52,3 +52,39 @@ self.addEventListener("fetch", (event) => {
     );
   }
 });
+
+/*
+ * Notifications (BUILD 4.2): what the server sent, already decrypted by the browser. One per pin
+ * (`tag`), so a newer notice replaces an older one. A tap opens the pin, in a window already open
+ * on it if there is one.
+ */
+self.addEventListener("push", (event) => {
+  let notice = null;
+  try {
+    notice = event.data ? event.data.json() : null;
+  } catch {
+    notice = null;
+  }
+  if (!notice || typeof notice.title !== "string") return;
+  event.waitUntil(
+    self.registration.showNotification(notice.title, {
+      body: notice.body,
+      tag: notice.tag,
+      data: { url: notice.url },
+      icon: "/icons/icon-192.png",
+      badge: "/icons/badge-96.png",
+      lang: "pt-BR",
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url ?? "/mapa", self.location.origin).href;
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((w) => w.url === url);
+      return open ? open.focus() : self.clients.openWindow(url);
+    }),
+  );
+});
