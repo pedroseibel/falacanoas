@@ -4,6 +4,7 @@ import { CategoryLine } from "@/components/category";
 import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { PinIntent } from "./pin-intent";
 
 export function whereOf(it: Item, muni: Municipality): string {
   const bairro = muni.neighborhoods.find((n) => n.slug === it.neighborhood)?.name ?? muni.name;
@@ -20,6 +21,7 @@ export function ItemCard({
   layout = "list",
   onOpen,
   onHover,
+  intent,
 }: {
   it: Item;
   muni: Municipality;
@@ -28,6 +30,8 @@ export function ItemCard({
   layout?: "list" | "rail";
   onOpen: (id: string) => void;
   onHover?: (id: string | null) => void;
+  /** Starts loading the pin when the pointer rests on the card, focus lands on it, or it's pressed. */
+  intent?: PinIntent;
 }) {
   const open = isOpen(it);
   const photo = it.photos[0];
@@ -37,8 +41,16 @@ export function ItemCard({
       data-id={it.id}
       aria-current={selected || undefined}
       onClick={() => onOpen(it.id)}
-      onPointerEnter={() => onHover?.(it.id)}
-      onPointerLeave={() => onHover?.(null)}
+      onPointerEnter={(e) => {
+        onHover?.(it.id);
+        if (e.pointerType === "mouse") intent?.rest(it.id);
+      }}
+      onPointerLeave={() => {
+        onHover?.(null);
+        intent?.leave();
+      }}
+      onPointerDown={() => intent?.press(it.id)}
+      onFocus={() => intent?.rest(it.id)}
       className={cn(
         // A press answers at once, barely (tens of taps a day): 99%, back on release.
         "flex w-full gap-3 rounded-xl border p-2.5 text-left transition duration-160 ease-fluid outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-99 motion-reduce:active:scale-100",

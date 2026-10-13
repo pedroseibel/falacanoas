@@ -4,6 +4,7 @@ import { useMountEffect } from "@/hooks/use-mount-effect";
 import { PHONE_QUERY } from "@/lib/use-media-query";
 import { mountMap, prefersDark } from "./map-engine";
 import { setMapState, type MapState } from "./map-store";
+import type { PinIntent } from "./pin-intent";
 
 /** The map is an imperative island: mounted once, then driven by mapStore (see map-engine.ts). */
 export function MapView({
@@ -11,11 +12,13 @@ export function MapView({
   viewer,
   initial,
   onPick,
+  intent,
 }: {
   muni: Municipality;
   viewer: Viewer;
   initial: Pick<MapState, "visible" | "selectedId">;
   onPick: (id: string) => void;
+  intent?: PinIntent;
 }) {
   const host = useRef<HTMLDivElement>(null);
   useMountEffect(() => {
@@ -36,6 +39,7 @@ export function MapView({
           muni,
           viewer,
           onPick,
+          intent,
           isPhone: () => matchMedia(PHONE_QUERY).matches,
           railHeight: () => document.querySelector("[data-rail]")?.getBoundingClientRect().height ?? 170,
         });

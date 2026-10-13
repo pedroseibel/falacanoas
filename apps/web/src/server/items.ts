@@ -56,9 +56,17 @@ export async function listItems(now = new Date()): Promise<Item[]> {
   return rows.map((row) => itemFromRows(row, { photos: photosOf.get(row.id) ?? [] }, now, tz));
 }
 
-async function readItem(q: Db | Tx, id: string, now: Date): Promise<Item | null> {
+type ItemRow = typeof items.$inferSelect;
+
+/** `canSee` decides from the row whether the history is read at all (one query, not two, for a reader). */
+async function readItem(
+  q: Db | Tx,
+  id: string,
+  now: Date,
+  canSee: (row: ItemRow) => boolean | Promise<boolean> = () => true,
+): Promise<Item | null> {
   const [row] = await q.select().from(items).where(eq(items.id, id));
-  if (!row) return null;
+  if (!row || !(await canSee(row))) return null;
   const [events, photos] = await Promise.all([
     q
       .select({
@@ -91,27 +99,30 @@ export const hashKey = async (key: string) =>
  */
 export async function findVisibleItem(
   id: string,
-  { key, accountId }: { key: string | null; accountId: string | null },
+  {
+    key,
+    accountId,
+  }: {
+    key: string | null;
+    /** Asked only for a pin still in moderation: a published one needs no session lookup. */
+    accountId: () => Promise<string | null>;
+  },
   now = new Date(),
 ): Promise<Item | null> {
-  const [row] = await db
-    .select({ moderation: items.moderation, trackingKeyHash: items.trackingKeyHash })
-    .from(items)
-    .where(eq(items.id, id));
-  if (!row) return null;
-  if (row.moderation !== "published") {
-    const byKey = Boolean(key && row.trackingKeyHash && (await hashKey(key)) === row.trackingKeyHash);
-    const own =
-      accountId !== null &&
-      (await has(
+  return readItem(db, id, now, async (row) => {
+    if (row.moderation === "published") return true;
+    if (key && row.trackingKeyHash && (await hashKey(key)) === row.trackingKeyHash) return true;
+    const account = await accountId();
+    return (
+      account !== null &&
+      has(
         db
           .select({ id: itemAuthors.itemId })
           .from(itemAuthors)
-          .where(and(eq(itemAuthors.itemId, id), eq(itemAuthors.accountId, accountId))),
-      ));
-    if (!byKey && !own) return null;
-  }
-  return readItem(db, id, now);
+          .where(and(eq(itemAuthors.itemId, id), eq(itemAuthors.accountId, account))),
+      )
+    );
+  });
 }
 
 export async function itemExists(id: string): Promise<boolean> {

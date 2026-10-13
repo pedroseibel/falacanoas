@@ -6,6 +6,7 @@ import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
 import { ItemCard } from "./item-card";
 import { mapStore, setMapState } from "./map-store";
+import type { PinIntent } from "./pin-intent";
 import { distanceTo } from "./selectors";
 
 interface RailProps {
@@ -14,12 +15,13 @@ interface RailProps {
   viewer: Viewer;
   selectedId: string | null;
   onOpen: (id: string) => void;
+  intent?: PinIntent;
 }
 
 const hover = (id: string | null) => setMapState({ hoveredId: id });
 
 /** Desktop: virtualized vertical list (handles 400+ records without DOM bloat). */
-export function ListRail({ items, muni, viewer, selectedId, onOpen }: RailProps) {
+export function ListRail({ items, muni, viewer, selectedId, onOpen, intent }: RailProps) {
   const scroller = useRef<HTMLDivElement>(null);
   const v = useVirtualizer({
     count: items.length,
@@ -66,6 +68,7 @@ export function ListRail({ items, muni, viewer, selectedId, onOpen }: RailProps)
                 distance={distance(distanceTo(viewer.location, it, muni))}
                 onOpen={onOpen}
                 onHover={hover}
+                intent={intent}
               />
             </div>
           );
@@ -78,7 +81,7 @@ export function ListRail({ items, muni, viewer, selectedId, onOpen }: RailProps)
 const PAGE = 40;
 
 /** Phone: horizontal snap rail over the map. Swiping focuses a pin without opening it. */
-export function SwipeRail({ items, muni, viewer, selectedId, onOpen }: RailProps) {
+export function SwipeRail({ items, muni, viewer, selectedId, onOpen, intent }: RailProps) {
   const [limit, setLimit] = useState(PAGE);
   const rail = useRef<HTMLDivElement>(null);
   const focusNearest = useDebouncedCallback(
@@ -92,7 +95,10 @@ export function SwipeRail({ items, muni, viewer, selectedId, onOpen }: RailProps
         const id = card.dataset.id;
         if (id && (!best || d < best.d)) best = { id, d };
       }
-      if (best) setMapState({ focusId: best.id });
+      if (!best) return;
+      setMapState({ focusId: best.id });
+      // The card a swipe settles on is the likeliest next tap.
+      intent?.rest(best.id);
     },
     { wait: 140 },
   );
@@ -112,6 +118,7 @@ export function SwipeRail({ items, muni, viewer, selectedId, onOpen }: RailProps
           selected={it.id === selectedId}
           distance={distance(distanceTo(viewer.location, it, muni))}
           onOpen={onOpen}
+          intent={intent}
         />
       ))}
       {items.length > limit && (

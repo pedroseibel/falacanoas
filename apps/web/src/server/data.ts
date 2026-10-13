@@ -18,6 +18,8 @@ export const getCity = createServerFn({ method: "GET" }).handler(async () => {
 export const getItem = createServerFn({ method: "GET" })
   .validator(z.object({ id: z.string().min(4).max(12), key: z.string().max(64).nullable() }))
   .handler(async ({ data }) => {
-    const user = (await getSession())?.user;
-    return findVisibleItem(data.id.toUpperCase(), { key: data.key, accountId: user?.id ?? null });
+    return findVisibleItem(data.id.toUpperCase(), {
+      key: data.key,
+      accountId: async () => (await getSession())?.user?.id ?? null,
+    });
   });

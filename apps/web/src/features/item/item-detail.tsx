@@ -124,6 +124,23 @@ function LegalDeadline({
   );
 }
 
+/** The history's place while it loads: two rows shaped like events, so nothing jumps when they arrive. */
+function HistoryLoading() {
+  return (
+    <div className="mt-2.5 grid gap-3.5" role="status" aria-label="Carregando o histórico">
+      {[0, 1].map((k) => (
+        <div key={k} className="flex gap-2.5" aria-hidden="true">
+          <span className="size-5.5 shrink-0 animate-pulse rounded-full bg-muted motion-reduce:animate-none" />
+          <span className="grid flex-1 gap-1.5 pt-0.5">
+            <span className="h-3 w-24 animate-pulse rounded-sm bg-muted motion-reduce:animate-none" />
+            <span className="h-3.5 w-3/5 animate-pulse rounded-sm bg-muted motion-reduce:animate-none" />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ItemDetail({
   it,
   muni,
@@ -132,6 +149,7 @@ export function ItemDetail({
   member,
   onSignIn,
   trackingKey,
+  historyPending = false,
 }: {
   it: Item;
   muni: Municipality;
@@ -143,6 +161,11 @@ export function ItemDetail({
   onSignIn: () => void;
   /** A guest pin's tracking key, from its link: lets its author contest a refusal. */
   trackingKey: string | null;
+  /**
+   * Drawn from the list's copy while the full item loads: everything but the history is already
+   * here. The history waits, rather than falling back to deriveEvents' sample one.
+   */
+  historyPending?: boolean;
 }) {
   const a = useItemActions(it, member, onSignIn);
   const [draft, setDraft] = useState("");
@@ -152,7 +175,7 @@ export function ItemDetail({
   const issue = it.kind === "public_issue";
   const over = open && it.days > muni.deadlineDays;
   const disagreement = it.official?.status === "resolved" && it.community === "ongoing";
-  const events = deriveEvents(it, (d) => dateAgo(now, d));
+  const events = historyPending ? [] : deriveEvents(it, (d) => dateAgo(now, d));
   const unit = issue ? "dias em acompanhamento" : open ? "dias em aberto" : "dias até o conserto";
 
   return (
@@ -289,6 +312,7 @@ export function ItemDetail({
               {it.updates} {it.updates === 1 ? "atualização" : "atualizações"} · {relativeTime(it.updatedMinutesAgo)}
             </small>
           </h3>
+          {historyPending && <HistoryLoading />}
           <ol className="mt-2.5 grid">
             {events.map((e, k) => {
               const EventIcon = EVENT_ICON[e.kind];

@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { queryOptions, type QueryClient } from "@tanstack/react-query";
 import { getCity, getItem } from "@/server/data";
 import { getPinThread, getReportedPosts, getThreads } from "@/server/forum";
 import { getAccount, getAuthConfig } from "@/server/account";
@@ -79,6 +79,18 @@ export const isModeratorQuery = queryOptions({
 /** A pin's conversation, or null if nobody has started it. */
 export const pinThreadQuery = (id: string) =>
   queryOptions({ queryKey: ["item", id, "thread"], queryFn: () => getPinThread({ data: id }), staleTime: 30_000 });
+
+/**
+ * Everything a pin's panel asks for, started together: the item with its history, its conversation
+ * and, for a neighbour who can act, what they already did with it. Left to the panel, the last two
+ * would start only once the item had arrived, a round trip later. Fresh data is reused, not refetched.
+ */
+export function prefetchPin(queryClient: QueryClient, id: string) {
+  void queryClient.prefetchQuery(itemQuery(id));
+  void queryClient.prefetchQuery(pinThreadQuery(id));
+  if (memberGate(queryClient.getQueryData(accountQuery.queryKey) ?? null) === null)
+    void queryClient.prefetchQuery(itemViewerQuery(id));
+}
 
 /** Reported forum posts, for moderators. */
 export const reportedPostsQuery = queryOptions({

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { FilterChips, SortSelect, currentFilter, currentSort } from "./filters";
 import { mapControls } from "./map-engine";
 import { mapStore, setMapState, type PinMode } from "./map-store";
+import type { PinIntent } from "./pin-intent";
 import { MapView } from "./map-view";
 import { ListRail, SwipeRail } from "./rail";
 import type { MapSearch, Sort } from "./selectors";
@@ -26,6 +27,8 @@ export interface MapPageProps {
   onSearch: (patch: Partial<MapSearch>) => void;
   onOpen: (id: string) => void;
   onClose: () => void;
+  /** Starts loading a pin the pointer rests on or presses, in the list, the rail or the map. */
+  intent?: PinIntent;
   /** Detail content (the /o/$id child route), or null. */
   detail: ReactNode;
 }
@@ -200,6 +203,7 @@ export function MapPage({
   onSearch,
   onOpen,
   onClose,
+  intent,
   detail,
 }: MapPageProps) {
   const phone = useMediaQuery(PHONE_QUERY);
@@ -235,7 +239,14 @@ export function MapPage({
             </div>
           </div>
           {visible.length ? (
-            <ListRail items={visible} muni={muni} viewer={viewer} selectedId={selectedId} onOpen={onOpen} />
+            <ListRail
+              items={visible}
+              muni={muni}
+              viewer={viewer}
+              selectedId={selectedId}
+              onOpen={onOpen}
+              intent={intent}
+            />
           ) : (
             <NothingHere search={search} onShowAll={() => setFilter("tudo")} />
           )}
@@ -261,7 +272,7 @@ export function MapPage({
 
       {/* A size container: the legend makes room for the map credit by the map's width, not the window's. */}
       <div className="@container relative min-w-0 flex-1 bg-ground">
-        <MapView muni={muni} viewer={viewer} initial={{ visible, selectedId }} onPick={onOpen} />
+        <MapView muni={muni} viewer={viewer} initial={{ visible, selectedId }} onPick={onOpen} intent={intent} />
         {phone ? (
           <div className="pt-safe absolute inset-x-0 top-0 z-10 grid gap-2 px-3">
             <InputGroup variant="floating">
@@ -303,7 +314,14 @@ export function MapPage({
             <SortSelect value={sort} onChange={setSort} floating />
           </div>
           {visible.length ? (
-            <SwipeRail items={visible} muni={muni} viewer={viewer} selectedId={selectedId} onOpen={onOpen} />
+            <SwipeRail
+              items={visible}
+              muni={muni}
+              viewer={viewer}
+              selectedId={selectedId}
+              onOpen={onOpen}
+              intent={intent}
+            />
           ) : (
             <div className="px-3.5 pb-3">
               <div className="rounded-xl border border-hairline bg-card shadow-float">

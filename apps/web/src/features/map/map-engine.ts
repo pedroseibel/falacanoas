@@ -1,6 +1,14 @@
 import { itemLngLat, isOpen, type Item, type Municipality, type Viewer } from "@fala/core";
-import type { ExpressionSpecification, GeoJSONSource, Map as MapLibreMap, Marker } from "maplibre-gl";
+import type {
+  ExpressionSpecification,
+  GeoJSONSource,
+  MapLayerMouseEvent,
+  MapLayerTouchEvent,
+  Map as MapLibreMap,
+  Marker,
+} from "maplibre-gl";
 import { mapStore, type MapState } from "./map-store";
+import type { PinIntent } from "./pin-intent";
 
 type MapLibre = typeof import("maplibre-gl");
 
@@ -50,6 +58,7 @@ export interface MapEngineOptions {
   muni: Municipality;
   viewer: Viewer;
   onPick: (id: string) => void;
+  intent?: PinIntent;
   isPhone: () => boolean;
   railHeight: () => number;
 }
@@ -292,8 +301,22 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
       const id = e.features?.[0]?.properties?.id;
       if (typeof id === "string") opts.onPick(id);
     });
-    map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
-    map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
+    map.on("mouseenter", layer, (e) => {
+      map.getCanvas().style.cursor = "pointer";
+      const id = e.features?.[0]?.properties?.id;
+      if (typeof id === "string") opts.intent?.rest(id);
+    });
+    map.on("mouseleave", layer, () => {
+      map.getCanvas().style.cursor = "";
+      opts.intent?.leave();
+    });
+    // The press comes a beat before the click (more on a touch screen): start loading the pin then.
+    const press = (e: MapLayerMouseEvent | MapLayerTouchEvent) => {
+      const id = e.features?.[0]?.properties?.id;
+      if (typeof id === "string") opts.intent?.press(id);
+    };
+    map.on("mousedown", layer, press);
+    map.on("touchstart", layer, press);
   }
 
   const sub = mapStore.subscribe((next) => {
