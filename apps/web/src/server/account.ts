@@ -35,7 +35,7 @@ type SaveResult = { ok: true } | { ok: false; error: string };
  * spellings, and one that signed anything is never given to anyone else.
  */
 export const saveProfile = createServerFn({ method: "POST" })
-  .inputValidator(ProfileSchema)
+  .validator(ProfileSchema)
   .handler(async ({ data }): Promise<SaveResult> => {
     const s = await session();
     if (!s || s.user.isAnonymous) throw new Error("Entre com seu telefone para escolher um apelido.");

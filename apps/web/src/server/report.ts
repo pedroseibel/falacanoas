@@ -60,7 +60,7 @@ async function uniqueId(): Promise<string> {
 }
 
 export const createReport = createServerFn({ method: "POST" })
-  .inputValidator(formData)
+  .validator(formData)
   .handler(async ({ data }): Promise<ReportResult> => {
     const session = (await getSession())?.user;
     if (session?.isAnonymous) return createGuestPin(data, session.id);
@@ -96,7 +96,7 @@ export const createReport = createServerFn({ method: "POST" })
 
 /** "Já existe algo parecido": confirm the existing problem and add the photos to its timeline. */
 export const joinReport = createServerFn({ method: "POST" })
-  .inputValidator(formData)
+  .validator(formData)
   .handler(async ({ data }): Promise<JoinResult> => {
     const who = await member();
     if ("error" in who) return who;

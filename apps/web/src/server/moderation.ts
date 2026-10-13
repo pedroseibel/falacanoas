@@ -100,7 +100,7 @@ const EVENT_TEXT = {
 
 /** A moderator's decision on an open case, appended to the item's history. */
 export const decideCase = createServerFn({ method: "POST" })
-  .inputValidator(DecisionSchema)
+  .validator(DecisionSchema)
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const user = (await getSession())?.user;
     if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
@@ -135,7 +135,7 @@ export const decideCase = createServerFn({ method: "POST" })
 
 /** A contest, judged again: overturned publishes the item, upheld keeps it out. */
 export const resolveContest = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ caseId: z.uuid(), overturn: z.boolean(), note: z.string().trim().min(3).max(280) }))
+  .validator(z.object({ caseId: z.uuid(), overturn: z.boolean(), note: z.string().trim().min(3).max(280) }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const user = (await getSession())?.user;
     if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
@@ -169,7 +169,7 @@ export const resolveContest = createServerFn({ method: "POST" })
  * the pin's tracking key. One open contest per decision.
  */
 export const contestDecision = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       itemId: z.string().min(4).max(12),
       key: z.string().max(64).nullable(),
@@ -213,7 +213,7 @@ export const contestDecision = createServerFn({ method: "POST" })
 
 /** For the item page: the latest decision on a held or refused item, and whether it can still be contested. */
 export const getDecision = createServerFn({ method: "GET" })
-  .inputValidator(z.string().min(4).max(12))
+  .validator(z.string().min(4).max(12))
   .handler(async ({ data }) => {
     const [c] = await db
       .select({ status: moderationCases.status, note: moderationCases.note, contest: moderationCases.contestStatus })

@@ -60,7 +60,7 @@ const same = (a: FollowPlace, b: FollowPlace) =>
   a.kind === b.kind && (a.kind !== "neighborhood" || (b.kind === "neighborhood" && a.neighborhood === b.neighborhood));
 
 export const followPlace = createServerFn({ method: "POST" })
-  .inputValidator(FollowPlaceSchema)
+  .validator(FollowPlaceSchema)
   .handler(async ({ data }): Promise<Failure | { ok: true; following: Following }> => {
     const who = await member("acompanhar");
     if ("error" in who) return who;
@@ -81,7 +81,7 @@ export const followPlace = createServerFn({ method: "POST" })
   });
 
 export const unfollowPlace = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ id: z.uuid() }))
+  .validator(z.object({ id: z.uuid() }))
   .handler(async ({ data }): Promise<Failure | { ok: true; following: Following }> => {
     const who = await member("acompanhar");
     if ("error" in who) return who;

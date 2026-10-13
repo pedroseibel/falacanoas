@@ -40,7 +40,7 @@ async function keyOpens(itemId: string, key: string): Promise<boolean> {
 }
 
 export const submitDataRequest = createServerFn({ method: "POST" })
-  .inputValidator((input: DataRequest & { turnstile: string | null }) =>
+  .validator((input: DataRequest & { turnstile: string | null }) =>
     DataRequestSchema.extend({ turnstile: z.string().max(4096).nullable() }).parse(input),
   )
   .handler(async ({ data }): Promise<Failure | { ok: true; protocol: string }> => {

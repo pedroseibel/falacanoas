@@ -53,7 +53,7 @@ export const requestReauthCode = createServerFn({ method: "POST" }).handler(asyn
  * The app's deletion commits only if the vault accepted the code and closed its side.
  */
 export const closeAccount = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ code: z.string().regex(/^\d{6}$/) }))
+  .validator(z.object({ code: z.string().regex(/^\d{6}$/) }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const user = await phoneAccount();
     if (!user) return { ok: false, error: "Entre com o seu celular primeiro." };
@@ -100,7 +100,7 @@ export type ChangeStart = (Failure & { reauth?: true }) | { ok: true; ticket: st
  * number to the vault: the app never sees the new number either.
  */
 export const startNumberChange = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.object({
       code: z
         .string()

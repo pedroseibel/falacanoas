@@ -33,7 +33,7 @@ const EVIDENCE: Record<ActionInput["type"], EvidenceAction> = {
 
 /** What the signed-in neighbour has already done here; null when nobody is signed in at nível 1. */
 export const getItemViewer = createServerFn({ method: "GET" })
-  .inputValidator((id: string) => z.string().min(4).max(12).parse(id.toUpperCase()))
+  .validator((id: string) => z.string().min(4).max(12).parse(id.toUpperCase()))
   .handler(async ({ data }): Promise<ViewerState | null> => {
     const user = (await getSession())?.user;
     if (!user || user.isAnonymous || !user.phoneVerifiedAt) return null;
@@ -41,7 +41,7 @@ export const getItemViewer = createServerFn({ method: "GET" })
   });
 
 export const actOnItemFn = createServerFn({ method: "POST" })
-  .inputValidator(formData)
+  .validator(formData)
   .handler(async ({ data }): Promise<ActResult> => {
     const who = await member("participar");
     if ("error" in who) return who;
@@ -78,7 +78,7 @@ export const actOnItemFn = createServerFn({ method: "POST" })
   });
 
 export const followItem = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ id: z.string().min(4).max(12), on: z.boolean() }))
+  .validator(z.object({ id: z.string().min(4).max(12), on: z.boolean() }))
   .handler(async ({ data }): Promise<Failure | { ok: true; following: boolean }> => {
     const who = await member("acompanhar");
     if ("error" in who) return who;

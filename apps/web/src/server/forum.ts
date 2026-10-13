@@ -27,15 +27,15 @@ const screened = (text: string): Failure | null => {
 };
 
 export const getThreads = createServerFn({ method: "GET" })
-  .inputValidator(Slug)
+  .validator(Slug)
   .handler(({ data }) => boardThreads(data));
 
 export const getPinThread = createServerFn({ method: "GET" })
-  .inputValidator(z.string().min(4).max(12))
+  .validator(z.string().min(4).max(12))
   .handler(({ data }) => pinThread(data.toUpperCase()));
 
 export const startThread = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ neighborhood: Slug, title: z.string().trim().min(8).max(160) }))
+  .validator(z.object({ neighborhood: Slug, title: z.string().trim().min(8).max(160) }))
   .handler(async ({ data }): Promise<Failure | { ok: true; threads: Thread[] }> => {
     const who = await member("conversar");
     if ("error" in who) return who;
@@ -53,7 +53,7 @@ export const startThread = createServerFn({ method: "POST" })
 
 /** A reply on a bairro thread, or under a pin: the pin's conversation starts with its first reply. */
 export const replyToThread = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     z.union([
       z.object({ threadId: z.uuid(), text: Text }),
       z.object({ itemId: z.string().min(4).max(12), text: Text }),
@@ -101,7 +101,7 @@ export const replyToThread = createServerFn({ method: "POST" })
 
 /** "Denunciar": a post goes to the moderators. Once per person per post. */
 export const reportPost = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ postId: z.uuid() }))
+  .validator(z.object({ postId: z.uuid() }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const who = await member("denunciar");
     if ("error" in who) return who;
@@ -150,7 +150,7 @@ export const getReportedPosts = createServerFn({ method: "GET" }).handler(async 
 
 /** A moderator hides a reported post (kept, never shown) or keeps it. */
 export const decidePost = createServerFn({ method: "POST" })
-  .inputValidator(z.object({ postId: z.uuid(), hide: z.boolean() }))
+  .validator(z.object({ postId: z.uuid(), hide: z.boolean() }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const user = (await getSession())?.user;
     if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };

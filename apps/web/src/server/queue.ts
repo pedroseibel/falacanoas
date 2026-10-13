@@ -21,7 +21,7 @@ export const getQueue = createServerFn({ method: "GET" }).handler(async () => {
 });
 
 export const joinQueue = createServerFn({ method: "POST" })
-  .inputValidator(QueueSignupSchema)
+  .validator(QueueSignupSchema)
   .handler(async ({ data }) => {
     if (!canoas.neighborhoods.some((n) => n.slug === data.neighborhood)) throw new Error("Bairro desconhecido.");
     const contact = normalizeContact(data.channel, data.contact);

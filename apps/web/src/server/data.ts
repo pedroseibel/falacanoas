@@ -16,7 +16,7 @@ export const getCity = createServerFn({ method: "GET" }).handler(async () => {
 
 /** One item. A guest pin still in moderation needs its tracking key, or the session that dropped it. */
 export const getItem = createServerFn({ method: "GET" })
-  .inputValidator(z.object({ id: z.string().min(4).max(12), key: z.string().max(64).nullable() }))
+  .validator(z.object({ id: z.string().min(4).max(12), key: z.string().max(64).nullable() }))
   .handler(async ({ data }) => {
     const user = (await getSession())?.user;
     return findVisibleItem(data.id.toUpperCase(), { key: data.key, accountId: user?.id ?? null });
