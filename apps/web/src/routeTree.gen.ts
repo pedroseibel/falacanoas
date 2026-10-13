@@ -18,6 +18,7 @@ import { Route as AppMapRouteImport } from './routes/_app/_map'
 import { Route as AppModerarRouteImport } from './routes/_app/moderar'
 import { Route as AppPlacarRouteImport } from './routes/_app/placar'
 import { Route as AppVoceRouteImport } from './routes/_app/voce'
+import { Route as PrivacidadePedidoRouteImport } from './routes/privacidade_.pedido'
 import { Route as AppMapMapaRouteImport } from './routes/_app/_map/mapa'
 import { Route as AppBairroIndexRouteImport } from './routes/_app/bairro.index'
 import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
@@ -69,6 +70,11 @@ const AppVoceRoute = AppVoceRouteImport.update({
   path: '/voce',
   getParentRoute: () => AppRoute,
 } as any)
+const PrivacidadePedidoRoute = PrivacidadePedidoRouteImport.update({
+  id: '/privacidade_/pedido',
+  path: '/privacidade/pedido',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppMapMapaRoute = AppMapMapaRouteImport.update({
   id: '/mapa',
   path: '/mapa',
@@ -113,6 +119,7 @@ export interface FileRoutesByFullPath {
   '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
+  '/privacidade/pedido': typeof PrivacidadePedidoRoute
   '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
+  '/privacidade/pedido': typeof PrivacidadePedidoRoute
   '/mapa': typeof AppMapMapaRoute
   '/bairro/$slug': typeof AppBairroSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -148,6 +156,7 @@ export interface FileRoutesById {
   '/_app/moderar': typeof AppModerarRoute
   '/_app/placar': typeof AppPlacarRoute
   '/_app/voce': typeof AppVoceRoute
+  '/privacidade_/pedido': typeof PrivacidadePedidoRoute
   '/_app/_map/mapa': typeof AppMapMapaRoute
   '/_app/bairro/$slug': typeof AppBairroSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -166,6 +175,7 @@ export interface FileRouteTypes {
     | '/moderar'
     | '/placar'
     | '/voce'
+    | '/privacidade/pedido'
     | '/mapa'
     | '/bairro/$slug'
     | '/api/auth/$'
@@ -182,6 +192,7 @@ export interface FileRouteTypes {
     | '/moderar'
     | '/placar'
     | '/voce'
+    | '/privacidade/pedido'
     | '/mapa'
     | '/bairro/$slug'
     | '/api/auth/$'
@@ -200,6 +211,7 @@ export interface FileRouteTypes {
     | '/_app/moderar'
     | '/_app/placar'
     | '/_app/voce'
+    | '/privacidade_/pedido'
     | '/_app/_map/mapa'
     | '/_app/bairro/$slug'
     | '/api/auth/$'
@@ -215,6 +227,7 @@ export interface RootRouteChildren {
   BemVindoRoute: typeof BemVindoRoute
   EntrarRoute: typeof EntrarRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  PrivacidadePedidoRoute: typeof PrivacidadePedidoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFotosKeyRoute: typeof ApiFotosKeyRoute
   ApiIdentidadeSplatRoute: typeof ApiIdentidadeSplatRoute
@@ -284,6 +297,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/voce'
       preLoaderRoute: typeof AppVoceRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/privacidade_/pedido': {
+      id: '/privacidade_/pedido'
+      path: '/privacidade/pedido'
+      fullPath: '/privacidade/pedido'
+      preLoaderRoute: typeof PrivacidadePedidoRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/_map/mapa': {
       id: '/_app/_map/mapa'
@@ -376,6 +396,7 @@ const rootRouteChildren: RootRouteChildren = {
   BemVindoRoute: BemVindoRoute,
   EntrarRoute: EntrarRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  PrivacidadePedidoRoute: PrivacidadePedidoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFotosKeyRoute: ApiFotosKeyRoute,
   ApiIdentidadeSplatRoute: ApiIdentidadeSplatRoute,

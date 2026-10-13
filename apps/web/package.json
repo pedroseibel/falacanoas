@@ -16,7 +16,8 @@
     "db:seed": "bun src/server/db/seed.ts",
     "db:roles": "bun src/server/db/roles.ts",
     "moderator:add": "bun src/server/db/moderators.ts add",
-    "moderator:remove": "bun src/server/db/moderators.ts remove"
+    "moderator:remove": "bun src/server/db/moderators.ts remove",
+    "requests": "bun src/server/db/requests.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",

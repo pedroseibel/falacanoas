@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { VocePage } from "@/features/voce/voce-page";
 import { authClient } from "@/lib/auth-client";
 import { accountQuery, cityQuery } from "@/lib/city";
+import { useBackLink } from "../-auth-links";
 
 export const Route = createFileRoute("/_app/voce")({
   loader: ({ context }) =>
@@ -18,6 +19,8 @@ function VoceRoute() {
   const { data: account } = useSuspenseQuery(accountQuery);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  // A real link (new tab works); a plain click stays in the app.
+  const request = useBackLink("/privacidade/pedido?volta=%2Fvoce");
   return (
     <VocePage
       account={account}
@@ -27,6 +30,8 @@ function VoceRoute() {
       onSignIn={() => void navigate({ to: "/entrar", search: { volta: "/voce" } })}
       onPickNick={() => void navigate({ to: "/bem-vindo", search: { volta: "/voce" } })}
       onModerate={() => void navigate({ to: "/moderar" })}
+      requestPath={request.href}
+      onRequest={request.onNavigate}
       onClosed={() => {
         queryClient.setQueryData(accountQuery.queryKey, null);
         void queryClient.invalidateQueries();

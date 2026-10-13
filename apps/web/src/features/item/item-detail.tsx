@@ -33,6 +33,7 @@ import { CategoryLine } from "@/components/category";
 import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { textLink } from "@/features/landing/bits";
 import { Input } from "@/components/ui/input";
 import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
@@ -364,6 +365,17 @@ export function ItemDetail({
         )}
 
         {!it.moderation && <PinConversation it={it} member={member} onSignIn={onSignIn} />}
+
+        <p className="border-t border-hairline pt-4 text-xs text-pretty text-muted-foreground">
+          Você aparece neste registro, ou ele mostra um dado seu?{" "}
+          <a
+            href={`/privacidade/pedido?quem=in_content&registro=${it.id}&volta=${encodeURIComponent(`/o/${it.id}`)}`}
+            className={textLink}
+          >
+            Peça para ocultar
+          </a>
+          .
+        </p>
       </div>
     </article>
   );

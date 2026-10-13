@@ -18,8 +18,8 @@ declare module "cloudflare:workers" {
         code: string,
         connection: import("@fala/core").Connection,
       ): Promise<{ ok: true } | { ok: false; error: "invalid" }>;
-      /** A guest pin's Turnstile token, checked by the vault (it holds the secret). */
-      human(token: string, ip: string | null): Promise<boolean>;
+      /** A Turnstile token (a guest pin's by default), checked by the vault (it holds the secret). */
+      human(token: string, ip: string | null, action?: string): Promise<boolean>;
       /** Write-only access evidence for a publication, confirmation, comment or guest pin. */
       record(input: {
         action: import("@fala/core").EvidenceAction;

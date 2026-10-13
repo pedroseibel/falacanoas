@@ -1,5 +1,6 @@
 import {
   connectionFromHeaders,
+  GUEST_PIN_ACTION,
   importVaultKey,
   readVaultAssertion,
   type EvidenceAction,
@@ -33,11 +34,14 @@ export async function noteSignIn(accountId: string, headers: Headers | null): Pr
   await env.VAULT?.signedIn(accountId, connection).catch((e: unknown) => console.error("cofre: signedIn falhou", e));
 }
 
-/** A guest pin's robot check, through the vault, which holds the Turnstile secret. Fails closed. */
-export async function isHuman(token: string | null): Promise<boolean> {
+/**
+ * A robot check for someone not signed in (a guest pin, a data-subject request), through the vault,
+ * which holds the Turnstile secret. Fails closed.
+ */
+export async function isHuman(token: string | null, action: string = GUEST_PIN_ACTION): Promise<boolean> {
   if (!token || !env.VAULT) return false;
   const ip = connectionFromHeaders(new Headers(getRequestHeaders())).clientIp;
-  return env.VAULT.human(token, ip).catch(() => false);
+  return env.VAULT.human(token, ip, action).catch(() => false);
 }
 
 /**

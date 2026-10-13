@@ -1,15 +1,18 @@
 import { CONFIRMATION_MIN_HOURS, initials, localStamp, type Item, type Municipality } from "@fala/core";
 import { useQuery } from "@tanstack/react-query";
+import type { MouseEvent } from "react";
 import { Check, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { textLink } from "@/features/landing/bits";
 import { ItemCard } from "@/features/map/item-card";
 import { followingQuery, isModeratorQuery } from "@/lib/city";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
 import { Following } from "./following";
 import { CloseAccount } from "./close-account";
+import { DownloadData } from "./download-data";
 import { Passkeys } from "./passkeys";
 import { ThemeSchema, setTheme, useTheme, type Theme } from "./theme";
 
@@ -67,6 +70,8 @@ export function VocePage({
   onSignOut,
   onModerate,
   onClosed,
+  requestPath,
+  onRequest,
 }: {
   account: Account | null;
   muni: Municipality;
@@ -78,6 +83,9 @@ export function VocePage({
   onModerate: () => void;
   /** The account was closed: signed out everywhere. */
   onClosed: () => void;
+  /** The data-subject channel: a real link, which a plain click follows inside the app. */
+  requestPath: string;
+  onRequest: (e: MouseEvent<HTMLAnchorElement>) => void;
 }) {
   const theme = useTheme();
   const nick = account?.nick ?? null;
@@ -184,9 +192,20 @@ export function VocePage({
                 Seus dados
               </h2>
               <p className="text-sm text-pretty text-ink-2">
-                Você pode encerrar a conta quando quiser. O que publicou continua no mapa, sem ligação com você.
+                Uma cópia de tudo o que a sua conta guarda. Para o resto, como os registros de acesso, uma correção ou
+                um conteúdo em que você aparece,{" "}
+                <a href={requestPath} onClick={onRequest} className={textLink}>
+                  faça um pedido
+                </a>
+                .
               </p>
-              <CloseAccount onClosed={onClosed} />
+              <DownloadData timezone={muni.timezone} />
+              <div className="mt-2 grid gap-3 border-t border-hairline pt-5">
+                <p className="text-sm text-pretty text-ink-2">
+                  Você pode encerrar a conta quando quiser. O que publicou continua no mapa, sem ligação com você.
+                </p>
+                <CloseAccount onClosed={onClosed} />
+              </div>
             </section>
           )}
         </div>

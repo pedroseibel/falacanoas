@@ -12,3 +12,4 @@ export * from "./access-evidence";
 export * from "./actions";
 export * from "./follows";
 export * from "./moderation";
+export * from "./data-requests";

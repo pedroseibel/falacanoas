@@ -409,6 +409,51 @@ export const moderationCases = fala
   )
   .enableRLS();
 
+/* ---------- The data-subject channel (round 18; LGPD art. 18) ---------- */
+
+export const requester = fala.enum("requester", ["account", "guest", "in_content", "former", "other"]);
+export const requestKind = fala.enum("request_kind", [
+  "access",
+  "copy",
+  "correction",
+  "content",
+  "deletion",
+  "objection",
+  "other",
+]);
+export const requestStatus = fala.enum("request_status", ["open", "answered"]);
+/** How the requester showed the request is theirs: their session, or a guest pin's secret link. */
+export const requestProof = fala.enum("request_proof", ["session", "tracking_key"]);
+
+/**
+ * A request from anyone, with or without an account, answered by the controller within 15 days
+ * (LGPD art. 19). Kept to show it was answered; how long is set with the legal review.
+ */
+export const dataRequests = fala
+  .table(
+    "data_requests",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      /** "PD-7K3QFA": what the person quotes when they write back. */
+      protocol: text().notNull().unique(),
+      requester: requester().notNull(),
+      kind: requestKind().notNull(),
+      /** The pin it's about, if any. Never the guest's key: only whether it matched. */
+      itemId: text(),
+      proof: requestProof(),
+      text: text().notNull(),
+      /** The e-mail for the answer. */
+      contact: text().notNull(),
+      accountId: uuid().references(() => users.id, { onDelete: "set null" }),
+      status: requestStatus().notNull().default("open"),
+      answeredAt: timestamp({ withTimezone: true }),
+      note: text(),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.status, t.createdAt)],
+  )
+  .enableRLS();
+
 /* ---------- Accounts (Better Auth; rounds 17 and 18) ---------- */
 /*
  * The phone is not here: it lives in the identity vault (apps/vault), which tells the app only which

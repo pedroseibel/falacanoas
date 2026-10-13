@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { TransactionRollbackError } from "drizzle-orm/errors";
 import { z } from "zod";
 import { auth } from "./auth";
+import { collectMyData, type MyData } from "./data-export";
 import { db } from "./db/client";
 import { nickReservations, users } from "./db/schema";
 import type { Failure } from "./member";
@@ -81,3 +82,9 @@ export const closeAccount = createServerFn({ method: "POST" })
     await auth.api.signOut({ headers }).catch(() => null);
     return { ok: true };
   });
+
+/** "Baixar meus dados" (LGPD art. 18, II and V): everything the app holds about the account, as JSON. */
+export const exportMyData = createServerFn({ method: "GET" }).handler(async (): Promise<MyData | null> => {
+  const user = await phoneAccount();
+  return user ? collectMyData(user.id) : null;
+});

@@ -19,6 +19,8 @@ export const isBrazilianMobileE164 = (v: string) => /^\+55[1-9]{2}9\d{8}$/.test(
 export const SEND_CODE_ACTION = "enviar-codigo";
 /** The Turnstile action of a guest pin (round 2): a token minted for sign-in can't post one, and back. */
 export const GUEST_PIN_ACTION = "registro-convidado";
+/** The Turnstile action of a request on the data-subject channel, from someone not signed in. */
+export const DATA_REQUEST_ACTION = "pedido-titular";
 
 /** "+5551999998888" → "(51) 9…8888": enough to recognise your own number, nothing more. */
 export const maskedPhone = (e164: string) => {
