@@ -231,6 +231,22 @@ export const itemPhotos = fala
   )
   .enableRLS();
 
+/**
+ * What the screening service (apps/triagem; round 20) saw in a stored photo, keyed by its storage key
+ * because screening runs after the upload, beside the report, not inside it. It only sorts the
+ * moderator's queue: a likely nude photo is shown blurred, and faces and plates are counted.
+ */
+export const photoScreens = fala
+  .table("photo_screens", {
+    storageKey: text().primaryKey(),
+    /** The highest score among exposed genitals, breasts, buttocks or anus, 0 to 1. */
+    nudity: doublePrecision().notNull(),
+    faces: integer().notNull(),
+    plates: integer().notNull(),
+    screenedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  })
+  .enableRLS();
+
 /** Independent confirmations: one per account per item (round 18, Q17). */
 export const itemConfirmations = fala
   .table(

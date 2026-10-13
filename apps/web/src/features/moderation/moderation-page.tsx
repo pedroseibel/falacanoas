@@ -1,4 +1,4 @@
-import { FLAG_LABEL, REPORT_REASON, shieldsModerator, type Municipality } from "@fala/core";
+import { FLAG_LABEL, LIKELY_NUDE, REPORT_REASON, shieldsModerator, type Municipality } from "@fala/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -124,7 +124,9 @@ function Section({ id, title, count, children }: { id: string; title: string; co
  * A photo reported for nudity or a child is blurred until the moderator chooses to look: volunteers
  * shouldn't meet the worst of it by surprise.
  */
-function CasePhoto({ photo, shield, className }: { photo: QueuePhoto; shield: boolean; className?: string }) {
+function CasePhoto({ photo, shield: reported, className }: { photo: QueuePhoto; shield: boolean; className?: string }) {
+  // Reported for nudity or a child, or rated likely nude by the screening service (round 20).
+  const shield = reported || (photo.screen?.nudity ?? 0) >= LIKELY_NUDE;
   const [seen, setSeen] = useState(!shield);
   return (
     <span className={cn("relative block overflow-hidden rounded-lg border border-hairline bg-panel-3", className)}>
@@ -156,6 +158,29 @@ function CasePhoto({ photo, shield, className }: { photo: QueuePhoto; shield: bo
         </button>
       )}
     </span>
+  );
+}
+
+/**
+ * What the screening service saw in a photo (round 20): where to look, never a verdict. Faces and
+ * plates matter until automatic blurring exists: a readable one means asking for another photo.
+ */
+function ScreenTags({ screen }: { screen: QueuePhoto["screen"] }) {
+  if (!screen) return null;
+  const tags = [
+    screen.nudity >= LIKELY_NUDE ? "Nudez provável" : null,
+    screen.faces ? `${screen.faces} ${screen.faces === 1 ? "rosto" : "rostos"}` : null,
+    screen.plates ? `${screen.plates} ${screen.plates === 1 ? "placa" : "placas"}` : null,
+  ].flatMap((t) => (t ? [t] : []));
+  if (!tags.length) return <p className="text-2xs text-muted-foreground">Triagem: nada a apontar</p>;
+  return (
+    <p className="flex flex-wrap gap-1" aria-label="O que a triagem automática viu">
+      {tags.map((t) => (
+        <Badge key={t} variant="secondary">
+          {t}
+        </Badge>
+      ))}
+    </p>
   );
 }
 
@@ -268,7 +293,10 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
 
       {c.target === "photo" && (
         <div className="grid gap-3.5 compact:grid-cols-2">
-          <CasePhoto photo={c.photo} shield={shield} className="aspect-4/3" />
+          <span className="grid content-start gap-1.5">
+            <CasePhoto photo={c.photo} shield={shield} className="aspect-4/3" />
+            <ScreenTags screen={c.photo.screen} />
+          </span>
           <PinContext c={c} muni={muni} full={false} />
         </div>
       )}
@@ -451,6 +479,7 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
                   </span>
                 )}
               </span>
+              <ScreenTags screen={c.photo.screen} />
               <Button
                 size="sm"
                 variant={out ? "destructive" : "outline"}

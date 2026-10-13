@@ -27,3 +27,9 @@ SUPABASE_SECRET_KEY=
 # key is the raw point, base64url, which browsers subscribe with.
 VAPID_PRIVATE_KEY=
 VAPID_PUBLIC_KEY=
+
+# Screening service (apps/triagem; DECISIONS round 20): `bun --filter @fala/triagem models`, then `dev`.
+# Empty: photos aren't screened, and moderators still look at every one. Production also sets
+# TRIAGEM_TOKEN, the same value as the service's.
+TRIAGEM_URL=
+TRIAGEM_TOKEN=

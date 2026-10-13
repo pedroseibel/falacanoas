@@ -164,5 +164,11 @@ export function hidesAtOnce(r: {
   return r.target === "photo" && URGENT.has(r.reason) && !r.muted && !r.keptBefore;
 }
 
+/**
+ * From this nudity score on (the screening service's, round 20), the queue treats a photo as likely
+ * nude: it goes first, and the moderator sees it blurred until they choose to look.
+ */
+export const LIKELY_NUDE = 0.45;
+
 /** Whether a moderator should see this case's images blurred until they choose to look. */
 export const shieldsModerator = (reasons: readonly ReportReason[]) => reasons.some((r) => URGENT.has(r));

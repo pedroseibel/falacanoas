@@ -1,0 +1,21 @@
+{
+  "name": "@fala/triagem",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "models": "bun scripts/models.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "elysia": "1.4.30",
+    "onnxruntime-node": "1.30.0",
+    "sharp": "0.35.5"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "7.0.2"
+  }
+}

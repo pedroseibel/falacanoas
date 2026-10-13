@@ -1,5 +1,6 @@
 import {
   FLAG_LABEL,
+  LIKELY_NUDE,
   ReportReasonSchema,
   weightOf,
   type Item,
@@ -11,7 +12,16 @@ import { and, asc, count, desc, eq, inArray, isNotNull, isNull, ne, or, sql } fr
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { db } from "./db/client";
-import { contentReports, escalations, itemAuthors, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
+import {
+  contentReports,
+  escalations,
+  itemAuthors,
+  itemEvents,
+  itemPhotos,
+  items,
+  moderationCases,
+  photoScreens,
+} from "./db/schema";
 import { findItem, hashKey } from "./items";
 import { member, type Failure } from "./member";
 import {
@@ -28,6 +38,7 @@ import {
 } from "./moderation-store";
 import { notifyFollowers, notifyPlaces } from "./push-send";
 import { recheck, strike } from "./sanctions-store";
+import type { PhotoScreen } from "./screening";
 import { getSession } from "./session";
 
 /**
@@ -47,6 +58,8 @@ export interface QueuePhoto {
   src: string;
   by: string;
   takenAt: string;
+  /** What the screening service saw, when it ran (round 20); null otherwise. */
+  screen: PhotoScreen | null;
 }
 
 /** What people reported, without who: how many per reason, and the words some of them added. */
@@ -84,7 +97,10 @@ const targetAccountSql = sql<
 >`coalesce(${itemPhotos.accountId}, ${itemEvents.accountId}, ${targetAuthors.accountId})`;
 
 const iso = (d: Date) => d.toISOString();
-const urgent = (c: QueueCase) => c.reports?.reasons.some((r) => r.reason === "sexual" || r.reason === "child");
+/** Reports of nudity or a child, and photos the screening service rates as likely nude, go first. */
+const urgent = (c: QueueCase) =>
+  Boolean(c.reports?.reasons.some((r) => r.reason === "sexual" || r.reason === "child")) ||
+  (c.target === "photo" && (c.photo.screen?.nudity ?? 0) >= LIKELY_NUDE);
 
 /** Open cases and open contests, for the moderator's bairros, never about their own posts. */
 export const getModerationQueue = createServerFn({ method: "GET" }).handler(async (): Promise<QueueCase[] | null> => {
@@ -99,12 +115,14 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
       pinAuthor: pinAuthor.accountId,
       account: targetAccountSql,
       photo: { id: itemPhotos.id, src: itemPhotos.src, by: itemPhotos.by, takenAt: itemPhotos.takenAt },
+      screen: { nudity: photoScreens.nudity, faces: photoScreens.faces, plates: photoScreens.plates },
       update: { actor: itemEvents.actor, text: itemEvents.text, at: itemEvents.at },
     })
     .from(moderationCases)
     .innerJoin(items, eq(items.id, moderationCases.itemId))
     .leftJoin(pinAuthor, eq(pinAuthor.itemId, moderationCases.itemId))
     .leftJoin(itemPhotos, eq(itemPhotos.id, moderationCases.photoId))
+    .leftJoin(photoScreens, eq(photoScreens.storageKey, itemPhotos.storageKey))
     .leftJoin(itemEvents, eq(itemEvents.id, moderationCases.eventId))
     .leftJoin(
       targetAuthors,
@@ -160,8 +178,10 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
         src: itemPhotos.src,
         by: itemPhotos.by,
         takenAt: itemPhotos.takenAt,
+        screen: { nudity: photoScreens.nudity, faces: photoScreens.faces, plates: photoScreens.plates },
       })
       .from(itemPhotos)
+      .leftJoin(photoScreens, eq(photoScreens.storageKey, itemPhotos.storageKey))
       .where(and(inArray(itemPhotos.itemId, itemIds), ne(itemPhotos.review, "removed")))
       .orderBy(asc(itemPhotos.position)),
     Promise.all(itemIds.map(async (id): Promise<[string, Item | null]> => [id, await findItem(id)])),
@@ -169,7 +189,7 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
   const refusedBy = new Map(refusals.map((r) => [r.account, r.n]));
   const itemOf = new Map(its);
 
-  const out = mine.flatMap(({ c, handle, pinAuthor: author, account, photo, update }): QueueCase[] => {
+  const out = mine.flatMap(({ c, handle, pinAuthor: author, account, photo, screen, update }): QueueCase[] => {
     const item = itemOf.get(c.itemId);
     if (!item) return [];
     const target = targetOf(c);
@@ -195,7 +215,8 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
       decided: c.status === "open" ? null : { status: c.status, note: c.note },
       decidedByYou: c.decidedBy === user.id,
     };
-    if (target === "photo" && photo) return [{ ...base, target, photo: { ...photo, takenAt: iso(photo.takenAt) } }];
+    if (target === "photo" && photo)
+      return [{ ...base, target, photo: { ...photo, takenAt: iso(photo.takenAt), screen } }];
     if (target === "update" && update) return [{ ...base, target, update: { ...update, at: iso(update.at) } }];
     if (target !== "item") return [];
     return [
@@ -205,7 +226,7 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
         flags: c.flags.filter(isFlag),
         photos: photos
           .filter((p) => p.itemId === c.itemId)
-          .map(({ id, src, by, takenAt }) => ({ id, src, by, takenAt: iso(takenAt) })),
+          .map(({ id, src, by, takenAt, screen: seen }) => ({ id, src, by, takenAt: iso(takenAt), screen: seen })),
       },
     ];
   });
