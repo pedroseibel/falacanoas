@@ -27,6 +27,8 @@ bun run vault:keys     # development: the vault's keys, and the app's copy of it
 bun run push:keys      # development: the VAPID key pair web push signs with, into apps/web/.dev.vars
 bun --filter @fala/web moderator:add <apelido> [bairro…]   # who moderates (all bairros, or some); moderator:remove
 bun --filter @fala/web requests                             # open data-subject requests; `requests answered <protocolo> [nota]`
+bun --filter @fala/web sanction list                        # the controller's sanctions: list, mute|suspend <alvo> <dias|permanente> <motivo>, lift <código>
+bun --filter @fala/web escalation list                      # child abuse escalations: list, reported <código> <canal> <protocolo>, received, purge, contest
 bun --filter @fala/digest agora                             # one daily digest now (development: the e-mail lands in apps/digest/outbox/)
 bun --filter @fala/digest protocolo <código> <número> [data] # the protocol the Ouvidoria answered with, on a sent pin
 bun --filter @fala/whatsapp mensagem <número> <texto…>     # development: a message as if sent to the project's WhatsApp

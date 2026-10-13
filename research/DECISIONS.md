@@ -353,6 +353,46 @@ The founder asked what stops abuse: an obscene photo, a neighbour named or photo
 
 **Next, no input needed:** sanctions (mute, suspend) and lower limits for new accounts; a wider pre-screen (neighbours, house numbers, plates) and apelido checks; the rule shown at posting time.
 
+## Round 20: sanctions, the law on abuse material, and screening (2026-10-13)
+
+The founder delegated these ("you decide the best course"). They were settled after research (`research/legal/abuso-infantil-e-imagens-intimas.md`, `research/image-screening.md`). The legal points must be reviewed with counsel before launch.
+
+**Sanctions**
+- **Weight:** a removal weighs against whoever sent the thing.
+  - *None:* an honest mistake, such as a readable face or plate, a child in the frame, or a photo that misses the problem.
+  - *Strike:* exposing a person, offence or spam.
+  - *Grave:* nudity.
+- **Automatic mute:** one grave removal, or three strikes in 30 days, mutes the account for 30 days. Winning a contest lifts a mute no longer justified.
+- **Mute:** pins wait for a moderator; updates and replies close; confirming and reporting stay open, but reports never hide anything.
+- **Suspend:** nothing can be written. A moderator proposes it and a second one confirms; it lasts 90 days. Only the controller gives a permanent one.
+- **The person:** sees the sanction and why on Você, and can contest once; someone other than whoever gave it reviews. Nothing about a sanction is public, and moderators see it only by its own code.
+- **Daily limits:** while a phone is under 72 h old, 3 pins, 5 photos, 10 updates and 10 reports a day. After that, 20, 40, 60 and 30.
+- **The text filter** also flags "Expõe uma pessoa": a singular neighbour, someone tied to a house, number or car, and licence plates. A house number alone stays allowed.
+- **Apelidos** can't carry insults or official-sounding words.
+- **The rule** shows beside both text boxes: no neighbours, houses or cars.
+- **Faces and plates, until automatic blurring exists:** moderators remove photos with a readable face or plate, and every photo with a child. This weighs nothing.
+
+**The law**
+- **Hide first:** a visitor's report of nudity or a child also takes a photo down at once (Marco Civil art. 21: the person shown may have no account). A moderator's "keep" ends that for the photo.
+- **Child abuse material** (ECA arts. 241-A and 241-B; Lei 15.211/2025 art. 27; Decreto 12.880/2026):
+  - A moderator escalates it in one step: it comes down, is never served again (not even to moderators), and is preserved.
+  - The account is suspended, and the person is only told the case is with the team responsible. Their contest goes to the controller, not to volunteers.
+  - The controller reports it (SaferNet and the PF now; the PF's Nidus once registration opens), records the protocol, and deletes the bytes only after the authority confirms receipt. The metadata stays.
+- **Retention:** a removed photo's bytes are deleted six months after removal, the Marco Civil art. 15 and ECA Digital art. 27 period. Never while a contest is open or an escalation covers it.
+- **Own commitment:** intimate images of adults come down within 24 hours of any notice. This is not a legal deadline.
+- **An annual transparency report** is published (the STF tese on art. 19).
+
+**Screening**
+- **Automatic screening** is a small self-hosted service in São Paulo running open models: nudity, faces and plates (BUILD 5.7). No managed vendor does all three while processing in Brazil. AWS Rekognition sa-east-1 is the fallback.
+- **Volunteers keep the final say.** The service pre-hides likely nudity and marks faces, plates and text.
+- **Blurring replaces removal only after testing.** Before blurring stands in for a moderator removing a photo, measure recall on 200–300 labelled real Canoas photos, with a bar of about 95% on faces and on grey and Mercosul plates.
+- **Hash matching for known abuse material:** register with Arachnid Shield (free) and apply to PhotoDNA and Google's Content Safety API in parallel. Turn on Cloudflare's CSAM scanning once the domain is live.
+
+**Launch conditions added:**
+1. A hash-matching service is active, or counsel signs off on the interim (every photo looked at first, plus escalation).
+2. A designated person and a backup for escalations, with the procedure reviewed by counsel.
+3. The Fala is registered on Nidus once registration opens.
+
 ## Research findings that constrain design (2026-10-12)
 
 - **Maps:** the landing page uses an inline SVG of the 18 bairros (`maps/data/web/canoas-bairros.svg`, about 4 KB gzipped) and a `<select>`, with no map library. For the eventual app: MapLibre (v6 is about 439 KB gzipped, ESM-only, and fails from `file://`; v5.24 UMD works). CARTO has required an API key since 2026-09-29; it is free up to 5M tiles/month non-commercial, and access is revocable. OpenFreeMap needs no key. Flood-extent layer: UFRGS, CC BY, 48.3% of the municipality.

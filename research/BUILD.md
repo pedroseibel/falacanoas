@@ -1,6 +1,6 @@
 # Build plan
 
-Every decision in `research/DECISIONS.md` (rounds 1-19) that is not built yet, in build order. A loop works through it: each iteration takes the next unblocked item, builds it with tests, verifies it (in the browser for UI, to the polish bar), commits, pushes and ticks it here.
+Every decision in `research/DECISIONS.md` (rounds 1-20) that is not built yet, in build order. A loop works through it: each iteration takes the next unblocked item, builds it with tests, verifies it (in the browser for UI, to the polish bar), commits, pushes and ticks it here.
 
 **Legend:**
 - `[x]` done
@@ -163,9 +163,22 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - [x] **5.2 "Denunciar"** on pins, photos and updates (`content_reports`, one open case per target). Visitors pass Turnstile (the vault accepts the `denuncia` action); neighbours at nível 1 send up to 30 a day. Hide first per core's `hidesAtOnce`. A Dialog on desktop, a Drawer on phones.
 - [x] **5.3 Takedown and contests.** Moderators remove a pin, photo or update from the report dialog ("Remover agora") or decide a report in the queue. Each removal goes into the history with its reason; removed updates keep their place without their words. Whoever sent a removed photo or update sees why on the pin and can contest. Refusals count against that person, through the case's target. Images reported for nudity or a child are blurred for moderators until they choose to look.
 - [x] **5.4 Photo serving.** `/api/fotos/$key` is public only for approved photos on published pins (an hour's cache and an ETag); moderators see the rest; everyone else gets a 404. Removed photos stay in the private bucket, unserved.
-- [ ] **5.5 Sanctions:** mute (everything held) and suspend, applied through the opaque handle; lower limits for new accounts.
-- [ ] **5.6 A wider pre-screen:** neighbours, house numbers and plates in text; apelido checks (insults, official-sounding names); the rule shown at posting time.
-- [ ] **5.7 Automatic image screening** (nudity, children, faces, plates, text) and CSAM hash matching, ahead of the human first look. ⛔ Needs the vendor choice, and the procedure written with counsel.
+- [x] **5.5 Sanctions** (round 20). Done 2026-10-13, verified in the browser; the automatic mute was checked against the database in a rolled-back transaction.
+  - removals weigh none, strike or grave;
+  - automatic 30-day mutes; moderators mute from a case card, and a suspension waits for a second moderator;
+  - the person sees it on Você and contests; the controller uses `bun --filter @fala/web sanction`;
+  - new-account and daily limits (core's `postingLimits`).
+- [x] **5.6 A wider pre-screen** (round 20). Done 2026-10-13.
+  - "Expõe uma pessoa": a singular neighbour, someone tied to a house, number or car, and plates;
+  - apelidos with insults or official-sounding words are refused;
+  - the rule shows beside both text boxes.
+- [ ] **5.7 Automatic image screening** (round 20): a self-hosted service in São Paulo with open models for nudity, faces and plates. It pre-hides likely nudity, marks faces, plates and text for the moderator, and later blurs the public copy once recall is measured on real Canoas photos (2.11). See `research/image-screening.md`.
+- [ ] **5.8 Hash matching for known abuse material**, at upload, before any volunteer sees a photo. ⛔ Needs the registration with Arachnid Shield (or PhotoDNA, or Google's API).
+- [x] **5.9 Escalation of child abuse material** (round 20). Done 2026-10-13, verified end to end with test accounts.
+  - one step from the queue or "Remover agora": removed, unviewable even to moderators, preserved, account suspended;
+  - the controller's `bun --filter @fala/web escalation` covers list, reported, received, purge and contest.
+- [x] **5.10 Retention** (round 20). Done 2026-10-13: the daily job deletes removed photos' bytes six months after removal, never under an open contest or an escalation.
+- [ ] **5.11 Annual transparency report** (round 20; the STF tese on art. 19): a public page with reports, removals by reason, sanctions and contests won, by month.
 
 ## Founder inputs that unblock items
 
@@ -173,7 +186,9 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - **WhatsApp provider and number:** 3.2.
 - **Open-data licence:** 3.3 (CC BY 4.0 or ODbL; set `openDataLicence` in the instance).
 - **Face and plate detection service:** 2.11, then 2.12 (video).
-- **Image-screening vendor, CSAM hash matching, the CSAM and intimate-imagery procedure, and how long removed photos are kept:** 5.7 (the same vendor can serve 2.11).
+- **Registration with Arachnid Shield** (or PhotoDNA, or Google's Content Safety API): 5.8.
+- **Where the screening service runs** (a São Paulo host: Fly `gru` or a Brazilian VPS), for 5.7 and 2.11.
+- **For escalations:** a designated person and a backup; counsel's review of `research/legal/abuso-infantil-e-imagens-intimas.md`; and Nidus registration once the associação exists. These gate the launch.
 - **CARTO key:** 4.4.
 - **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).
 - **Domains and Turnstile keys:** 4.5.
