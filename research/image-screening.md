@@ -27,3 +27,19 @@
 3. Before trusting it to blur instead of a human removing the photo, label 200–300 real Canoas photos and measure recall on faces, grey plates and Mercosul plates. Fine-tune the plate detector if recall is under about 95%.
 4. Minors: don't pay for an age signal. Blurring every face protects children better than guessing ages.
 5. Fallback if there's no engineering time: AWS Rekognition in sa-east-1 with the AI opt-out set, plus a plate service.
+
+## What was built (2026-10-13)
+
+`apps/triagem` runs NudeNet 320n, Ultra-Light RFB-640 and YOLOv9-t-384, all CPU via ONNX Runtime under Bun, at about 0.2–0.4 s per photo, or about 1.2 s when large photos are also searched in four tiles.
+
+Spot test on public Wikimedia photos re-encoded at 1600 px:
+
+| Photo | Result |
+|---|---|
+| A crowd | 17 faces, all blurred |
+| A busy São Paulo crossing | 6 faces (4 without tiles) |
+| A Mercosul plate close-up | 1 plate, score 0.93 (0.49 without tiles) |
+| A plate display | 6 plates |
+| A street crossing | Missed a man's face: about 15 px, in profile, under a hat |
+
+This is not a measurement. Recall on real Canoas photos is still the bar for blurring public copies.
