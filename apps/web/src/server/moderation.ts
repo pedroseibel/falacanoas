@@ -11,7 +11,7 @@ import { and, asc, count, desc, eq, inArray, isNotNull, isNull, ne, or, sql } fr
 import { alias } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { db } from "./db/client";
-import { contentReports, itemAuthors, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
+import { contentReports, escalations, itemAuthors, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
 import { findItem, hashKey } from "./items";
 import { member, type Failure } from "./member";
 import {
@@ -354,6 +354,8 @@ export const contestDecision = createServerFn({ method: "POST" })
           .orderBy(desc(moderationCases.decidedAt))
           .limit(1);
     if (!c) return { ok: false, error: "Não há decisão para contestar." };
+    const [escalated] = await db.select({ id: escalations.id }).from(escalations).where(eq(escalations.caseId, c.id));
+    if (escalated) return { ok: false, error: "Essa decisão está com a equipe responsável pelo Fala." };
     const own = Boolean(user && (await targetAccount(db, c)) === user.id);
     let byKey = false;
     if (!own && data.key && targetOf(c) === "item") {
@@ -408,11 +410,14 @@ export const getMyRemovals = createServerFn({ method: "GET" })
       .from(moderationCases)
       .leftJoin(itemPhotos, eq(itemPhotos.id, moderationCases.photoId))
       .leftJoin(itemEvents, eq(itemEvents.id, moderationCases.eventId))
+      .leftJoin(escalations, eq(escalations.caseId, moderationCases.id))
       .where(
         and(
           eq(moderationCases.itemId, data),
           eq(moderationCases.status, "rejected"),
           or(isNotNull(moderationCases.photoId), isNotNull(moderationCases.eventId)),
+          // An escalated removal is the controller's: the person is told on Você, through the suspension.
+          isNull(escalations.id),
         ),
       )
       .orderBy(desc(moderationCases.decidedAt));

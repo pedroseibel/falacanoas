@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldContent, FieldDescription, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem, RadioGroupSegment, RadioGroupSegmented } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -14,8 +15,9 @@ import { textLink } from "@/features/landing/bits";
 import { Header, type Head } from "@/features/report/report-form";
 import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
-import { reportContent, takeDown } from "@/server/content-reports";
+import { escalateChildAbuse, reportContent, takeDown } from "@/server/content-reports";
 import { closeContentReport, contentReportStore, type ReportSubject } from "./content-report-store";
+import { ESCALATE_EXPLAINED } from "./escalate";
 import { emptyRemoval, RemovalNote, type Removal } from "./removal-note";
 
 const REASONS = ReportReasonSchema.options;
@@ -79,25 +81,29 @@ function ReportFlow({
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [note, setNote] = useState("");
   const [removal, setRemoval] = useState<Removal>(emptyRemoval);
+  /** A moderator's removal that is child abuse material: escalated, not just removed (round 20). */
+  const [abuse, setAbuse] = useState(false);
   const { mount: mountRobot, token: robotToken } = useTurnstile(turnstileSiteKey ?? "", CONTENT_REPORT_ACTION);
   const target = subject.target === "item" ? { type: subject.target } : { type: subject.target, id: subject.id };
 
   const send = useMutation({
     mutationFn: async () => {
       const r =
-        mode === "remove"
-          ? await takeDown({
-              data: { itemId: subject.itemId, target, note: removal.note.trim(), weight: removal.weight },
-            })
-          : await reportContent({
-              data: {
-                itemId: subject.itemId,
-                target,
-                reason: reason ?? "other",
-                note: note.trim() || null,
-                turnstile: member ? null : await robotToken().catch(() => null),
-              },
-            });
+        mode === "remove" && abuse
+          ? await escalateChildAbuse({ data: { itemId: subject.itemId, target } })
+          : mode === "remove"
+            ? await takeDown({
+                data: { itemId: subject.itemId, target, note: removal.note.trim(), weight: removal.weight },
+              })
+            : await reportContent({
+                data: {
+                  itemId: subject.itemId,
+                  target,
+                  reason: reason ?? "other",
+                  note: note.trim() || null,
+                  turnstile: member ? null : await robotToken().catch(() => null),
+                },
+              });
       if (!r.ok) throw new Error(r.error);
       return { hidden: "hidden" in r && r.hidden };
     },
@@ -134,7 +140,7 @@ function ReportFlow({
       </div>
     );
 
-  const ready = mode === "remove" ? removal.note.trim().length >= 3 : Boolean(reason);
+  const ready = mode === "remove" ? abuse || removal.note.trim().length >= 3 : Boolean(reason);
   const urgent = subject.target === "photo" && (reason === "sexual" || reason === "child");
   return (
     <form
@@ -162,7 +168,23 @@ function ReportFlow({
         )}
 
         {mode === "remove" ? (
-          <RemovalNote id="remover-motivo" value={removal} onChange={setRemoval} />
+          <>
+            <Field orientation="horizontal">
+              <Checkbox id="remover-abuso" checked={abuse} onCheckedChange={(on) => setAbuse(on)} />
+              <FieldContent>
+                <FieldLabel htmlFor="remover-abuso" variant="option">
+                  É material de abuso sexual infantil
+                </FieldLabel>
+              </FieldContent>
+            </Field>
+            {abuse ? (
+              <p className="rounded-xl border border-dashed border-hairline-strong p-3 text-sm text-pretty text-ink-2">
+                {ESCALATE_EXPLAINED}
+              </p>
+            ) : (
+              <RemovalNote id="remover-motivo" value={removal} onChange={setRemoval} />
+            )}
+          </>
         ) : (
           <>
             <RadioGroup aria-label="Motivo" value={reason} onValueChange={(v) => setReason(asReason(v) ?? null)}>
@@ -227,7 +249,7 @@ function ReportFlow({
           disabled={!ready || send.isPending || (mode === "report" && !member && !turnstileSiteKey)}
         >
           {send.isPending && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
-          {mode === "remove" ? "Remover" : "Enviar denúncia"}
+          {mode === "remove" ? (abuse ? "Remover e encaminhar" : "Remover") : "Enviar denúncia"}
         </Button>
       </div>
     </form>

@@ -224,6 +224,8 @@ export const itemPhotos = fala
       /** Who sent it: a removal counts against them, never against the pin's author. Never leaves the server. */
       accountId: uuid().references(() => users.id, { onDelete: "set null" }),
       review: photoReview().notNull().default("pending"),
+      /** When the stored bytes were deleted: removed photos after 6 months, escalated ones once an authority has them. */
+      purgedAt: timestamp({ withTimezone: true }),
     },
     (t) => [index().on(t.itemId, t.position), uniqueIndex().on(t.storageKey)],
   )
@@ -434,6 +436,44 @@ export const moderationCases = fala
   )
   .enableRLS();
 
+export const escalationKind = fala.enum("escalation_kind", ["child_abuse"]);
+
+/**
+ * Content that is a crime to keep up and a duty to report (round 20; ECA arts. 241-A and 241-B, Lei
+ * 15.211/2025 art. 27): removed at once, never served again, not even to moderators, preserved for the
+ * authorities, reported by the controller, and deleted once an authority confirms it has it. The
+ * account id is kept without a foreign key, so closing the account doesn't erase what must be preserved.
+ */
+export const escalations = fala
+  .table(
+    "escalations",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      kind: escalationKind().notNull(),
+      caseId: uuid()
+        .notNull()
+        .references(() => moderationCases.id, { onDelete: "restrict" }),
+      itemId: text()
+        .notNull()
+        .references(() => items.id, { onDelete: "restrict" }),
+      /** The photo, when the escalation is about one; null for a whole pin or an update. */
+      photoId: uuid().references(() => itemPhotos.id, { onDelete: "restrict" }),
+      accountId: uuid(),
+      createdBy: uuid().references(() => users.id, { onDelete: "set null" }),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+      /** Where the controller reported it (SaferNet, Polícia Federal / Nidus, MPF) and the protocol it got. */
+      reportedAt: timestamp({ withTimezone: true }),
+      reportChannel: text(),
+      reportProtocol: text(),
+      /** The authority confirmed it received the material: from here it may be deleted (Decreto 12.880, art. 39). */
+      receiptAt: timestamp({ withTimezone: true }),
+      purgedAt: timestamp({ withTimezone: true }),
+      note: text(),
+    },
+    (t) => [index().on(t.itemId), index().on(t.photoId)],
+  )
+  .enableRLS();
+
 export const sanctionKind = fala.enum("sanction_kind", ["mute", "suspend"]);
 export const sanctionSource = fala.enum("sanction_source", ["auto", "moderator", "controller"]);
 
@@ -468,6 +508,8 @@ export const sanctions = fala
       contestedAt: timestamp({ withTimezone: true }),
       contestStatus: contestStatus(),
       contestNote: text(),
+      /** A suspension that came with an escalation: only the controller reviews it, never volunteers. */
+      escalationId: uuid(),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
     (t) => [index().on(t.accountId)],

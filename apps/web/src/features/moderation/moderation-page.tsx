@@ -15,6 +15,7 @@ import { decidePost, type ReportedPost } from "@/server/forum";
 import { decideCase, resolveContest, type QueueCase, type QueuePhoto, type ReportSummary } from "@/server/moderation";
 import { type QueueSanction } from "@/server/sanctions";
 import { emptyRemoval, RemovalNote, type Removal } from "./removal-note";
+import { EscalateAction } from "./escalate";
 import { SanctionActions, SanctionCard } from "./sanction-cards";
 
 const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-soft";
@@ -383,6 +384,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
           </>
         )}
       </div>
+      {!c.contest && <EscalateAction caseId={c.id} />}
       {!c.decidedByYou && <SanctionActions caseId={c.id} />}
     </article>
   );
@@ -457,6 +459,7 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
               >
                 {out ? "Vai sair" : "Remover"}
               </Button>
+              <EscalateAction caseId={c.id} compact />
             </li>
           );
         })}

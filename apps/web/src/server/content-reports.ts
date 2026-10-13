@@ -5,13 +5,14 @@ import {
   postingLimits,
   ReportReasonSchema,
   standingMessage,
+  SUSPEND_DAYS,
   weightOf,
 } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, gte, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db/client";
-import { contentReports, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
+import { contentReports, escalations, itemEvents, itemPhotos, items, moderationCases, sanctions } from "./db/schema";
 import type { Failure } from "./member";
 import { applyDecision, moderatorOf, openCase, targetAccount } from "./moderation-store";
 import { dayOf, standingOf, strike } from "./sanctions-store";
@@ -177,6 +178,80 @@ export const takeDown = createServerFn({ method: "POST" })
         .where(eq(moderationCases.id, caseId));
       await applyDecision(tx, c, "reject", data.note, now);
       if (weight !== "none") await strike(tx, await targetAccount(tx, c), now);
+      return { ok: true };
+    });
+  });
+
+/** What the item's history says: neutral, so the history itself never describes the material. */
+const ILLEGAL = "Conteúdo ilegal removido.";
+const SUSPENDED_FOR_LAW =
+  "Uma publicação sua foi removida por violar a lei. O caso está com a equipe responsável pelo Fala.";
+
+/**
+ * Child sexual abuse material (round 20; ECA arts. 241-A and 241-B; Lei 15.211/2025 art. 27). A
+ * moderator who meets it removes it and hands it on in one step: it comes down at once, is never shown
+ * again (not even to moderators), is preserved for the authorities, and the account is suspended. The
+ * controller reports it (`bun --filter @fala/web escalation`) and deletes it once an authority has it.
+ */
+export const escalateChildAbuse = createServerFn({ method: "POST" })
+  .validator(
+    z.union([z.object({ caseId: z.uuid() }), z.object({ itemId: z.string().min(4).max(12), target: TargetSchema })]),
+  )
+  .handler(async ({ data }): Promise<Failure | { ok: true }> => {
+    const user = (await getSession())?.user;
+    if (!user || !(await moderatorOf(user.id))) return { ok: false, error: "Só moderadores encaminham." };
+    const now = new Date();
+    return db.transaction(async (tx): Promise<Failure | { ok: true }> => {
+      let c: typeof moderationCases.$inferSelect | undefined;
+      if ("caseId" in data) {
+        [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
+      } else {
+        const itemId = data.itemId.toUpperCase();
+        [c] = await tx
+          .select()
+          .from(moderationCases)
+          .where(and(eq(moderationCases.itemId, itemId), eq(moderationCases.status, "open"), ...onTarget(data.target)))
+          .limit(1)
+          .for("update");
+        if (!c) {
+          const id = await openCase(tx, itemId, "takedown", [], refs(data.target));
+          [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, id));
+        }
+      }
+      if (!c) return { ok: false, error: "Esse caso não existe." };
+      const [already] = await tx.select({ id: escalations.id }).from(escalations).where(eq(escalations.caseId, c.id));
+      if (already) return { ok: true };
+      const account = await targetAccount(tx, c);
+      if (account === user.id) return { ok: false, error: "Outra pessoa da moderação precisa encaminhar." };
+      if (c.status !== "rejected") {
+        await tx
+          .update(moderationCases)
+          .set({ status: "rejected", note: ILLEGAL, weight: "grave", decidedBy: user.id, decidedAt: now })
+          .where(eq(moderationCases.id, c.id));
+        await applyDecision(tx, c, "reject", ILLEGAL, now);
+      }
+      const [escalation] = await tx
+        .insert(escalations)
+        .values({
+          kind: "child_abuse",
+          caseId: c.id,
+          itemId: c.itemId,
+          photoId: c.photoId,
+          accountId: account,
+          createdBy: user.id,
+        })
+        .returning({ id: escalations.id });
+      if (account && escalation)
+        await tx.insert(sanctions).values({
+          accountId: account,
+          kind: "suspend",
+          source: "auto",
+          reason: SUSPENDED_FOR_LAW,
+          startsAt: now,
+          endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY),
+          confirmedAt: now,
+          escalationId: escalation.id,
+        });
       return { ok: true };
     });
   });

@@ -122,6 +122,8 @@ export const getSanctionQueue = createServerFn({ method: "GET" }).handler(async 
         or(and(isNull(sanctions.confirmedAt), eq(sanctions.kind, "suspend")), eq(sanctions.contestStatus, "open")),
         or(isNull(sanctions.createdBy), ne(sanctions.createdBy, mod.id)),
         ne(sanctions.accountId, mod.id),
+        // A suspension that came with an escalation is the controller's to review, never volunteers'.
+        isNull(sanctions.escalationId),
       ),
     )
     .orderBy(desc(sanctions.createdAt))
@@ -182,7 +184,14 @@ export const resolveSanctionContest = createServerFn({ method: "POST" })
     const [row] = await db
       .select()
       .from(sanctions)
-      .where(and(eq(sanctions.id, data.id), eq(sanctions.contestStatus, "open"), isNotNull(sanctions.confirmedAt)));
+      .where(
+        and(
+          eq(sanctions.id, data.id),
+          eq(sanctions.contestStatus, "open"),
+          isNotNull(sanctions.confirmedAt),
+          isNull(sanctions.escalationId),
+        ),
+      );
     if (!row) return { ok: false, error: "Essa contestação já foi analisada." };
     if (row.createdBy === mod.id || row.confirmedBy === mod.id || row.accountId === mod.id)
       return { ok: false, error: "Outra pessoa da moderação precisa analisar." };
