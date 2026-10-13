@@ -1,0 +1,24 @@
+{
+  "name": "Fala, Canoas",
+  "short_name": "Fala, Canoas",
+  "description": "O que está quebrado na sua rua, contado em dias. Um mapa independente de Canoas.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "id": "/mapa",
+  "start_url": "/mapa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#FAFAFA",
+  "theme_color": "#FAFAFA",
+  "categories": ["social", "news", "utilities"],
+  "icons": [
+    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Mapa", "url": "/mapa", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Placar", "url": "/placar", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Você", "url": "/voce", "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

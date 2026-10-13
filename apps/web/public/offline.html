@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="robots" content="noindex" />
+    <title>Sem conexão · Fala, Canoas</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      /* The offline page the service worker shows when a page can't load. DESIGN.md tokens, inline. */
+      @font-face {
+        font-family: Geist;
+        src: url("/fonts/geist-latin.woff2") format("woff2");
+        font-weight: 100 900;
+        font-display: swap;
+      }
+      :root {
+        --paper: #fafafa;
+        --panel: #ffffff;
+        --ink: #0e0f10;
+        --ink-2: #393b40;
+        --line: rgb(14 15 16 / 0.085);
+        --orange: #f05a1a;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --paper: #0a0a0b;
+          --panel: #121214;
+          --ink: #f3f3f4;
+          --ink-2: #c6c7cb;
+          --line: rgb(255 255 255 / 0.075);
+          --orange: #f4652a;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        background: var(--paper);
+        color: var(--ink);
+        font: 400 16px/1.5 Geist, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 26rem;
+        display: grid;
+        gap: 20px;
+      }
+      .mark {
+        font-size: 22px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .mark span {
+        color: var(--orange);
+      }
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.15;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        text-wrap: balance;
+      }
+      p {
+        margin: 0;
+        color: var(--ink-2);
+        text-wrap: pretty;
+      }
+      button {
+        justify-self: start;
+        height: 44px;
+        padding: 0 18px;
+        border-radius: 10px;
+        border: 0;
+        background: var(--ink);
+        color: var(--paper);
+        font: 500 15px Geist, ui-sans-serif, system-ui, sans-serif;
+        cursor: pointer;
+      }
+      button:focus-visible {
+        outline: 3px solid color-mix(in oklch, var(--orange), transparent 50%);
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="mark">Fala<span>,</span> Canoas</div>
+      <h1>Você está sem internet</h1>
+      <p>O mapa e os registros precisam de conexão. Quando ela voltar, é só tentar de novo.</p>
+      <button type="button" onclick="location.reload()">Tentar de novo</button>
+    </main>
+  </body>
+</html>

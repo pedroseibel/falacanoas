@@ -128,7 +128,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 
 ## 4. Platform
 
-- [ ] **4.1 Installable PWA** (round 11): a manifest, icons, an offline shell, and camera and GPS on cheap Android phones.
+- [x] **4.1 Installable PWA** (round 11): a manifest, icons, an offline shell, and camera and GPS on cheap Android phones. Done 2026-10-12, verified on a production build: the worker installs, caches the shell, and serves the offline page (in Geist) with the server down.
+  - `manifest.webmanifest` (start at /mapa, standalone, shortcuts to Mapa, Placar and Você); icons drawn from the favicon's mark by `bun --filter @fala/cards icons` (any, maskable, Apple touch);
+  - `public/sw.js`, registered in production builds only: pages from the network with `/offline` when there's none; the build's hashed assets, fonts and icons cached as they're used. No data, server functions, photos or other origins are cached;
+  - the photo field already offers camera or gallery (`accept="image/*"`); locating retries with the network's position when a cheap phone's GPS times out.
 - [ ] **4.2 Web push** for followed items.
 - [ ] **4.3 Icons to a signage norm** (round 16): CONTRAN, ISO 7001, AIGA/DOT or NBR 9050, kept behind `<Icon>`.
 - [ ] **4.4 CARTO basemap** (round 14). ⛔ Needs the key.
@@ -147,5 +150,6 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - **Open-data licence:** 3.3.
 - **Face and plate detection service:** 2.11.
 - **CARTO key:** 4.4.
+- **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).
 - **Domains and Turnstile keys:** 4.5.
 - **Legal:** associação, privacy notice review, ECA Digital opinion. These gate the public launch, not the build.

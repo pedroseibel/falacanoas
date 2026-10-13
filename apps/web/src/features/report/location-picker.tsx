@@ -34,7 +34,7 @@ export function LocationPicker({
   const picker = useRef<Picker | null>(null);
   const [locating, setLocating] = useState(false);
 
-  const locate = (quiet = false) => {
+  const locate = (quiet = false, precise = true) => {
     if (!("geolocation" in navigator)) {
       if (!quiet) toast("Este aparelho não informa a localização. Arraste o mapa até o lugar.");
       return;
@@ -50,11 +50,15 @@ export function LocationPicker({
         }
         picker.current?.flyTo(at);
       },
-      () => {
+      (err) => {
+        // A cheap phone's GPS can take longer than the wait; the network's guess is close enough to start.
+        if (precise && err.code === err.TIMEOUT) return locate(quiet, false);
         setLocating(false);
         if (!quiet) toast("Não deu para saber onde você está. Arraste o mapa até o lugar.");
       },
-      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 },
+      precise
+        ? { enableHighAccuracy: true, timeout: 10_000, maximumAge: 60_000 }
+        : { enableHighAccuracy: false, timeout: 15_000, maximumAge: 300_000 },
     );
   };
 
