@@ -1,6 +1,6 @@
 # Build plan
 
-Every decision in `research/DECISIONS.md` (rounds 1-18) that is not built yet, in build order. A loop works through it: each iteration takes the next unblocked item, builds it with tests, verifies it (in the browser for UI, to the polish bar), commits, pushes and ticks it here.
+Every decision in `research/DECISIONS.md` (rounds 1-19) that is not built yet, in build order. A loop works through it: each iteration takes the next unblocked item, builds it with tests, verifies it (in the browser for UI, to the polish bar), commits, pushes and ticks it here.
 
 **Legend:**
 - `[x]` done
@@ -153,12 +153,27 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 
   ⛔ Needs the domain `falacanoas.com.br` and the Turnstile keys.
 
+## 5. Abuse safeguards (round 19)
+
+- [x] **5.1 A first look at every photo.** Done 2026-10-13, verified end to end in the browser with a test author and a test moderator.
+  - `item_photos.review` (pending, approved, removed) and who sent each photo; one first-look case per photo on a published pin; a held pin's photos are judged with it;
+  - readers get approved photos only, and a count shown as "em análise" (the viewer's tile, or the panel when there's no photo yet);
+  - the digest waits for a pin's photos to be looked at and links only approved ones; followers hear of a new photo when it's approved;
+  - the queue groups a pin's new photos: approve all, or mark some to remove with one reason.
+- [x] **5.2 "Denunciar"** on pins, photos and updates (`content_reports`, one open case per target). Visitors pass Turnstile (the vault accepts the `denuncia` action); neighbours at nível 1 send up to 30 a day. Hide first per core's `hidesAtOnce`. A Dialog on desktop, a Drawer on phones.
+- [x] **5.3 Takedown and contests.** Moderators remove a pin, photo or update from the report dialog ("Remover agora") or decide a report in the queue. Each removal goes into the history with its reason; removed updates keep their place without their words. Whoever sent a removed photo or update sees why on the pin and can contest. Refusals count against that person, through the case's target. Images reported for nudity or a child are blurred for moderators until they choose to look.
+- [x] **5.4 Photo serving.** `/api/fotos/$key` is public only for approved photos on published pins (an hour's cache and an ETag); moderators see the rest; everyone else gets a 404. Removed photos stay in the private bucket, unserved.
+- [ ] **5.5 Sanctions:** mute (everything held) and suspend, applied through the opaque handle; lower limits for new accounts.
+- [ ] **5.6 A wider pre-screen:** neighbours, house numbers and plates in text; apelido checks (insults, official-sounding names); the rule shown at posting time.
+- [ ] **5.7 Automatic image screening** (nudity, children, faces, plates, text) and CSAM hash matching, ahead of the human first look. ⛔ Needs the vendor choice, and the procedure written with counsel.
+
 ## Founder inputs that unblock items
 
 - **E-mail sender and Ouvidoria address:** 3.1.
 - **WhatsApp provider and number:** 3.2.
 - **Open-data licence:** 3.3 (CC BY 4.0 or ODbL; set `openDataLicence` in the instance).
 - **Face and plate detection service:** 2.11, then 2.12 (video).
+- **Image-screening vendor, CSAM hash matching, the CSAM and intimate-imagery procedure, and how long removed photos are kept:** 5.7 (the same vendor can serve 2.11).
 - **CARTO key:** 4.4.
 - **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).
 - **Domains and Turnstile keys:** 4.5.

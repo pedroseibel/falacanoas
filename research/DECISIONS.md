@@ -334,6 +334,25 @@ Settled in a `/grill-me` session (questions Q1-Q32, plus Q13b and Q26). **The pr
 
 Before any nível 2: the RIPD, the path A pilot on a real signed PDF, and the documented key-rotation procedure.
 
+## Round 19: abuse safeguards (2026-10-13)
+
+The founder asked what stops abuse: an obscene photo, a neighbour named or photographed. The review found that nothing looked at photos before they went public, and that nobody could take down a published pin, photo or update. Decided ("build it"):
+
+- **Every photo gets a first look.** A photo shows only after a moderator approves it; until then the pin shows "em análise". The pin's text still goes out at once under round 5's pre-screen. This narrows round 15's "updates from others enter immediately" for photos only. The 18h digest waits until a pin's photos have been looked at, so the Ouvidoria never gets, in the Fala's name, a photo nobody saw.
+- **"Denunciar" on pins, photos and updates**, by anyone. Visitors pass Turnstile; a neighbour at nível 1 reports once per case. The reasons are nudity or sexual content, a child, exposing a person, offence, not a city problem, and other. Reports on the same thing form one case.
+- **Hide first:** a nível-1 neighbour's report of nudity or of a child takes a photo down until a moderator looks. Once a moderator looked at a report on a photo and kept it, reports no longer take it down by themselves.
+- **Takedown:** moderators remove a pin, a photo or an update directly, with a reason that goes into the history ("nothing disappears silently"). Whoever posted it can contest, and someone other than whoever decided judges the contest. A removed photo or update counts against whoever sent it, never against the pin's author.
+- **Serving:** a photo is public only once approved on a published pin; moderators see the rest; everyone else gets a 404. Public copies are cached for an hour, so a takedown reaches browsers. Removed photos are kept privately (round 6) and never served.
+- **Moderator care:** images reported for nudity or a child are blurred until the moderator chooses to look.
+
+**Open (founder and counsel):**
+- an image-screening vendor (nudity, faces, plates, text in images): one choice that also unblocks 2.11;
+- CSAM hash matching, and a written procedure for CSAM and intimate imagery with counsel (preserve and report, never just delete; the Marco Civil art. 21 timing);
+- how long removed photos are kept;
+- photo screening as a launch condition.
+
+**Next, no input needed:** sanctions (mute, suspend) and lower limits for new accounts; a wider pre-screen (neighbours, house numbers, plates) and apelido checks; the rule shown at posting time.
+
 ## Research findings that constrain design (2026-10-12)
 
 - **Maps:** the landing page uses an inline SVG of the 18 bairros (`maps/data/web/canoas-bairros.svg`, about 4 KB gzipped) and a `<select>`, with no map library. For the eventual app: MapLibre (v6 is about 439 KB gzipped, ESM-only, and fails from `file://`; v5.24 UMD works). CARTO has required an API key since 2026-09-29; it is free up to 5M tiles/month non-commercial, and access is revocable. OpenFreeMap needs no key. Flood-extent layer: UFRGS, CC BY, 48.3% of the municipality.
