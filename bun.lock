@@ -30,6 +30,21 @@
         "wrangler": "^4.149.0",
       },
     },
+    "apps/dados": {
+      "name": "@fala/dados",
+      "version": "0.1.0",
+      "dependencies": {
+        "@fala/core": "workspace:*",
+        "@fala/instance-canoas": "workspace:*",
+        "elysia": "1.4.30",
+        "pg": "8.23.1",
+      },
+      "devDependencies": {
+        "@types/bun": "latest",
+        "@types/pg": "^8.23.1",
+        "typescript": "7.0.2",
+      },
+    },
     "apps/digest": {
       "name": "@fala/digest",
       "version": "0.1.0",
@@ -331,6 +346,8 @@
     "@fala/cards": ["@fala/cards@workspace:apps/cards"],
 
     "@fala/core": ["@fala/core@workspace:packages/core"],
+
+    "@fala/dados": ["@fala/dados@workspace:apps/dados"],
 
     "@fala/digest": ["@fala/digest@workspace:apps/digest"],
 

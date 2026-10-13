@@ -121,12 +121,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - sign-in codes don't pass through this service: the vault sends them itself (its `Outbox`), so the phone never leaves it. In development the sign-in page shows them, as before;
   - development: `bun --filter @fala/whatsapp mensagem <número> <texto>`, or `POST /dev/mensagem`, plays a message as if it came from WhatsApp; replies are appended to `apps/whatsapp/outbox/mensagens.txt`;
   - ⛔ production: needs a provider (Meta's Cloud API or a BSP on it) and the number. Then: the provider's webhook (signature and parsing, behind `Provider`; `/webhook` answers 501 until then), its sender for replies, and the vault's delivery for codes (an authentication template) and number-change notices. E-mail confirmation links wait on the e-mail sender (3.1).
-- [ ] **3.3 Open-data API** (round 10):
-  - pins and status timelines;
-  - locations fuzzed and photos blurred;
-  - no reporter data.
-
-  ⛔ Licence to pick: CC BY 4.0 or ODbL.
+- [x] **3.3 Open-data API** (round 10). Done 2026-10-12, verified against the dev database with test pins (no apelido, resident's text or exact point in any response).
+  - `apps/dados`, Elysia on Bun: `/v1/registros` (JSON pages, filters by bairro, category, status and "changed since"), `.geojson`, `.csv`, `/v1/registros/{código}` with its timeline, and `/v1/historico.csv`; the index at `/` carries the licence, the data dictionary and what is left out. Open to any site (CORS), cached five minutes;
+  - privacy in the database, not just the code: migration 0015 adds the `dados` views and the `fala_dados` role, which can read them and no table (checked: refused on `fala`, `fala_cofre` and writes). The views hold only published, real pins, with the point moved to the centre of its 0.001° cell (about 100 m, the same on every download), and timelines where only the project and public bodies are named or quoted. Titles and residents' text stay out (they can name other people); each record links to its page;
+  - the days on the public clock, the category's and bairro's names and the responsible body are added from the instance (core `open-data.ts`); CSV fields that a spreadsheet would run as formulas are defused;
+  - ⛔ the licence: CC BY 4.0 or ODbL (`openDataLicence` in the instance). Until it's picked, the index says the data can't be reused yet, and production refuses to start. Photos join once faces and plates are blurred (2.11).
 
 ## 4. Platform
 
@@ -154,7 +153,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 
 - **E-mail sender and Ouvidoria address:** 3.1.
 - **WhatsApp provider and number:** 3.2.
-- **Open-data licence:** 3.3.
+- **Open-data licence:** 3.3 (CC BY 4.0 or ODbL; set `openDataLicence` in the instance).
 - **Face and plate detection service:** 2.11.
 - **CARTO key:** 4.4.
 - **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).

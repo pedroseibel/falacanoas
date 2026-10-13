@@ -17,3 +17,4 @@ export * from "./share-card";
 export * from "./notices";
 export * from "./digest";
 export * from "./whatsapp";
+export * from "./open-data";

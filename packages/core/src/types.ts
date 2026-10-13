@@ -245,6 +245,11 @@ export interface Municipality {
     whatsapp?: string;
   };
   /**
+   * The open data's licence (DECISIONS round 10): CC BY 4.0 or ODbL. Absent until the instance picks
+   * one, and the open-data API won't run in production without it.
+   */
+  openDataLicence?: "CC-BY-4.0" | "ODbL-1.0";
+  /**
    * Campaign periods (inclusive dates, local), when anonymous electoral propaganda is held for
    * moderation (round 18, Q31).
    */

@@ -14,6 +14,9 @@ PASSKEY_ORIGINS=
 # to DATABASE_ADMIN_URL and gives the app its own role, fala_app, which can't read the vault's schema.
 DATABASE_URL=
 DATABASE_ADMIN_URL=
+# The open-data API's role, fala_dados (written by `bun run db:roles`): it reads only the `dados` views.
+# Not used by the app; apps/dados reads it from here in development.
+DADOS_DATABASE_URL=
 # The vault's public key, written by `bun run vault:keys`. Not secret: it verifies, it can't sign.
 VAULT_VERIFY_KEY=
 # Supabase API, server-side only (Storage). The secret key never reaches the browser.

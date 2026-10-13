@@ -1,0 +1,22 @@
+{
+  "name": "@fala/dados",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "@fala/core": "workspace:*",
+    "@fala/instance-canoas": "workspace:*",
+    "elysia": "1.4.30",
+    "pg": "8.23.1"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/pg": "^8.23.1",
+    "typescript": "7.0.2"
+  }
+}

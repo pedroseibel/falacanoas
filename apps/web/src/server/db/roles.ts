@@ -3,8 +3,9 @@ import { Client } from "pg";
 import { devVar } from "./dev-env";
 
 /**
- * `bun run db:roles`, after the migrations: lets the app (fala_app) and the vault (fala_cofre) log in,
- * each with the password in its own connection string. In development, missing connection strings
+ * `bun run db:roles`, after the migrations: lets the app (fala_app), the vault (fala_cofre) and the
+ * open-data API (fala_dados, which reads only the `dados` views) log in, each with the password in its
+ * own connection string. In development, missing connection strings
  * are created first, with fresh random passwords, in the gitignored .dev.vars files: the old
  * `postgres` URL becomes DATABASE_ADMIN_URL. Nothing secret is printed.
  */
@@ -44,6 +45,7 @@ if (!admin) throw new Error("Defina DATABASE_ADMIN_URL (o papel postgres) em app
 const roles: { role: string; file: "web" | "vault"; name: string }[] = [
   { role: "fala_app", file: "web", name: "DATABASE_URL" },
   { role: "fala_cofre", file: "vault", name: "VAULT_DATABASE_URL" },
+  { role: "fala_dados", file: "web", name: "DADOS_DATABASE_URL" },
 ];
 
 const urls = new Map<string, string>();
