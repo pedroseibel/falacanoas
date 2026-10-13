@@ -388,6 +388,11 @@ The founder delegated these ("you decide the best course"). They were settled af
 - **Blurring replaces removal only after testing.** Before blurring stands in for a moderator removing a photo, measure recall on 200–300 labelled real Canoas photos, with a bar of about 95% on faces and on grey and Mercosul plates.
 - **Hash matching for known abuse material:** register with Arachnid Shield (free) and apply to PhotoDNA and Google's Content Safety API in parallel. Turn on Cloudflare's CSAM scanning once the domain is live.
 
+**Answered by the founder (2026-10-13):**
+- The designated person for escalations is the founder, Pedro Seibel. A backup is still to be named.
+- The São Paulo host for the screening service waits: Fly is too expensive for now. Meanwhile every photo is looked at by hand.
+- Hash-matching registration, Nidus registration and labelling real photos come later.
+
 **Launch conditions added:**
 1. A hash-matching service is active, or counsel signs off on the interim (every photo looked at first, plus escalation).
 2. A designated person and a backup for escalations, with the procedure reviewed by counsel.
