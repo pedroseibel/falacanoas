@@ -105,6 +105,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - ⛔ production: drawing takes about a second of CPU, beyond the free plan's 10 ms per request, so it needs Workers Paid (founder decision). Until then the link falls back to the pin's photo, or og.png.
 - [x] **2.10 Emergency notice in the app** (round 11): "Em emergência: Defesa Civil 199 / Bombeiros 193". It now sits at the foot of the report form, with tappable numbers.
 - [ ] **2.11 Faces and plates blurred** (round 6). The original stays private, and the public copy is blurred. ⛔ Needs a choice of detection service.
+- [ ] **2.12 Optional video, up to 30 s** (round 1). Not built on purpose: a clip catches far more bystanders than a photo, and round 6 requires faces and plates blurred in public, so video waits for 2.11's service to handle frames too. It also needs server-side remuxing to strip the container's metadata (MP4 can carry the recording's GPS position) and a size and length check before storage. ⛔ After 2.11.
 
 ## 3. Services (Elysia on Bun, outside `apps/web`)
 
@@ -157,7 +158,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - **E-mail sender and Ouvidoria address:** 3.1.
 - **WhatsApp provider and number:** 3.2.
 - **Open-data licence:** 3.3 (CC BY 4.0 or ODbL; set `openDataLicence` in the instance).
-- **Face and plate detection service:** 2.11.
+- **Face and plate detection service:** 2.11, then 2.12 (video).
 - **CARTO key:** 4.4.
 - **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).
 - **Domains and Turnstile keys:** 4.5.
