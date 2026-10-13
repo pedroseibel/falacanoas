@@ -415,6 +415,10 @@ The sign-in stepper, a variant of the Scoreboard Ruler. It is 18px tall with 13 
 
 Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500), a right-aligned mono queue count, and a 20-slot meter of 12px cells at 2px radius on Panel Well, filled with ink as neighbours join. Hover takes Panel Recess. The selected row gets Shelter Orange Wash, orange lit slots and an orange count.
 
+### Not Found
+
+An address that leads nowhere is drawn off the map. The 18 bairros sit in a panel, each a link, with a Ghost Pin past the city's south-east corner: a dashed ring in ink, whose halo breathes three times and stops, like the hot pin's but in ink. An ink tooltip beside it carries the address in mono. Above it, a title-size heading ("Esta página não está no mapa."), one plain line on why, and "Você quis dizer…" rows when the address looks like a pin's code or a bairro. Inside the app, a missing pin takes the detail panel: a dashed slot where its photo would be, holding the Ghost Pin and the code. A missing bairro lists the close matches, then every bairro as pills. Failures use the same voice ("Algo falhou do nosso lado.") with "Tentar de novo".
+
 ### Pictograms
 
 One pictogram per category, drawn to the public-information norm: ISO 7001's construction in the public-domain AIGA/DOT drawing style. Where a Brazilian traffic sign (CONTRAN) already shows the subject, the pictogram takes that subject (the traffic light, the pedestrian, the road surface), but never the sign's yellow diamond or red ring: nothing may read as an alert. Each is a solid single-ink silhouette on a 24-unit grid, inside 2 to 22. Limbs and bars are 2.5 units, and gaps and cut-outs are at least 2, so the set still reads at 13px. It shows the object, not a mood: a tire in the hole, a tied bag, a pipe pouring out, a car up to its doors in water. They take the text colour around them: Slate in tiles and meta lines, ink in filter chips. They live in `src/components/Icons.tsx` behind `<Icon name>`; all other interface icons are lucide strokes.

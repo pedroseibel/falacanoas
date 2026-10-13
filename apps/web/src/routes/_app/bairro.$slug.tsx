@@ -1,7 +1,10 @@
-import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, notFound, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { BairroPage } from "@/features/bairro/bairro-page";
+import { BairroNotFound } from "@/features/not-found/bairro-not-found";
+import { findBairro } from "@/features/not-found/not-found-model";
+import { useGo } from "../-auth-links";
 import { isOpen } from "@fala/core";
 import { accountQuery, cityQuery, memberGate, threadsQuery } from "@/lib/city";
 import { bairroShareMeta } from "@/lib/share-meta";
@@ -9,7 +12,12 @@ import { bairroShareMeta } from "@/lib/share-meta";
 export const Route = createFileRoute("/_app/bairro/$slug")({
   loader: async ({ context, params }) => {
     const bairro = canoas.neighborhoods.find((n) => n.slug === params.slug);
-    if (!bairro) throw notFound();
+    if (!bairro) {
+      // The same bairro written differently ("São José", "mathias velho"): straight to it.
+      const { exact } = findBairro(params.slug, canoas.neighborhoods);
+      if (exact) throw redirect({ to: "/bairro/$slug", params: { slug: exact.slug }, replace: true });
+      throw notFound();
+    }
     const [city] = await Promise.all([
       context.queryClient.ensureQueryData(cityQuery),
       context.queryClient.ensureQueryData(threadsQuery(params.slug)),
@@ -25,9 +33,23 @@ export const Route = createFileRoute("/_app/bairro/$slug")({
       demo: mine.some((i) => i.demo),
     };
   },
-  head: ({ loaderData }) => (loaderData ? bairroShareMeta(loaderData, canoas) : {}),
+  head: ({ loaderData, match }) =>
+    loaderData
+      ? bairroShareMeta(loaderData, canoas)
+      : {
+          meta: [
+            { title: `${match.status === "notFound" ? "Bairro não encontrado" : "Bairro"} · Fala, Canoas` },
+            { name: "robots", content: "noindex" },
+          ],
+        },
   component: BairroRoute,
+  notFoundComponent: BairroMissing,
 });
+
+function BairroMissing() {
+  const { slug } = Route.useParams();
+  return <BairroNotFound muni={canoas} slug={slug} go={useGo()} />;
+}
 
 function BairroRoute() {
   const { slug } = Route.useParams();

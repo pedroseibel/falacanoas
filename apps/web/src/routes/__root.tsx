@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import mapCss from "maplibre-gl/dist/maplibre-gl.css?url";
 import appCss from "@/styles/globals.css?url";
+import { RootError, RootNotFound } from "./-errors";
 
 /** Applies a saved theme before paint (no flash). */
 const THEME_BOOT = `try{var t=localStorage.getItem("fc-theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}`;
@@ -46,6 +47,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     scripts: [{ children: THEME_BOOT }, ...(import.meta.env.PROD ? [{ children: SW_BOOT }] : [])],
   }),
   component: RootComponent,
+  notFoundComponent: RootNotFound,
+  errorComponent: RootError,
 });
 
 function RootComponent() {
