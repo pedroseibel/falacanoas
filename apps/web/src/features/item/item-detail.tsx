@@ -37,6 +37,7 @@ import { textLink } from "@/features/landing/bits";
 import { Input } from "@/components/ui/input";
 import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
+import { PhotoViewer } from "./photo-viewer";
 import { whereOf } from "@/features/map/item-card";
 import { ItemActions, usePhotoInput } from "./item-actions";
 import { ModerationNotice } from "./moderation-notice";
@@ -136,13 +137,11 @@ export function ItemDetail({
   trackingKey: string | null;
 }) {
   const a = useItemActions(it, member, onSignIn);
-  const [photoIndex, setPhotoIndex] = useState(0);
   const [draft, setDraft] = useState("");
   const currentPhoto = usePhotoInput((photos) => a.run({ type: "photo", photos }));
   const write = () => (member ? document.getElementById("composer")?.focus() : onSignIn());
   const open = isOpen(it);
   const issue = it.kind === "public_issue";
-  const photo = it.photos[photoIndex] ?? it.photos[0];
   const over = open && it.days > muni.deadlineDays;
   const disagreement = it.official?.status === "resolved" && it.community === "ongoing";
   const events = deriveEvents(it, (d) => dateAgo(now, d));
@@ -151,56 +150,13 @@ export function ItemDetail({
   return (
     <article className="grid">
       {currentPhoto.element}
-      {photo ? (
-        <figure className="m-0">
-          <div className="relative bg-panel-3">
-            <img src={photo.src} alt={`Foto do registro: ${it.title}`} className="aspect-4/3 w-full object-cover" />
-            <span className="absolute top-3 left-3 rounded-md bg-foreground/70 px-2 py-1.5 font-mono text-xs text-background">
-              {photo.takenAt} · {photo.by}
-            </span>
-            {photo.credit && (
-              <span className="absolute right-2.5 bottom-2.5 rounded-md bg-foreground/60 px-1.5 py-0.5 text-2xs text-background">
-                {photo.credit}
-              </span>
-            )}
-          </div>
-          <div
-            className="flex gap-2 overflow-x-auto border-b border-hairline bg-card px-4 py-2.5"
-            role="group"
-            aria-label="Fotos ao longo do tempo"
-          >
-            {it.photos.map((p, k) => (
-              <button
-                key={`${p.src}|${p.takenAt}`}
-                type="button"
-                aria-pressed={p === photo}
-                onClick={() => setPhotoIndex(k)}
-                className="grid shrink-0 gap-1 text-left"
-              >
-                <img
-                  src={p.src}
-                  alt=""
-                  className={cn(
-                    "h-14 w-19 rounded-md border-2 object-cover",
-                    p === photo ? "border-foreground" : "border-transparent",
-                  )}
-                />
-                <small className="font-mono text-2xs text-muted-foreground">{p.takenAt.split(" · ")[0]}</small>
-              </button>
-            ))}
-            <button
-              type="button"
-              className="grid shrink-0 gap-1 text-left"
-              disabled={a.pending === "photo"}
-              onClick={() => (member ? currentPhoto.open() : onSignIn())}
-            >
-              <span className="grid h-14 w-19 place-items-center rounded-md border border-dashed border-hairline-strong bg-muted text-muted-foreground">
-                <Camera className="size-4" />
-              </span>
-              <small className="font-mono text-2xs text-muted-foreground">foto atual</small>
-            </button>
-          </div>
-        </figure>
+      {it.photos.length ? (
+        <PhotoViewer
+          photos={it.photos}
+          title={it.title}
+          adding={a.pending === "photo"}
+          onAdd={() => (member ? currentPhoto.open() : onSignIn())}
+        />
       ) : (
         <div className="grid aspect-video place-items-center content-center gap-2.5 bg-panel-3 text-center text-sm text-muted-foreground">
           <Icon name={categoryIcon(it.category)} size={36} />
