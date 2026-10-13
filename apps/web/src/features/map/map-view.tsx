@@ -21,6 +21,11 @@ export function MapView({
   useMountEffect(() => {
     // Route lifecycle hooks don't run on hydration: seed the store from the server-rendered state.
     setMapState({ ...initial, dark: prefersDark() });
+    // On "auto", the page's colours follow the system when it switches (at sunset, say); the basemap
+    // has to follow too, or dark chrome sits on a light map. A saved theme wins (prefersDark reads it).
+    const scheme = matchMedia("(prefers-color-scheme: dark)");
+    const follow = () => setMapState({ dark: prefersDark() });
+    scheme.addEventListener("change", follow);
     let dispose: (() => void) | null = null;
     let cancelled = false;
     void Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl-worker.mjs?url")]).then(
@@ -38,6 +43,7 @@ export function MapView({
     );
     return () => {
       cancelled = true;
+      scheme.removeEventListener("change", follow);
       dispose?.();
     };
   });
