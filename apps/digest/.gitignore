@@ -1,0 +1,3 @@
+# The development outbox: digests written as .eml files instead of sent.
+outbox/
+.env

@@ -15,3 +15,4 @@ export * from "./moderation";
 export * from "./data-requests";
 export * from "./share-card";
 export * from "./notices";
+export * from "./digest";

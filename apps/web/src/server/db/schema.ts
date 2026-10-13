@@ -409,6 +409,27 @@ export const moderationCases = fala
   )
   .enableRLS();
 
+/* ---------- The daily digest (round 5; BUILD 3.1) ---------- */
+
+/**
+ * Each digest sent to the Ouvidoria: to whom, what, which items, and how it went out. Its time is
+ * when those items' public clocks started, so the record stays as the proof.
+ */
+export const digests = fala
+  .table("digests", {
+    id: uuid().primaryKey().defaultRandom(),
+    sentAt: timestamp({ withTimezone: true }).notNull(),
+    recipients: text().array().notNull(),
+    subject: text().notNull(),
+    body: text().notNull(),
+    itemIds: text().array().notNull(),
+    /** "arquivo" in development (an .eml file, nothing sent), or the provider's name. */
+    transport: text().notNull(),
+    /** The provider's message id, to match replies (protocol numbers) later. */
+    messageId: text(),
+  })
+  .enableRLS();
+
 /* ---------- Web push (round 15: following; BUILD 4.2) ---------- */
 
 /**

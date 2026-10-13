@@ -108,12 +108,12 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 
 ## 3. Services (Elysia on Bun, outside `apps/web`)
 
-- [ ] **3.1 Daily digest at 18h** (round 5):
-  - builds the digest for the Ouvidoria;
-  - sets `sentAt` (the clock starts there);
-  - records protocols when they come back.
-
-  ⛔ Needs an e-mail sender and the Ouvidoria address. A development outbox comes first.
+- [x] **3.1 Daily digest at 18h** (round 5). Done 2026-10-12 with a development outbox, verified against the dev database.
+  - `apps/digest`, Elysia on Bun: a cron at the instance's digest hour and time zone (18h, São Paulo) takes the published, real occurrences not sent yet and sends one e-mail in the Fala's name, the CAC in copy (`buildDigest` in core). Entries are grouped by the body responsible: code, category, bairro, title, text, the point with an OpenStreetMap link, photo links, when it was registered, neighbour confirmations and the pin's page. Never who reported, never demo data or held pins;
+  - only after the e-mail goes out, one transaction keeps the digest (`fala.digests`), sets `sent_at` (the public clock starts there) and adds "Enviado à Prefeitura no resumo diário" to each history. A failed send marks nothing, so the next run retries; a session advisory lock keeps runs from overlapping;
+  - protocols: `bun --filter @fala/digest protocolo <código> <número> [data]` sets the number and date on a sent pin (never before the send) and adds it to the history; the page shows it with the legal deadline;
+  - development writes each e-mail to `apps/digest/outbox/` as an `.eml` and doesn't schedule itself (`bun --filter @fala/digest agora` runs one), so a dev process never starts real reports' clocks. `POST /resumo` (bearer token) runs one by hand; `GET /saude` shows the schedule and the last run;
+  - ⛔ production: needs an e-mail sender and the Ouvidoria and CAC addresses (`DIGEST_FROM`, `DIGEST_TO`, `DIGEST_CC`). Until a sender exists, production refuses to send, and no clock starts. Reading protocols from the replies (by hand for now) can follow the sender.
 - [ ] **3.2 WhatsApp sender and webhook** (rounds 11, 12, 17):
   - sign-in codes;
   - waitlist confirmation by `wa.me` link with a code.
