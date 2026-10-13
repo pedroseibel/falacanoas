@@ -168,7 +168,9 @@ export function MapPage({
 
       {!phone && selectedId && detail && (
         <section
-          className="relative z-10 w-110 shrink-0 overflow-y-auto overscroll-contain border-r border-hairline bg-card"
+          // Out of the list's edge when a pin opens from the whole map; switching pins keeps it mounted,
+          // so it doesn't replay, and closing is instant.
+          className="relative z-10 w-110 shrink-0 overflow-y-auto overscroll-contain border-r border-hairline bg-card transition duration-220 ease-fluid starting:-translate-x-3 starting:opacity-0 motion-reduce:starting:translate-x-0"
           aria-label="Registro"
           onKeyDown={(e) => {
             if (e.key === "Escape" && !e.defaultPrevented) onClose();

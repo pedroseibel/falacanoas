@@ -16,6 +16,7 @@ import { decideCase, resolveContest, type QueueCase, type QueuePhoto, type Repor
 import { type QueueSanction } from "@/server/sanctions";
 import { emptyRemoval, RemovalNote, type Removal } from "./removal-note";
 import { EscalateAction } from "./escalate";
+import { QueueRow, useLeave } from "./leave";
 import { SanctionActions, SanctionCard } from "./sanction-cards";
 
 const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-soft";
@@ -110,7 +111,8 @@ export function ModerationPage({
 function Section({ id, title, count, children }: { id: string; title: string; count: number; children: ReactNode }) {
   if (!count) return null;
   return (
-    <section aria-labelledby={id} className="grid gap-3">
+    // A flex column, not a grid: a leaving card closes the gap with a negative margin (globals.css, .queue-row).
+    <section aria-labelledby={id} className="flex flex-col gap-3">
       <h2 id={id} className="flex items-baseline gap-2 text-lg font-semibold tracking-tight">
         {title}
         <span className="font-mono text-sm font-normal text-muted-foreground tabular-nums">{count}</span>
@@ -246,7 +248,9 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
   const [step, setStep] = useState<Step>(null);
   const [note, setNote] = useState("");
   const [removal, setRemoval] = useState<Removal>(emptyRemoval);
-  const done = () => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
+  const { leaving, leave } = useLeave();
+  // Decided: the card leaves its place first, then the queue refetches without it.
+  const done = () => leave(() => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey }));
   const decide = useMutation({
     mutationFn: (d: Parameters<typeof decideCase>[0]["data"]) => decideCase({ data: d }),
     onSuccess: (r) => {
@@ -275,146 +279,148 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
   };
 
   return (
-    <article className={panel} aria-labelledby={`caso-${c.id}`}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline">{REASON_LABEL[c.reason]}</Badge>
-        {c.target === "item" &&
-          c.flags.map((f) => (
-            <Badge key={f} variant="secondary">
-              {FLAG_LABEL[f]}
-            </Badge>
-          ))}
-        <span className="ml-auto text-xs text-muted-foreground">
-          {c.target === "photo" ? "Quem enviou" : c.target === "update" ? "Quem escreveu" : "Autor"}{" "}
-          <span className="font-mono">{c.handle}</span>
-          {c.priorRefusals > 0 && ` · ${c.priorRefusals} ${c.priorRefusals === 1 ? "recusa" : "recusas"} antes`}
-        </span>
-      </div>
-
-      {c.target === "photo" && (
-        <div className="grid gap-3.5 compact:grid-cols-2">
-          <span className="grid content-start gap-1.5">
-            <CasePhoto photo={c.photo} shield={shield} className="aspect-4/3" />
-            <ScreenTags screen={c.photo.screen} />
+    <QueueRow leaving={leaving}>
+      <article className={panel} aria-labelledby={`caso-${c.id}`}>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline">{REASON_LABEL[c.reason]}</Badge>
+          {c.target === "item" &&
+            c.flags.map((f) => (
+              <Badge key={f} variant="secondary">
+                {FLAG_LABEL[f]}
+              </Badge>
+            ))}
+          <span className="ml-auto text-xs text-muted-foreground">
+            {c.target === "photo" ? "Quem enviou" : c.target === "update" ? "Quem escreveu" : "Autor"}{" "}
+            <span className="font-mono">{c.handle}</span>
+            {c.priorRefusals > 0 && ` · ${c.priorRefusals} ${c.priorRefusals === 1 ? "recusa" : "recusas"} antes`}
           </span>
-          <PinContext c={c} muni={muni} full={false} />
         </div>
-      )}
-      {c.target === "update" && (
-        <div className="grid gap-3">
-          <blockquote className="grid gap-1 rounded-xl border border-hairline bg-muted p-3.5">
-            <p className="text-xs text-muted-foreground">
-              <b className="font-semibold text-foreground">{c.update.actor}</b>, na história do registro
-            </p>
-            <p className="text-sm leading-relaxed text-pretty break-words">{c.update.text}</p>
-          </blockquote>
-          <PinContext c={c} muni={muni} full={false} />
-        </div>
-      )}
-      {c.target === "item" && (
-        <div className="grid gap-3.5">
-          {c.photos.length > 0 && (
-            <div className="flex gap-2 overflow-x-auto">
-              {c.photos.map((p) => (
-                <CasePhoto key={p.id} photo={p} shield={shield} className="size-24 shrink-0" />
-              ))}
-            </div>
-          )}
-          <PinContext c={c} muni={muni} full />
-        </div>
-      )}
 
-      {c.reports && <Reports reports={c.reports} />}
-
-      {c.contest && (
-        <section className="grid gap-1 rounded-xl border border-dashed border-hairline-strong p-3">
-          <h4 className="text-sm font-semibold">Contestação</h4>
-          {c.decided?.note && <p className="text-xs text-muted-foreground">Decisão: {c.decided.note}</p>}
-          <p className="text-sm text-pretty text-ink-2">“{c.contest.text}”</p>
-        </section>
-      )}
-
-      {step === "reject" ? (
-        <RemovalNote id={`nota-${c.id}`} value={removal} onChange={setRemoval} />
-      ) : step ? (
-        <div className="grid gap-2">
-          <label htmlFor={`nota-${c.id}`} className="text-sm font-medium">
-            {step === "republish"
-              ? "O que pedir a quem publicou"
-              : step === "overturn"
-                ? "Por que voltar atrás"
-                : "Motivo"}
-          </label>
-          <Textarea
-            id={`nota-${c.id}`}
-            value={note}
-            maxLength={280}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder={
-              step === "republish"
-                ? "Ex.: propaganda eleitoral não sai como Anônimo; publique assinado com seu apelido."
-                : "Ex.: a pessoa ao fundo não dá para reconhecer."
-            }
-          />
-          <p className="text-xs text-muted-foreground">Aparece para quem publicou e no histórico do registro.</p>
-        </div>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        {step ? (
-          <>
-            <Button
-              size="sm"
-              variant={step === "reject" ? "destructive" : "default"}
-              disabled={busy}
-              onClick={submitNote}
-            >
-              {busy && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
-              {step === "reject"
-                ? removeLabel
-                : step === "republish"
-                  ? "Pedir republicação"
-                  : step === "overturn"
-                    ? "Aceitar e devolver"
-                    : "Manter a decisão"}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setStep(null)}>
-              Cancelar
-            </Button>
-          </>
-        ) : c.contest && c.decidedByYou ? (
-          <p className="text-xs text-muted-foreground">
-            Você decidiu este caso: a contestação fica para outra pessoa da moderação.
-          </p>
-        ) : c.contest ? (
-          <>
-            <Button size="sm" onClick={() => setStep("overturn")}>
-              Aceitar e devolver
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setStep("uphold")}>
-              Manter a decisão
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button size="sm" disabled={busy} onClick={() => decide.mutate({ caseId: c.id, decision: "publish" })}>
-              {decide.isPending && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
-              {held ? "Publicar" : "Manter no ar"}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setStep("reject")}>
-              {removeLabel}
-            </Button>
-            {c.target === "item" && c.flags.includes("electoral") && c.item.visibility === "anonymous" && (
-              <Button size="sm" variant="outline" onClick={() => setStep("republish")}>
-                Pedir assinatura
-              </Button>
-            )}
-          </>
+        {c.target === "photo" && (
+          <div className="grid gap-3.5 compact:grid-cols-2">
+            <span className="grid content-start gap-1.5">
+              <CasePhoto photo={c.photo} shield={shield} className="aspect-4/3" />
+              <ScreenTags screen={c.photo.screen} />
+            </span>
+            <PinContext c={c} muni={muni} full={false} />
+          </div>
         )}
-      </div>
-      {!c.contest && <EscalateAction caseId={c.id} />}
-      {!c.decidedByYou && <SanctionActions caseId={c.id} />}
-    </article>
+        {c.target === "update" && (
+          <div className="grid gap-3">
+            <blockquote className="grid gap-1 rounded-xl border border-hairline bg-muted p-3.5">
+              <p className="text-xs text-muted-foreground">
+                <b className="font-semibold text-foreground">{c.update.actor}</b>, na história do registro
+              </p>
+              <p className="text-sm leading-relaxed text-pretty break-words">{c.update.text}</p>
+            </blockquote>
+            <PinContext c={c} muni={muni} full={false} />
+          </div>
+        )}
+        {c.target === "item" && (
+          <div className="grid gap-3.5">
+            {c.photos.length > 0 && (
+              <div className="flex gap-2 overflow-x-auto">
+                {c.photos.map((p) => (
+                  <CasePhoto key={p.id} photo={p} shield={shield} className="size-24 shrink-0" />
+                ))}
+              </div>
+            )}
+            <PinContext c={c} muni={muni} full />
+          </div>
+        )}
+
+        {c.reports && <Reports reports={c.reports} />}
+
+        {c.contest && (
+          <section className="grid gap-1 rounded-xl border border-dashed border-hairline-strong p-3">
+            <h4 className="text-sm font-semibold">Contestação</h4>
+            {c.decided?.note && <p className="text-xs text-muted-foreground">Decisão: {c.decided.note}</p>}
+            <p className="text-sm text-pretty text-ink-2">“{c.contest.text}”</p>
+          </section>
+        )}
+
+        {step === "reject" ? (
+          <RemovalNote id={`nota-${c.id}`} value={removal} onChange={setRemoval} />
+        ) : step ? (
+          <div className="grid gap-2">
+            <label htmlFor={`nota-${c.id}`} className="text-sm font-medium">
+              {step === "republish"
+                ? "O que pedir a quem publicou"
+                : step === "overturn"
+                  ? "Por que voltar atrás"
+                  : "Motivo"}
+            </label>
+            <Textarea
+              id={`nota-${c.id}`}
+              value={note}
+              maxLength={280}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder={
+                step === "republish"
+                  ? "Ex.: propaganda eleitoral não sai como Anônimo; publique assinado com seu apelido."
+                  : "Ex.: a pessoa ao fundo não dá para reconhecer."
+              }
+            />
+            <p className="text-xs text-muted-foreground">Aparece para quem publicou e no histórico do registro.</p>
+          </div>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2">
+          {step ? (
+            <>
+              <Button
+                size="sm"
+                variant={step === "reject" ? "destructive" : "default"}
+                disabled={busy}
+                onClick={submitNote}
+              >
+                {busy && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
+                {step === "reject"
+                  ? removeLabel
+                  : step === "republish"
+                    ? "Pedir republicação"
+                    : step === "overturn"
+                      ? "Aceitar e devolver"
+                      : "Manter a decisão"}
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setStep(null)}>
+                Cancelar
+              </Button>
+            </>
+          ) : c.contest && c.decidedByYou ? (
+            <p className="text-xs text-muted-foreground">
+              Você decidiu este caso: a contestação fica para outra pessoa da moderação.
+            </p>
+          ) : c.contest ? (
+            <>
+              <Button size="sm" onClick={() => setStep("overturn")}>
+                Aceitar e devolver
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setStep("uphold")}>
+                Manter a decisão
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" disabled={busy} onClick={() => decide.mutate({ caseId: c.id, decision: "publish" })}>
+                {decide.isPending && <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />}
+                {held ? "Publicar" : "Manter no ar"}
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setStep("reject")}>
+                {removeLabel}
+              </Button>
+              {c.target === "item" && c.flags.includes("electoral") && c.item.visibility === "anonymous" && (
+                <Button size="sm" variant="outline" onClick={() => setStep("republish")}>
+                  Pedir assinatura
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+        {!c.contest && <EscalateAction caseId={c.id} onDone={done} />}
+        {!c.decidedByYou && <SanctionActions caseId={c.id} />}
+      </article>
+    </QueueRow>
   );
 }
 
@@ -426,6 +432,8 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
   const queryClient = useQueryClient();
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set());
   const [removal, setRemoval] = useState<Removal>(emptyRemoval);
+  const { leaving, leave } = useLeave();
+  const refetch = () => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
   const first = cases[0];
   const decide = useMutation({
     mutationFn: async () => {
@@ -441,10 +449,14 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
       const failed = results.find((r) => !r.ok);
       if (failed && !failed.ok) throw new Error(failed.error);
     },
-    onSuccess: () =>
-      toast(removed.size ? "Decisão registrada." : cases.length === 1 ? "Foto aprovada." : "Fotos aprovadas."),
-    onError: (e) => toast(e.message),
-    onSettled: () => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey }),
+    onSuccess: () => {
+      toast(removed.size ? "Decisão registrada." : cases.length === 1 ? "Foto aprovada." : "Fotos aprovadas.");
+      leave(refetch);
+    },
+    onError: (e) => {
+      toast(e.message);
+      refetch();
+    },
   });
   if (!first) return null;
   const toggle = (id: string) =>
@@ -455,99 +467,104 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
     });
   const removing = removed.size > 0;
   return (
-    <article className={panel} aria-labelledby={`caso-${first.id}`}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline">
-          {cases.length === 1 ? "Foto nova" : <span className="tabular-nums">{cases.length} fotos novas</span>}
-        </Badge>
-        <span className="ml-auto text-xs text-muted-foreground">
-          Quem enviou <span className="font-mono">{first.handle}</span>
-          {first.priorRefusals > 0 &&
-            ` · ${first.priorRefusals} ${first.priorRefusals === 1 ? "recusa" : "recusas"} antes`}
-        </span>
-      </div>
-      <ul className="grid grid-cols-2 gap-2.5 compact:grid-cols-3">
-        {cases.map((c) => {
-          const out = removed.has(c.id);
-          return (
-            <li key={c.id} className="grid gap-1.5">
-              <span className={cn("relative block transition-opacity duration-200 ease-fluid", out && "opacity-45")}>
-                <CasePhoto photo={c.photo} shield={false} className="aspect-4/3" />
-                {out && (
-                  <span className="absolute inset-0 grid place-items-center">
-                    <X className="size-8 text-background drop-shadow" aria-hidden="true" />
-                  </span>
-                )}
-              </span>
-              <ScreenTags screen={c.photo.screen} />
-              <Button
-                size="sm"
-                variant={out ? "destructive" : "outline"}
-                aria-pressed={out}
-                onClick={() => toggle(c.id)}
-              >
-                {out ? "Vai sair" : "Remover"}
-              </Button>
-              <EscalateAction caseId={c.id} compact />
-            </li>
-          );
-        })}
-      </ul>
-      <PinContext c={first} muni={muni} full={false} />
-      {removing && <RemovalNote id={`nota-${first.id}`} value={removal} onChange={setRemoval} />}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          disabled={decide.isPending || (removing && removal.note.trim().length < 3)}
-          onClick={() => decide.mutate()}
-        >
-          {decide.isPending ? (
-            <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
-          ) : (
-            <Check data-icon="inline-start" aria-hidden="true" />
-          )}
-          {!removing
-            ? cases.length === 1
-              ? "Aprovar"
-              : "Aprovar todas"
-            : removed.size === cases.length
-              ? "Remover"
-              : "Remover marcadas e aprovar o resto"}
-        </Button>
-      </div>
-      <SanctionActions caseId={first.id} />
-    </article>
+    <QueueRow leaving={leaving}>
+      <article className={panel} aria-labelledby={`caso-${first.id}`}>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline">
+            {cases.length === 1 ? "Foto nova" : <span className="tabular-nums">{cases.length} fotos novas</span>}
+          </Badge>
+          <span className="ml-auto text-xs text-muted-foreground">
+            Quem enviou <span className="font-mono">{first.handle}</span>
+            {first.priorRefusals > 0 &&
+              ` · ${first.priorRefusals} ${first.priorRefusals === 1 ? "recusa" : "recusas"} antes`}
+          </span>
+        </div>
+        <ul className="grid grid-cols-2 gap-2.5 compact:grid-cols-3">
+          {cases.map((c) => {
+            const out = removed.has(c.id);
+            return (
+              <li key={c.id} className="grid gap-1.5">
+                <span className={cn("relative block transition-opacity duration-200 ease-fluid", out && "opacity-45")}>
+                  <CasePhoto photo={c.photo} shield={false} className="aspect-4/3" />
+                  {out && (
+                    <span className="absolute inset-0 grid place-items-center">
+                      <X className="size-8 text-background drop-shadow" aria-hidden="true" />
+                    </span>
+                  )}
+                </span>
+                <ScreenTags screen={c.photo.screen} />
+                <Button
+                  size="sm"
+                  variant={out ? "destructive" : "outline"}
+                  aria-pressed={out}
+                  onClick={() => toggle(c.id)}
+                >
+                  {out ? "Vai sair" : "Remover"}
+                </Button>
+                <EscalateAction caseId={c.id} compact />
+              </li>
+            );
+          })}
+        </ul>
+        <PinContext c={first} muni={muni} full={false} />
+        {removing && <RemovalNote id={`nota-${first.id}`} value={removal} onChange={setRemoval} />}
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
+            disabled={decide.isPending || (removing && removal.note.trim().length < 3)}
+            onClick={() => decide.mutate()}
+          >
+            {decide.isPending ? (
+              <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
+            ) : (
+              <Check data-icon="inline-start" aria-hidden="true" />
+            )}
+            {!removing
+              ? cases.length === 1
+                ? "Aprovar"
+                : "Aprovar todas"
+              : removed.size === cases.length
+                ? "Remover"
+                : "Remover marcadas e aprovar o resto"}
+          </Button>
+        </div>
+        <SanctionActions caseId={first.id} />
+      </article>
+    </QueueRow>
   );
 }
 
 /** A reply someone reported in a bairro board or a pin's conversation: hide it, or keep it up. */
 function ReportedPostCard({ post }: { post: ReportedPost }) {
   const queryClient = useQueryClient();
+  const { leaving, leave } = useLeave();
   const decide = useMutation({
     mutationFn: (hide: boolean) => decidePost({ data: { postId: post.id, hide } }),
     onSuccess: (r, hide) => {
       toast(r.ok ? (hide ? "Mensagem ocultada." : "Mensagem mantida.") : r.error);
-      if (r.ok) void queryClient.invalidateQueries({ queryKey: reportedPostsQuery.queryKey });
+      if (r.ok) leave(() => void queryClient.invalidateQueries({ queryKey: reportedPostsQuery.queryKey }));
     },
   });
   return (
-    <article className={panel} aria-label={`Mensagem de ${post.by}`}>
-      <div className="grid gap-1">
-        <p className="text-xs text-muted-foreground">
-          Em “{post.threadTitle}” · {post.reports} {post.reports === 1 ? "denúncia" : "denúncias"}
-        </p>
-        <p className="text-sm leading-relaxed break-words">
-          <b className="font-semibold">{post.by}</b>: {post.text}
-        </p>
-      </div>
-      <div className="flex flex-wrap gap-2">
-        <Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate(true)}>
-          Ocultar
-        </Button>
-        <Button size="sm" variant="outline" disabled={decide.isPending} onClick={() => decide.mutate(false)}>
-          Manter
-        </Button>
-      </div>
-    </article>
+    <QueueRow leaving={leaving}>
+      <article className={panel} aria-label={`Mensagem de ${post.by}`}>
+        <div className="grid gap-1">
+          <p className="text-xs text-muted-foreground">
+            Em “{post.threadTitle}” · {post.reports} {post.reports === 1 ? "denúncia" : "denúncias"}
+          </p>
+          <p className="text-sm leading-relaxed break-words">
+            <b className="font-semibold">{post.by}</b>: {post.text}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" disabled={decide.isPending} onClick={() => decide.mutate(true)}>
+            Ocultar
+          </Button>
+          <Button size="sm" variant="outline" disabled={decide.isPending} onClick={() => decide.mutate(false)}>
+            Manter
+          </Button>
+        </div>
+      </article>
+    </QueueRow>
   );
 }

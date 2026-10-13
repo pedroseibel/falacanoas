@@ -17,7 +17,7 @@ export function Thumb({ file, index, onRemove }: { file: File; index: number; on
     [file],
   );
   return (
-    <li className="relative size-20 overflow-hidden rounded-lg border border-hairline bg-panel-3">
+    <li className="relative size-20 overflow-hidden rounded-lg border border-hairline bg-panel-3 transition duration-200 ease-fluid starting:scale-96 starting:opacity-0 motion-reduce:starting:scale-100">
       <img ref={preview} alt={`Foto ${index + 1}`} className="size-full object-cover" />
       <Button
         type="button"

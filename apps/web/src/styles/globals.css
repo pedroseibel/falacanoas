@@ -283,3 +283,48 @@
     color: var(--paper);
   }
 }
+
+/*
+ * A decided moderation case leaves its place in the queue (round 19): the card fades and settles
+ * back (140 ms), then its row closes (180 ms), so the next case slides up instead of jumping into
+ * the moderator's eye line. Reduced motion: a 120 ms fade, no movement.
+ */
+@layer components {
+  .queue-row {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition:
+      grid-template-rows 180ms var(--ease-fluid) 140ms,
+      margin-bottom 180ms var(--ease-fluid) 140ms;
+  }
+  .queue-row > * {
+    min-height: 0;
+    transition:
+      opacity 140ms var(--ease-fluid),
+      scale 140ms var(--ease-fluid);
+  }
+  .queue-row[data-leaving] {
+    grid-template-rows: 0fr;
+    /* The queue's gap (gap-3, in a flex column) closes with the row, so nothing snaps when the card is finally gone. */
+    margin-bottom: -0.75rem;
+  }
+  .queue-row[data-leaving] > * {
+    overflow: hidden;
+    opacity: 0;
+    scale: 0.98;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* Fade in place, then close without moving. */
+    .queue-row {
+      transition:
+        grid-template-rows 0s 120ms,
+        margin-bottom 0s 120ms;
+    }
+    .queue-row > * {
+      transition: opacity 120ms ease;
+    }
+    .queue-row[data-leaving] > * {
+      scale: 1;
+    }
+  }
+}

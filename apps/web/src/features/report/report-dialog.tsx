@@ -1,9 +1,10 @@
 import type { Item, Municipality } from "@fala/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "@tanstack/react-store";
-import { Check, Copy, Map as MapIcon, Share2 } from "lucide-react";
+import { Copy, Map as MapIcon, Share2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { SuccessMark } from "@/components/success-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -109,6 +110,28 @@ function ReportFlow({
   );
 }
 
+/**
+ * The pin's new code, its characters rising one after another just after the check lands: the
+ * moment a problem goes on the map. One copy of the text, so selecting and copying it gives the code
+ * once.
+ */
+function RisingCode({ code }: { code: string }) {
+  return (
+    <span className="font-mono text-3xl leading-none font-medium tracking-tight">
+      {[...code].map((c, i) => (
+        <span
+          // oxlint-disable-next-line no-array-index-key -- a code's characters repeat; their place is their identity
+          key={i}
+          className="inline-block transition duration-260 ease-fluid starting:translate-y-1.5 starting:opacity-0 motion-reduce:starting:translate-y-0"
+          style={{ transitionDelay: `${120 + i * 40}ms` }}
+        >
+          {c}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 async function share(item: Item) {
   const data = { title: item.title, text: `${item.title} · Fala, Canoas`, url: `${location.origin}/o/${item.id}` };
   if (typeof navigator.canShare === "function" && navigator.canShare(data)) {
@@ -149,12 +172,10 @@ function ReportDone({
       <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
         <div className="grid gap-3 rounded-xl border border-hairline bg-muted p-4">
           <div className="flex items-center gap-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-              <Check className="size-5" aria-hidden="true" />
-            </span>
+            <SuccessMark />
             <span className="grid gap-1">
               <span className="text-caption text-muted-foreground">Código do registro</span>
-              <span className="font-mono text-3xl leading-none font-medium tracking-tight">{item.id}</span>
+              <RisingCode code={item.id} />
             </span>
           </div>
           <p className="border-t border-hairline pt-3 text-sm text-ink-2">
@@ -236,12 +257,10 @@ function GuestDone({
       <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
         <div className="grid gap-3 rounded-xl border border-hairline bg-muted p-4">
           <div className="flex items-center gap-3.5">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground">
-              <Check className="size-5" aria-hidden="true" />
-            </span>
+            <SuccessMark />
             <span className="grid gap-1">
               <span className="text-caption text-muted-foreground">Código do registro</span>
-              <span className="font-mono text-3xl leading-none font-medium tracking-tight">{item.id}</span>
+              <RisingCode code={item.id} />
             </span>
           </div>
           <p className="border-t border-hairline pt-3 text-sm text-ink-2">

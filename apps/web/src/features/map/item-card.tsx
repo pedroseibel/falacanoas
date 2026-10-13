@@ -39,7 +39,8 @@ export function ItemCard({
       onPointerEnter={() => onHover?.(it.id)}
       onPointerLeave={() => onHover?.(null)}
       className={cn(
-        "flex w-full gap-3 rounded-xl border p-2.5 text-left transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/50",
+        // A press answers at once, barely (tens of taps a day): 99%, back on release.
+        "flex w-full gap-3 rounded-xl border p-2.5 text-left transition duration-160 ease-fluid outline-none focus-visible:ring-3 focus-visible:ring-ring/50 active:scale-99 motion-reduce:active:scale-100",
         layout === "rail"
           ? "w-80 shrink-0 snap-start border-hairline bg-card shadow-float"
           : "border-transparent hover:bg-muted",

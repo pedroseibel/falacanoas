@@ -1,8 +1,9 @@
 import { CONTENT_REPORT_ACTION, REPORT_REASON, ReportReasonSchema, type ReportReason } from "@fala/core";
 import { useMutation } from "@tanstack/react-query";
 import { useSelector } from "@tanstack/react-store";
-import { Check, EyeOff, Loader2 } from "lucide-react";
+import { EyeOff, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { SuccessMark } from "@/components/success-mark";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
@@ -128,9 +129,7 @@ function ReportFlow({
               : "A moderação do bairro vai olhar. Se sair do ar, o histórico do registro mostra o motivo."}
         </Header>
         <div className="grid place-items-center px-5 py-8">
-          <span className="grid size-12 place-items-center rounded-full bg-primary text-primary-foreground">
-            <Check className="size-6" aria-hidden="true" />
-          </span>
+          <SuccessMark size="lg" />
         </div>
         <div className={footer}>
           <Button size={size} onClick={closeContentReport}>

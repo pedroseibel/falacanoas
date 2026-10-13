@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { sanctionQueueQuery } from "@/lib/city";
+import { QueueRow, useLeave } from "./leave";
 import { decideSuspension, resolveSanctionContest, sanctionFromCase, type QueueSanction } from "@/server/sanctions";
 
 const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-soft";
@@ -90,9 +91,10 @@ export function SanctionActions({ caseId }: { caseId: string }) {
 export function SanctionCard({ s }: { s: QueueSanction }) {
   const queryClient = useQueryClient();
   const [note, setNote] = useState("");
+  const { leaving, leave } = useLeave();
   const done = (message: string) => {
     toast(message);
-    void queryClient.invalidateQueries({ queryKey: sanctionQueueQuery.queryKey });
+    leave(() => void queryClient.invalidateQueries({ queryKey: sanctionQueueQuery.queryKey }));
   };
   const confirm = useMutation({
     mutationFn: (yes: boolean) =>
@@ -106,64 +108,67 @@ export function SanctionCard({ s }: { s: QueueSanction }) {
   const busy = confirm.isPending || review.isPending;
   const contest = s.waiting === "contest";
   return (
-    <article className={panel} aria-label={`Sanção ${s.handle}`}>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="outline">{contest ? `${KIND_LABEL[s.kind]} · contestação` : "Suspensão a confirmar"}</Badge>
-        <span className="ml-auto text-xs text-muted-foreground">
-          Conta <span className="font-mono">{s.handle}</span> · <span className="tabular-nums">{s.recentRemovals}</span>{" "}
-          {s.recentRemovals === 1 ? "remoção" : "remoções"} em 30 dias
-        </span>
-      </div>
-      <div className="grid gap-1">
-        <p className="text-sm text-pretty">{s.reason}</p>
-        <p className="text-xs text-muted-foreground">
-          Sanção {SOURCE_LABEL[s.source]} · {contest ? `até ${day(s.until)}` : "90 dias a partir da confirmação"}
-        </p>
-      </div>
-      {s.contest && (
-        <section className="grid gap-1 rounded-xl border border-dashed border-hairline-strong p-3">
-          <h3 className="text-sm font-semibold">Contestação</h3>
-          <p className="text-sm text-pretty text-ink-2">“{s.contest.text}”</p>
-        </section>
-      )}
-      <div className="grid gap-2">
-        <label htmlFor={`sancao-nota-${s.id}`} className="text-sm font-medium">
-          {contest ? "Motivo da decisão" : "Nota (opcional)"}
-        </label>
-        <Textarea
-          id={`sancao-nota-${s.id}`}
-          value={note}
-          maxLength={280}
-          onChange={(e) => setNote(e.target.value)}
-          placeholder={contest ? "Aparece para a pessoa." : "Ex.: as remoções foram por fotos ruins, não por abuso."}
-        />
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {contest ? (
-          <>
-            <Button size="sm" disabled={busy || note.trim().length < 3} onClick={() => review.mutate(true)}>
-              Retirar a sanção
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={busy || note.trim().length < 3}
-              onClick={() => review.mutate(false)}
-            >
-              Manter
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button size="sm" variant="destructive" disabled={busy} onClick={() => confirm.mutate(true)}>
-              Confirmar suspensão
-            </Button>
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => confirm.mutate(false)}>
-              Recusar
-            </Button>
-          </>
+    <QueueRow leaving={leaving}>
+      <article className={panel} aria-label={`Sanção ${s.handle}`}>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Badge variant="outline">{contest ? `${KIND_LABEL[s.kind]} · contestação` : "Suspensão a confirmar"}</Badge>
+          <span className="ml-auto text-xs text-muted-foreground">
+            Conta <span className="font-mono">{s.handle}</span> ·{" "}
+            <span className="tabular-nums">{s.recentRemovals}</span> {s.recentRemovals === 1 ? "remoção" : "remoções"}{" "}
+            em 30 dias
+          </span>
+        </div>
+        <div className="grid gap-1">
+          <p className="text-sm text-pretty">{s.reason}</p>
+          <p className="text-xs text-muted-foreground">
+            Sanção {SOURCE_LABEL[s.source]} · {contest ? `até ${day(s.until)}` : "90 dias a partir da confirmação"}
+          </p>
+        </div>
+        {s.contest && (
+          <section className="grid gap-1 rounded-xl border border-dashed border-hairline-strong p-3">
+            <h3 className="text-sm font-semibold">Contestação</h3>
+            <p className="text-sm text-pretty text-ink-2">“{s.contest.text}”</p>
+          </section>
         )}
-      </div>
-    </article>
+        <div className="grid gap-2">
+          <label htmlFor={`sancao-nota-${s.id}`} className="text-sm font-medium">
+            {contest ? "Motivo da decisão" : "Nota (opcional)"}
+          </label>
+          <Textarea
+            id={`sancao-nota-${s.id}`}
+            value={note}
+            maxLength={280}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={contest ? "Aparece para a pessoa." : "Ex.: as remoções foram por fotos ruins, não por abuso."}
+          />
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {contest ? (
+            <>
+              <Button size="sm" disabled={busy || note.trim().length < 3} onClick={() => review.mutate(true)}>
+                Retirar a sanção
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busy || note.trim().length < 3}
+                onClick={() => review.mutate(false)}
+              >
+                Manter
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button size="sm" variant="destructive" disabled={busy} onClick={() => confirm.mutate(true)}>
+                Confirmar suspensão
+              </Button>
+              <Button size="sm" variant="outline" disabled={busy} onClick={() => confirm.mutate(false)}>
+                Recusar
+              </Button>
+            </>
+          )}
+        </div>
+      </article>
+    </QueueRow>
   );
 }

@@ -17,14 +17,25 @@ const ESCALATE_SHORT = "Sai do ar e fica só para as autoridades; a conta é sus
  * "Abuso sexual infantil" under a case: two steps, so it's never one slip of the finger, and nothing
  * to look at afterwards. The material leaves the queue for the controller's hands.
  */
-export function EscalateAction({ caseId, compact = false }: { caseId: string; compact?: boolean }) {
+export function EscalateAction({
+  caseId,
+  compact = false,
+  onDone,
+}: {
+  caseId: string;
+  compact?: boolean;
+  /** What happens once it's handed on; by default the queue refetches. */
+  onDone?: () => void;
+}) {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const send = useMutation({
     mutationFn: () => escalateChildAbuse({ data: { caseId } }),
     onSuccess: (r) => {
       toast(r.ok ? "Removido e encaminhado à equipe responsável." : r.error);
-      if (r.ok) void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
+      if (!r.ok) return;
+      if (onDone) onDone();
+      else void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
     },
   });
   if (!open)
