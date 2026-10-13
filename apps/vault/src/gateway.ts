@@ -68,10 +68,39 @@ export interface VaultStore {
   linkOf(accountId: string): Promise<(Link & { phoneSealed: string }) | null>;
   /** Closing the account: its phone is unlinked, and the 6-month deletion takes it from there. */
   unlinkAccount(accountId: string, at: Date): Promise<void>;
+  /** A number change's ticket (its hash), replacing any earlier one for the account. */
+  putChange(change: { accountId: string; ticketHash: string; expiresAt: Date }): Promise<void>;
+  findChange(ticketHash: string): Promise<Change | null>;
+  /** A code went out under this change. */
+  countChangeSend(accountId: string): Promise<void>;
+  /**
+   * In one transaction: unlink `unlink`, link the new number to the account, and mark the change
+   * done with the new number's hint.
+   */
+  completeChange(input: {
+    accountId: string;
+    unlink: string[];
+    phoneMac: string;
+    phoneSealed: string;
+    keyVersion: number;
+    hint: string;
+    at: Date;
+  }): Promise<void>;
+  /** The account's finished change, removed as it's read. */
+  takeChange(accountId: string): Promise<{ hint: string; completedAt: Date } | null>;
+}
+
+export interface Change {
+  accountId: string;
+  expiresAt: Date;
+  sends: number;
+  completedAt: Date | null;
 }
 
 export interface Outbox {
   deliver(phone: string, code: string): Promise<void>;
+  /** A plain notice, no code: that the account's number was changed. */
+  notice(phone: string, text: string): Promise<void>;
 }
 
 export type Human = (token: string, ip: string | null) => Promise<boolean>;
@@ -87,7 +116,7 @@ export interface Gateway {
   signingKey: CryptoKey;
 }
 
-async function allowed(store: VaultStore, key: string, windows: Window[], now: Date): Promise<boolean> {
+export async function allowed(store: VaultStore, key: string, windows: Window[], now: Date): Promise<boolean> {
   const longest = Math.max(...windows.map((w) => w.ms));
   const past = await store.hitsSince(key, new Date(now.getTime() - longest));
   if (

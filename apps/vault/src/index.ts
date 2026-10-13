@@ -1,4 +1,5 @@
 import {
+  connectionFromHeaders,
   ConnectionSchema,
   EvidenceActionSchema,
   DATA_REQUEST_ACTION,
@@ -10,6 +11,7 @@ import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
 import { importVaultKeys, type VaultKeys } from "./crypto";
 import { closeAccount, sendCode, sendReauthCode, verifyCode, type Gateway, type Outbox } from "./gateway";
+import { beginChange, sendChangeCode, takeChange, verifyChangeCode } from "./number-change";
 import { outbox, peekDevCode } from "./outbox";
 import { openStore } from "./store";
 import { turnstile } from "./turnstile";
@@ -37,9 +39,27 @@ const importKeys = (env: Env) =>
     ([keys, signingKey]) => ({ keys, signingKey }),
   ));
 
-const BodySchema = z.object({ telefone: z.unknown(), token: z.unknown(), codigo: z.unknown() }).partial();
+const BodySchema = z
+  .object({ telefone: z.unknown(), token: z.unknown(), codigo: z.unknown(), ticket: z.unknown() })
+  .partial();
 
-const STATUS = { invalid: 400, robot: 403, rate: 429, send: 503 } satisfies Record<string, number>;
+const STATUS = {
+  invalid: 400,
+  robot: 403,
+  expired: 410,
+  same: 409,
+  taken: 409,
+  rate: 429,
+  send: 503,
+} satisfies Record<string, number>;
+
+const ACTIONS = {
+  "/api/identidade/codigo": "send",
+  "/api/identidade/verificar": "verify",
+  "/api/identidade/troca/codigo": "change-send",
+  "/api/identidade/troca/verificar": "change-verify",
+} satisfies Record<string, string>;
+const isRoute = (path: string): path is keyof typeof ACTIONS => path in ACTIONS;
 
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
@@ -61,13 +81,8 @@ export default class Vault extends WorkerEntrypoint<Env> {
     }
     if (request.method !== "POST") return json({ ok: false }, 404);
 
-    const action =
-      url.pathname === "/api/identidade/codigo"
-        ? "send"
-        : url.pathname === "/api/identidade/verificar"
-          ? "verify"
-          : null;
-    if (!action) return json({ ok: false }, 404);
+    if (!isRoute(url.pathname)) return json({ ok: false }, 404);
+    const action = ACTIONS[url.pathname];
     const body = BodySchema.safeParse(await request.json().catch(() => null));
     const input = body.success ? body.data : {};
     const ip = request.headers.get("cf-connecting-ip");
@@ -80,8 +95,25 @@ export default class Vault extends WorkerEntrypoint<Env> {
         const r = await sendCode(g, { phone: input.telefone, token: input.token, ip, now });
         return r.ok ? json({ ok: true }) : json(r, STATUS[r.error]);
       }
-      const r = await verifyCode(g, { phone: input.telefone, code: input.codigo, ip, now });
-      return r.ok ? json({ ok: true, assertion: r.assertion }) : json(r, STATUS[r.error]);
+      if (action === "verify") {
+        const r = await verifyCode(g, { phone: input.telefone, code: input.codigo, ip, now });
+        return r.ok ? json({ ok: true, assertion: r.assertion }) : json(r, STATUS[r.error]);
+      }
+      // Changing number (round 18, Q20): the ticket stands for the re-authentication the app checked.
+      if (action === "change-send") {
+        const r = await sendChangeCode(g, { ticket: input.ticket, phone: input.telefone, ip, now });
+        return r.ok ? json({ ok: true }) : json(r, STATUS[r.error]);
+      }
+      const r = await verifyChangeCode(g, { ticket: input.ticket, phone: input.telefone, code: input.codigo, ip, now });
+      if (!r.ok) return json(r, STATUS[r.error]);
+      await db.recordEvidence({
+        action: "phone_changed",
+        accountId: r.accountId,
+        itemId: null,
+        connection: connectionFromHeaders(request.headers),
+        at: now,
+      });
+      return json({ ok: true });
     } finally {
       this.ctx.waitUntil(db.close());
     }
@@ -117,6 +149,7 @@ export default class Vault extends WorkerEntrypoint<Env> {
           await base.deliver(phone, code);
           sent = code;
         },
+        notice: (phone, text) => base.notice(phone, text),
       });
       const r = await sendReauthCode(g, { accountId: id, now: new Date() });
       return r.ok ? { ...r, devCode: development ? sent : null } : r;
@@ -145,6 +178,41 @@ export default class Vault extends WorkerEntrypoint<Env> {
           at: now,
         });
       return r;
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  /**
+   * RPC: starts a number change once the person re-authenticated, by the code to their number or by
+   * signing in moments ago (`fresh`, which the app checked). The ticket goes to the browser, which
+   * brings it here with the new number.
+   */
+  async beginChange(
+    accountId: unknown,
+    code: unknown,
+    fresh: unknown,
+  ): Promise<{ ok: true; ticket: string } | { ok: false; error: "invalid" }> {
+    const id = z.uuid().parse(accountId);
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      return await beginChange(await this.gateway(db.store), {
+        accountId: id,
+        code,
+        fresh: fresh === true,
+        now: new Date(),
+      });
+    } finally {
+      this.ctx.waitUntil(db.close());
+    }
+  }
+
+  /** RPC: the account's finished change (the new hint and when), read once, for the app to update and end other sessions. */
+  async takeChange(accountId: unknown): Promise<{ hint: string; verifiedAt: Date } | null> {
+    const id = z.uuid().parse(accountId);
+    const db = await openStore(this.env.VAULT_DATABASE_URL);
+    try {
+      return await takeChange(await this.gateway(db.store), { accountId: id, now: new Date() });
     } finally {
       this.ctx.waitUntil(db.close());
     }

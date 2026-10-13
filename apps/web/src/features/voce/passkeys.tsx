@@ -1,5 +1,5 @@
 import { localStamp } from "@fala/core";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -8,6 +8,16 @@ import { authClient } from "@/lib/auth-client";
 
 const passkeysKey = ["passkeys"];
 
+/** The account's passkeys (Better Auth's list), shared with the number change's re-authentication. */
+export const passkeysQuery = queryOptions({
+  queryKey: passkeysKey,
+  queryFn: async () => {
+    const r = await authClient.passkey.listUserPasskeys();
+    if (r.error) throw new Error(r.error.message);
+    return r.data ?? [];
+  },
+});
+
 /**
  * Passkeys (DECISIONS round 18, Q15 and Q26): optional, after the first phone sign-in. The phone stays
  * the account's link; a passkey is how a dormant account reopens once its number may have been reused.
@@ -15,14 +25,7 @@ const passkeysKey = ["passkeys"];
 export function Passkeys({ nick, timezone }: { nick: string | null; timezone: string }) {
   const queryClient = useQueryClient();
   const supported = usePasskeySupport();
-  const list = useQuery({
-    queryKey: passkeysKey,
-    queryFn: async () => {
-      const r = await authClient.passkey.listUserPasskeys();
-      if (r.error) throw new Error(r.error.message);
-      return r.data ?? [];
-    },
-  });
+  const list = useQuery(passkeysQuery);
   const add = useMutation({
     mutationFn: async () => {
       // The name is what the phone's passkey manager shows for this account: the apelido, never the

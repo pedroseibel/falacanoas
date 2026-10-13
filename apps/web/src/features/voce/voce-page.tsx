@@ -11,6 +11,7 @@ import { followingQuery, isModeratorQuery } from "@/lib/city";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
 import { Following } from "./following";
+import { ChangeNumber } from "./change-number";
 import { CloseAccount } from "./close-account";
 import { DownloadData } from "./download-data";
 import { Passkeys } from "./passkeys";
@@ -70,6 +71,7 @@ export function VocePage({
   onSignOut,
   onModerate,
   onClosed,
+  onNumberChanged,
   requestPath,
   onRequest,
 }: {
@@ -83,6 +85,8 @@ export function VocePage({
   onModerate: () => void;
   /** The account was closed: signed out everywhere. */
   onClosed: () => void;
+  /** The number changed: the account shows the new hint; other sessions ended. */
+  onNumberChanged: (hint: string) => void;
   /** The data-subject channel: a real link, which a plain click follows inside the app. */
   requestPath: string;
   onRequest: (e: MouseEvent<HTMLAnchorElement>) => void;
@@ -125,6 +129,17 @@ export function VocePage({
               </div>
               <Levels account={account} timezone={muni.timezone} />
               <Passkeys nick={nick} timezone={muni.timezone} />
+              {account.phoneVerified && (
+                <section aria-labelledby="cel-t" className="grid gap-2.5">
+                  <h3 id="cel-t" className="text-sm font-semibold">
+                    Celular
+                  </h3>
+                  <p className="text-sm text-pretty text-ink-2">
+                    Vai trocar de número? Troque aqui enquanto o antigo ainda recebe mensagens, ou com a sua passkey.
+                  </p>
+                  <ChangeNumber hint={account.phone} onChanged={onNumberChanged} />
+                </section>
+              )}
               <Button variant="ghost" size="sm" className="justify-self-start" onClick={onSignOut}>
                 <LogOut data-icon="inline-start" />
                 Sair

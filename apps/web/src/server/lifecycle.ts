@@ -2,13 +2,13 @@ import { connectionFromHeaders } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeaders } from "@tanstack/react-start/server";
 import { env } from "cloudflare:workers";
-import { eq } from "drizzle-orm";
+import { and, eq, ne } from "drizzle-orm";
 import { TransactionRollbackError } from "drizzle-orm/errors";
 import { z } from "zod";
 import { auth } from "./auth";
 import { collectMyData, type MyData } from "./data-export";
 import { db } from "./db/client";
-import { nickReservations, users } from "./db/schema";
+import { nickReservations, sessions, users } from "./db/schema";
 import type { Failure } from "./member";
 import { getSession } from "./session";
 
@@ -88,3 +88,57 @@ export const exportMyData = createServerFn({ method: "GET" }).handler(async (): 
   const user = await phoneAccount();
   return user ? collectMyData(user.id) : null;
 });
+
+/** A sign-in this recent counts as re-authentication (a passkey's included): no code needed. */
+const RECENT_SIGN_IN_MS = 5 * 60_000;
+
+export type ChangeStart = (Failure & { reauth?: true }) | { ok: true; ticket: string };
+
+/**
+ * Starts changing the number (round 18, Q20): with the code just sent to the current number, or
+ * with none if the session is minutes old. The ticket goes to the browser, which takes it and the new
+ * number to the vault: the app never sees the new number either.
+ */
+export const startNumberChange = createServerFn({ method: "POST" })
+  .inputValidator(
+    z.object({
+      code: z
+        .string()
+        .regex(/^\d{6}$/)
+        .nullable(),
+    }),
+  )
+  .handler(async ({ data }): Promise<ChangeStart> => {
+    const s = await getSession();
+    const user = s?.user;
+    if (!s || !user || user.isAnonymous || !user.phoneVerifiedAt)
+      return { ok: false, error: "Entre com o seu celular primeiro." };
+    if (!env.VAULT) return { ok: false, error: UNAVAILABLE };
+    const fresh = Date.now() - s.session.createdAt.getTime() < RECENT_SIGN_IN_MS;
+    if (!data.code && !fresh) return { ok: false, error: "Confirme que é você.", reauth: true };
+    const r = await env.VAULT.beginChange(user.id, data.code, !data.code && fresh).catch(() => null);
+    if (!r) return { ok: false, error: UNAVAILABLE };
+    return r.ok ? r : { ok: false, error: WRONG_CODE };
+  });
+
+/**
+ * Finishes the change: the vault confirmed the new number, so the account shows its hint, the 72-hour
+ * wait for confirmations starts again (as for any new number, Q17), and every other session ends.
+ */
+export const finishNumberChange = createServerFn({ method: "POST" }).handler(
+  async (): Promise<Failure | { ok: true; hint: string }> => {
+    const s = await getSession();
+    if (!s || s.user.isAnonymous) return { ok: false, error: "Entre com o seu celular primeiro." };
+    if (!env.VAULT) return { ok: false, error: UNAVAILABLE };
+    const done = await env.VAULT.takeChange(s.user.id).catch(() => null);
+    if (!done) return { ok: false, error: "A troca não terminou. Comece de novo." };
+    await db.transaction(async (tx) => {
+      await tx
+        .update(users)
+        .set({ phoneHint: done.hint, phoneVerifiedAt: done.verifiedAt, updatedAt: new Date() })
+        .where(eq(users.id, s.user.id));
+      await tx.delete(sessions).where(and(eq(sessions.userId, s.user.id), ne(sessions.id, s.session.id)));
+    });
+    return { ok: true, hint: done.hint };
+  },
+);

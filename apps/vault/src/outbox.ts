@@ -15,6 +15,10 @@ export function outbox(development: boolean): Outbox {
       devCodes.set(phone, code);
       console.info(`[dev] código de entrada para ${maskedPhone(phone)}: ${code}`);
     },
+    async notice(phone, text) {
+      if (!development) throw new Error("Nenhum provedor de WhatsApp ou SMS configurado.");
+      console.info(`[dev] aviso para ${maskedPhone(phone)}: ${text}`);
+    },
   };
 }
 

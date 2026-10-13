@@ -32,6 +32,10 @@ function VoceRoute() {
       onModerate={() => void navigate({ to: "/moderar" })}
       requestPath={request.href}
       onRequest={request.onNavigate}
+      onNumberChanged={(hint) => {
+        void queryClient.invalidateQueries({ queryKey: accountQuery.queryKey });
+        toast(`Número trocado para ${hint}. Você saiu dos outros aparelhos.`);
+      }}
       onClosed={() => {
         queryClient.setQueryData(accountQuery.queryKey, null);
         void queryClient.invalidateQueries();

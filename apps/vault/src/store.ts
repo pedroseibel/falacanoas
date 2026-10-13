@@ -4,7 +4,7 @@ import { drizzle, type NodePgDatabase } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 import type { VaultStore } from "./gateway";
 import * as schema from "./schema";
-import { accessEvidence, codes, hits, phones, preservationHolds } from "./schema";
+import { accessEvidence, codes, hits, phoneChanges, phones, preservationHolds } from "./schema";
 
 type Db = NodePgDatabase<typeof schema>;
 
@@ -124,6 +124,49 @@ export function pgStore(db: Db): VaultStore {
         .set({ unlinkedAt: at })
         .where(and(eq(phones.accountId, accountId), isNull(phones.unlinkedAt)));
     },
+    async putChange({ accountId, ticketHash, expiresAt }) {
+      await db
+        .insert(phoneChanges)
+        .values({ accountId, ticketHash, expiresAt })
+        .onConflictDoUpdate({
+          target: phoneChanges.accountId,
+          set: { ticketHash, expiresAt, sends: 0, completedAt: null, hint: null },
+        });
+    },
+    async findChange(ticketHash) {
+      const [row] = await db
+        .select({
+          accountId: phoneChanges.accountId,
+          expiresAt: phoneChanges.expiresAt,
+          sends: phoneChanges.sends,
+          completedAt: phoneChanges.completedAt,
+        })
+        .from(phoneChanges)
+        .where(eq(phoneChanges.ticketHash, ticketHash));
+      return row ?? null;
+    },
+    async countChangeSend(accountId) {
+      await db
+        .update(phoneChanges)
+        .set({ sends: sql`least(${phoneChanges.sends} + 1, 3)` })
+        .where(eq(phoneChanges.accountId, accountId));
+    },
+    async completeChange({ accountId, unlink, phoneMac, phoneSealed, keyVersion, hint, at }) {
+      await db.transaction(async (tx) => {
+        if (unlink.length) await tx.update(phones).set({ unlinkedAt: at }).where(inArray(phones.id, unlink));
+        await tx
+          .insert(phones)
+          .values({ accountId, phoneMac, phoneSealed, keyVersion, verifiedAt: at, lastSignInAt: at });
+        await tx.update(phoneChanges).set({ completedAt: at, hint }).where(eq(phoneChanges.accountId, accountId));
+      });
+    },
+    async takeChange(accountId) {
+      const [row] = await db
+        .delete(phoneChanges)
+        .where(and(eq(phoneChanges.accountId, accountId), isNotNull(phoneChanges.completedAt)))
+        .returning({ hint: phoneChanges.hint, completedAt: phoneChanges.completedAt });
+      return row?.hint && row.completedAt ? { hint: row.hint, completedAt: row.completedAt } : null;
+    },
   };
 }
 
@@ -192,6 +235,7 @@ async function purge(db: Db, now: Date): Promise<PurgeReport> {
     );
 
   await db.delete(codes).where(lt(codes.expiresAt, now));
+  await db.delete(phoneChanges).where(lt(phoneChanges.expiresAt, new Date(now.getTime() - DAY_MS)));
   await db.delete(hits).where(lt(hits.at, new Date(now.getTime() - DAY_MS)));
   return { evidence: evidence.rowCount ?? 0, links: links.rowCount ?? 0, holds: holds.length };
 }

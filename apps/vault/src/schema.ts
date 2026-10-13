@@ -54,6 +54,27 @@ export const codes = cofre
   )
   .enableRLS();
 
+/**
+ * A number change in progress (round 18, Q20), one per account: the ticket the person got after
+ * re-authenticating (only its hash), how many codes it sent, and, once the new number is verified,
+ * its masked hint for the app to pick up. Expired rows go in the daily purge.
+ */
+export const phoneChanges = cofre
+  .table(
+    "phone_changes",
+    {
+      accountId: uuid().primaryKey(),
+      ticketHash: text().notNull().unique(),
+      expiresAt: timestamp({ withTimezone: true }).notNull(),
+      sends: integer().notNull().default(0),
+      completedAt: timestamp({ withTimezone: true }),
+      /** "(51) 9…4567", for the app to show; never the number. */
+      hint: text(),
+    },
+    (t) => [check("phone_changes_sends", sql`${t.sends} between 0 and 3`)],
+  )
+  .enableRLS();
+
 /** Rate-limit hits, keyed by purpose and an HMAC of the number or the IP. Kept for a day. */
 export const hits = cofre
   .table(

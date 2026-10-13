@@ -1,5 +1,4 @@
 import { useMutation } from "@tanstack/react-query";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,11 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
-import { cn } from "@/lib/utils";
 import { closeAccount, requestReauthCode } from "@/server/lifecycle";
-
-const SLOTS = [0, 1, 2, 3, 4, 5];
+import { CodeField, DevCode } from "./code-field";
 
 /**
  * "Encerrar conta" (DECISIONS round 18, Q26): what stays and what goes, then a code to the number on
@@ -113,43 +109,15 @@ function CloseSteps({ onCancel, onClosed }: { onCancel: () => void; onClosed: ()
         </DialogDescription>
       </DialogHeader>
       <div className="grid gap-2">
-        <InputOTP
-          maxLength={6}
-          pattern={REGEXP_ONLY_DIGITS}
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          autoFocus
-          aria-label="Código de 6 números"
-          aria-describedby="encerrar-estado"
-          containerClassName="w-full"
+        <CodeField
+          id="encerrar"
           value={code}
           onChange={setCode}
+          error={close.isError ? close.error.message : null}
+          note="Depois de encerrar, não dá para desfazer."
           disabled={busy}
-        >
-          <InputOTPGroup size="fill">
-            {SLOTS.map((i) => (
-              <InputOTPSlot key={i} index={i} aria-invalid={close.isError} />
-            ))}
-          </InputOTPGroup>
-        </InputOTP>
-        <p
-          id="encerrar-estado"
-          role={close.isError ? "alert" : "status"}
-          className={cn("min-h-5 text-caption", close.isError ? "text-signal-text" : "text-muted-foreground")}
-        >
-          {close.isError ? close.error.message : "Depois de encerrar, não dá para desfazer."}
-        </p>
-        {sent.devCode && (
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-dashed border-hairline-strong px-3.5 py-2.5 text-caption text-ink-2">
-            <span>
-              Ambiente de teste, nenhum WhatsApp foi enviado. Código:{" "}
-              <b className="font-mono text-foreground">{sent.devCode}</b>
-            </span>
-            <Button size="sm" variant="outline" disabled={busy} onClick={() => setCode(sent.devCode ?? "")}>
-              Usar
-            </Button>
-          </div>
-        )}
+        />
+        {sent.devCode && <DevCode code={sent.devCode} disabled={busy} onUse={() => setCode(sent.devCode ?? "")} />}
       </div>
       <DialogFooter>
         <Button variant="ghost" onClick={onCancel} disabled={busy}>
