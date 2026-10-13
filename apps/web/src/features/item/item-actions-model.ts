@@ -1,6 +1,16 @@
-import { localStamp, PhotoFileSchema, REPORT, UPDATE_MAX, type ActionRefusal, type ItemAction } from "@fala/core";
+import {
+  applyAction,
+  localStamp,
+  PhotoFileSchema,
+  REPORT,
+  UPDATE_MAX,
+  type ActionRefusal,
+  type Item,
+  type ItemAction,
+} from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { z } from "zod";
+import type { ViewerState } from "@/server/items";
 
 /**
  * The item page's actions as they travel (FormData, because photos ride along) and the sentences
@@ -17,6 +27,52 @@ export const ActionInputSchema = z.discriminatedUnion("type", [
   z.object({ id: Id, type: z.literal("photo"), photos: z.array(PhotoFileSchema).min(1).max(REPORT.maxPhotos) }),
 ]);
 export type ActionInput = z.infer<typeof ActionInputSchema>;
+
+/** An action from the item page: the id is the page's. */
+export type Act = ActionInput extends infer A ? (A extends { id: string } ? Omit<A, "id"> : never) : never;
+
+/**
+ * An action's likely outcome, shown before the server answers: the server's own rules (core's
+ * applyAction) on what this neighbour already did with the item. Only for the taps: confirming,
+ * "continua", "foi resolvido" without a photo. Text and photos go through screening and moderation,
+ * so they wait for the server. The server's copy replaces the guess either way, and a refusal undoes it.
+ */
+export function predictAction(
+  it: Item,
+  input: Act,
+  viewer: ViewerState,
+  ctx: { by: string; now: Date; timezone: string },
+): { item: Item; viewer: ViewerState } | null {
+  const action: ItemAction | null =
+    input.type === "confirm" || input.type === "still"
+      ? { type: input.type }
+      : input.type === "resolved" && input.photos.length === 0
+        ? { type: "resolved", photos: [] }
+        : null;
+  if (!action) return null;
+  const already =
+    action.type === "confirm"
+      ? viewer.confirmed
+      : action.type === "still"
+        ? viewer.saidStillToday
+        : viewer.saidResolved;
+  const out = applyAction(it, action, {
+    by: ctx.by,
+    author: viewer.author,
+    independent: viewer.countsFrom === null,
+    already,
+    now: ctx.now,
+    timezone: ctx.timezone,
+  });
+  if (!out.ok) return null;
+  const did: Partial<ViewerState> =
+    action.type === "confirm"
+      ? { confirmed: true }
+      : action.type === "still"
+        ? { saidStillToday: true }
+        : { saidResolved: true };
+  return { item: out.item, viewer: { ...viewer, ...did } };
+}
 
 export function toActionFormData(input: ActionInput): FormData {
   const fd = new FormData();
