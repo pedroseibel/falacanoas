@@ -13,7 +13,7 @@ import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
 import { db } from "./db/client";
-import { createdSince, hashKey, insertItem, itemExists, joinItem } from "./items";
+import { createdSince, findItem, hashKey, insertItem, itemExists, joinItem } from "./items";
 import { openCase } from "./moderation-store";
 import { markNickPublished } from "./nicks";
 import { member, type Failure } from "./member";
@@ -92,9 +92,11 @@ export const createReport = createServerFn({ method: "POST" })
     }
     if (parsed.data.visibility === "pseudonymous") await markNickPublished(who.id);
     await recordEvidence("publication", who.id, item.id);
+    // As readers see it: its photos wait for moderation's first look, as a count, not as images.
+    const stored = (await findItem(id, now)) ?? item;
     // Published at once: the neighbours following this place hear of it. A held report waits for moderation.
-    if (!held) notifyPlaces(item, who.id);
-    return { ok: true, item, digest: digestDay(now, canoas) };
+    if (!held) notifyPlaces(stored, who.id);
+    return { ok: true, item: stored, digest: digestDay(now, canoas) };
   });
 
 /** "Já existe algo parecido": confirm the existing problem and add the photos to its timeline. */
@@ -172,5 +174,10 @@ async function createGuestPin(data: FormData, guestId: string): Promise<ReportRe
     throw e;
   }
   await recordEvidence("guest_pin", guestId, id);
-  return { ok: true, item, digest: digestDay(now, canoas), tracking: `/o/${id}?chave=${key}` };
+  return {
+    ok: true,
+    item: (await findItem(id, now)) ?? item,
+    digest: digestDay(now, canoas),
+    tracking: `/o/${id}?chave=${key}`,
+  };
 }

@@ -142,7 +142,9 @@ function ReportDone({
       <Header head={head} title={held ? "Recebido" : "Registrado"}>
         {held
           ? "Fica em análise até alguém da moderação olhar. Depois, entra no mapa e no resumo diário."
-          : `Entra no resumo ${digest === "hoje" ? "de hoje" : "de amanhã"}, às ${muni.digestHour}h. O relógio começa no envio.`}
+          : item.pendingPhotos
+            ? `Já está no mapa. As fotos aparecem depois que a moderação olhar; aí ele entra no resumo diário, às ${muni.digestHour}h, e o relógio começa.`
+            : `Entra no resumo ${digest === "hoje" ? "de hoje" : "de amanhã"}, às ${muni.digestHour}h. O relógio começa no envio.`}
       </Header>
       <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
         <div className="grid gap-3 rounded-xl border border-hairline bg-muted p-4">

@@ -13,11 +13,12 @@ import {
   type ItemAction,
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
-import { and, asc, count, desc, eq, gt, lte, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, gt, lte, ne, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
 import { db, type Db } from "./db/client";
 import { itemAuthors, itemConfirmations, itemEvents, itemFollows, itemPhotos, items, itemVotes } from "./db/schema";
 import { itemFromRows, newPhotoRows, rowsForNewItem, type PhotoRow } from "./items-model";
+import { openPhotoCases } from "./moderation-store";
 
 /**
  * Items in Postgres (fala.items and its history tables). The account behind each item stays in
@@ -30,6 +31,8 @@ const has = async (q: Promise<unknown[]>) => (await q).length > 0;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 const photoColumns = {
+  id: itemPhotos.id,
+  review: itemPhotos.review,
   itemId: itemPhotos.itemId,
   src: itemPhotos.src,
   takenAt: itemPhotos.takenAt,
@@ -47,7 +50,7 @@ function byItem<T extends { itemId: string }>(rows: T[]): Map<string, T[]> {
 export async function listItems(now = new Date()): Promise<Item[]> {
   const [rows, photos] = await Promise.all([
     db.select().from(items).where(eq(items.moderation, "published")).orderBy(desc(items.createdAt)),
-    db.select(photoColumns).from(itemPhotos).orderBy(asc(itemPhotos.position)),
+    db.select(photoColumns).from(itemPhotos).where(ne(itemPhotos.review, "removed")).orderBy(asc(itemPhotos.position)),
   ]);
   const photosOf = byItem(photos);
   return rows.map((row) => itemFromRows(row, { photos: photosOf.get(row.id) ?? [] }, now, tz));
@@ -58,7 +61,14 @@ async function readItem(q: Db | Tx, id: string, now: Date): Promise<Item | null>
   if (!row) return null;
   const [events, photos] = await Promise.all([
     q
-      .select({ at: itemEvents.at, kind: itemEvents.kind, actor: itemEvents.actor, text: itemEvents.text })
+      .select({
+        id: itemEvents.id,
+        at: itemEvents.at,
+        kind: itemEvents.kind,
+        actor: itemEvents.actor,
+        text: itemEvents.text,
+        hiddenAt: itemEvents.hiddenAt,
+      })
       .from(itemEvents)
       .where(eq(itemEvents.itemId, id))
       .orderBy(asc(itemEvents.at), asc(itemEvents.seq)),
@@ -119,19 +129,59 @@ export async function createdSince(accountId: string, ms: number, now = new Date
   return row?.n ?? 0;
 }
 
-/** A new report, its first event and photos, and who is behind it, all or nothing. */
+/** Where the next photo goes: after every photo the item ever had, shown or not. */
+async function nextPhotoPosition(q: Db | Tx, id: string): Promise<number> {
+  const [row] = await q
+    .select({ next: sql<number>`coalesce(max(${itemPhotos.position}) + 1, 0)::int` })
+    .from(itemPhotos)
+    .where(eq(itemPhotos.itemId, id));
+  return row?.next ?? 0;
+}
+
+/**
+ * New photos on a published item: stored pending, each with a case for moderation's first look.
+ * (A held item's photos are judged with the item, in its own case.)
+ */
+async function addPhotos(
+  q: Db | Tx,
+  id: string,
+  photos: { src: string; by: string }[],
+  accountId: string,
+  now: Date,
+): Promise<void> {
+  if (!photos.length) return;
+  const rows = newPhotoRows(id, photos, now, await nextPhotoPosition(q, id), accountId);
+  const added = await q.insert(itemPhotos).values(rows).returning({ id: itemPhotos.id });
+  await openPhotoCases(
+    q,
+    id,
+    added.map((p) => p.id),
+  );
+}
+
+/**
+ * A new report, its first event and photos, and who is behind it, all or nothing. A published one
+ * opens a first-look case per photo; a held one is judged whole, photos included.
+ */
 export async function insertItem(
   item: Item,
   accountId: string,
   now: Date,
   trackingKeyHash: string | null = null,
 ): Promise<void> {
-  const rows = rowsForNewItem(item, now);
+  const rows = rowsForNewItem(item, now, accountId);
   await db.transaction(async (tx) => {
     await tx.insert(items).values({ ...rows.row, trackingKeyHash });
     await tx.insert(itemAuthors).values({ itemId: item.id, accountId });
     if (rows.events.length) await tx.insert(itemEvents).values(rows.events);
-    if (rows.photos.length) await tx.insert(itemPhotos).values(rows.photos);
+    if (!rows.photos.length) return;
+    const added = await tx.insert(itemPhotos).values(rows.photos).returning({ id: itemPhotos.id });
+    if (!item.moderation)
+      await openPhotoCases(
+        tx,
+        item.id,
+        added.map((p) => p.id),
+      );
   });
 }
 
@@ -192,12 +242,12 @@ export async function joinItem({
       .set({ confirmations: next.confirmations, community: next.community, updates: next.updates, updatedAt: now })
       .where(eq(items.id, id));
     const added = next.photos.slice(item.photos.length).map((p) => ({ src: p.src, by: p.by }));
-    if (added.length) await tx.insert(itemPhotos).values(newPhotoRows(id, added, now, item.photos.length));
+    await addPhotos(tx, id, added, accountId, now);
     const event = next.events?.at(-1);
     if (event)
       await tx
         .insert(itemEvents)
-        .values({ itemId: id, at: now, kind: event.kind, actor: event.actor, text: event.text });
+        .values({ itemId: id, at: now, kind: event.kind, actor: event.actor, text: event.text, accountId });
     return { confirmation };
   });
   if (!outcome) return null;
@@ -321,16 +371,14 @@ export async function actOnItem(input: {
       .where(eq(items.id, id));
     await tx
       .insert(itemEvents)
-      .values({ itemId: id, at: now, kind: out.event.kind, actor: out.event.actor, text: out.event.text });
-    if (out.photos.length)
-      await tx.insert(itemPhotos).values(
-        newPhotoRows(
-          id,
-          out.photos.map((src) => ({ src, by })),
-          now,
-          item.photos.length,
-        ),
-      );
+      .values({ itemId: id, at: now, kind: out.event.kind, actor: out.event.actor, text: out.event.text, accountId });
+    await addPhotos(
+      tx,
+      id,
+      out.photos.map((src) => ({ src, by })),
+      accountId,
+      now,
+    );
     if (action.type === "confirm") await tx.insert(itemConfirmations).values({ itemId: id, accountId, createdAt: now });
     if (action.type === "still")
       await tx.insert(itemVotes).values({ itemId: id, accountId, kind: "still", slot: today(now), at: now });

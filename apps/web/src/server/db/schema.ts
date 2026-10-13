@@ -1,4 +1,4 @@
-import type { FollowPlace, Scope } from "@fala/core";
+import { ReportReasonSchema, type FollowPlace, type Scope } from "@fala/core";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -188,10 +188,20 @@ export const itemEvents = fala
       /** The public actor line: an apelido, "Anônimo", "Fala, Canoas" or a public body. */
       actor: text().notNull(),
       text: text().notNull(),
+      /** Who wrote an update: a takedown counts against them, never against the pin's author. Never leaves the server. */
+      accountId: uuid().references(() => users.id, { onDelete: "set null" }),
+      /** When moderation took this update down. Its words are kept for a contest or a court, never shown. */
+      hiddenAt: timestamp({ withTimezone: true }),
     },
     (t) => [index().on(t.itemId, t.at, t.seq)],
   )
   .enableRLS();
+
+/**
+ * Moderation looks at every photo before it shows (round 6; the abuse review of 2026-10-13): nobody
+ * else sees a pending photo, and a removed one is kept privately, for a contest or a court, never served.
+ */
+export const photoReview = fala.enum("photo_review", ["pending", "approved", "removed"]);
 
 /** Photos over time. New ones live in the private "fotos" bucket; demo ones are static files. */
 export const itemPhotos = fala
@@ -211,8 +221,11 @@ export const itemPhotos = fala
       by: text().notNull(),
       credit: text(),
       position: integer().notNull().default(0),
+      /** Who sent it: a removal counts against them, never against the pin's author. Never leaves the server. */
+      accountId: uuid().references(() => users.id, { onDelete: "set null" }),
+      review: photoReview().notNull().default("pending"),
     },
-    (t) => [index().on(t.itemId, t.position)],
+    (t) => [index().on(t.itemId, t.position), uniqueIndex().on(t.storageKey)],
   )
   .enableRLS();
 
@@ -375,7 +388,11 @@ export const moderators = fala
   })
   .enableRLS();
 
-export const caseReason = fala.enum("case_reason", ["guest_pin", "prescreen"]);
+/**
+ * Why a case exists: a guest pin, the text pre-screen, a photo waiting for its first look, a report
+ * ("Denunciar"), or a moderator taking something down on their own.
+ */
+export const caseReason = fala.enum("case_reason", ["guest_pin", "prescreen", "photo", "report", "takedown"]);
 export const caseStatus = fala.enum("case_status", ["open", "published", "rejected", "republish"]);
 export const contestStatus = fala.enum("contest_status", ["open", "upheld", "overturned"]);
 
@@ -389,6 +406,10 @@ export const moderationCases = fala
         .notNull()
         .references(() => items.id, { onDelete: "cascade" }),
       reason: caseReason().notNull(),
+      /** A case about one photo (its first look, or a report on it); null when it's about the pin. */
+      photoId: uuid().references(() => itemPhotos.id, { onDelete: "cascade" }),
+      /** A case about one update in the pin's history; null when it's about the pin. */
+      eventId: uuid().references(() => itemEvents.id, { onDelete: "cascade" }),
       /** core's ModerationFlag values the pre-screen raised. */
       flags: text()
         .array()
@@ -405,7 +426,31 @@ export const moderationCases = fala
       contestNote: text(),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     },
-    (t) => [index().on(t.status), index().on(t.itemId)],
+    (t) => [index().on(t.status), index().on(t.itemId), index().on(t.photoId), index().on(t.eventId)],
+  )
+  .enableRLS();
+
+export const reportReason = fala.enum("report_reason", ReportReasonSchema.enum);
+
+/**
+ * "Denunciar" on a pin, a photo or an update: each report joins its target's open case, so a pile of
+ * reports is one decision. Visitors pass a robot check; a neighbour at nível 1 reports once per case.
+ */
+export const contentReports = fala
+  .table(
+    "content_reports",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      caseId: uuid()
+        .notNull()
+        .references(() => moderationCases.id, { onDelete: "cascade" }),
+      reason: reportReason().notNull(),
+      note: text(),
+      /** Null for a visitor. Never shown to moderators or to whoever posted. */
+      reporterId: uuid().references(() => users.id, { onDelete: "set null" }),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    },
+    (t) => [index().on(t.caseId), uniqueIndex("content_reports_once").on(t.caseId, t.reporterId)],
   )
   .enableRLS();
 

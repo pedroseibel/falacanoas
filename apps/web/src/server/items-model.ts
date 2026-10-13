@@ -8,9 +8,11 @@ import type { itemEvents, itemPhotos, items } from "./db/schema";
 
 export type ItemRow = typeof items.$inferSelect;
 export type ItemInsert = typeof items.$inferInsert;
-export type EventRow = Pick<typeof itemEvents.$inferSelect, "at" | "kind" | "actor" | "text">;
+export type EventRow = Pick<typeof itemEvents.$inferSelect, "at" | "kind" | "actor" | "text"> &
+  Partial<Pick<typeof itemEvents.$inferSelect, "id" | "hiddenAt">>;
 export type EventInsert = typeof itemEvents.$inferInsert;
-export type PhotoRow = Pick<typeof itemPhotos.$inferSelect, "src" | "takenAt" | "by" | "credit">;
+export type PhotoRow = Pick<typeof itemPhotos.$inferSelect, "src" | "takenAt" | "by" | "credit"> &
+  Partial<Pick<typeof itemPhotos.$inferSelect, "id" | "review">>;
 export type PhotoInsert = typeof itemPhotos.$inferInsert;
 
 const DAY = 864e5;
@@ -24,13 +26,19 @@ export function clockDays(row: Pick<ItemRow, "sentAt" | "closedAt">, now: Date, 
   return Math.max(0, calendarDays(row.sentAt, row.closedAt ?? now, timezone));
 }
 
+/**
+ * Rows to the item everyone reads. Only approved photos show; pending ones are a count ("em análise"),
+ * removed ones are gone. An update moderation took down keeps its place in the history, without its words.
+ */
 export function itemFromRows(
   row: ItemRow,
-  { events, photos }: { events?: EventRow[]; photos: PhotoRow[] },
+  { events, photos: allPhotos }: { events?: EventRow[]; photos: PhotoRow[] },
   now: Date,
   timezone: string,
 ): Item {
   const stamp = (at: Date) => eventStamp(at, now, timezone);
+  const photos = allPhotos.filter((p) => (p.review ?? "approved") === "approved");
+  const pending = allPhotos.filter((p) => p.review === "pending").length;
   return {
     id: row.id,
     kind: row.kind,
@@ -45,11 +53,13 @@ export function itemFromRows(
     followers: row.followers,
     updates: row.updates,
     photos: photos.map((p) => ({
+      ...(p.id ? { id: p.id } : {}),
       src: p.src,
       takenAt: stamp(p.takenAt),
       by: p.by,
       ...(p.credit ? { credit: p.credit } : {}),
     })),
+    ...(pending ? { pendingPhotos: pending } : {}),
     visibility: row.visibility,
     author: row.visibility === "anonymous" ? null : row.authorNick,
     community: row.community,
@@ -72,9 +82,20 @@ export function itemFromRows(
     ...(row.guest ? { guest: true } : {}),
     ...(row.moderation !== "published" ? { moderation: row.moderation } : {}),
     ...(row.demo ? { demo: true } : {}),
-    ...(events ? { events: events.map((e): ItemEvent => ({ ...e, at: stamp(e.at) })) } : {}),
+    ...(events ? { events: events.map(eventFromRow(stamp)) } : {}),
   };
 }
+
+const eventFromRow =
+  (stamp: (at: Date) => string) =>
+  ({ id, at, kind, actor, text, hiddenAt }: EventRow): ItemEvent => ({
+    ...(id ? { id } : {}),
+    at: stamp(at),
+    kind,
+    actor,
+    text: hiddenAt ? "" : text,
+    ...(hiddenAt ? { removed: true } : {}),
+  });
 
 /** Where a photo lives in Storage, from its public path; null for static demo photos. */
 export const storageKeyOf = (src: string) => (src.startsWith("/api/fotos/") ? src.slice("/api/fotos/".length) : null);
@@ -86,6 +107,7 @@ export const storageKeyOf = (src: string) => (src.startsWith("/api/fotos/") ? sr
 export function rowsForNewItem(
   item: Item,
   now: Date,
+  accountId: string | null = null,
 ): { row: ItemInsert; events: EventInsert[]; photos: PhotoInsert[] } {
   const point = item.scope.type === "point" || item.scope.type === "place" ? item.scope : null;
   return {
@@ -117,12 +139,19 @@ export function rowsForNewItem(
       item.photos.map((p) => ({ src: p.src, by: p.by })),
       now,
       0,
+      accountId,
     ),
   };
 }
 
-/** Photos added at `now`, after the `from` already on the item. */
-export const newPhotoRows = (itemId: string, photos: { src: string; by: string }[], now: Date, from: number) =>
+/** Photos added at `now`, after the `from` already on the item. Every one waits for moderation's first look. */
+export const newPhotoRows = (
+  itemId: string,
+  photos: { src: string; by: string }[],
+  now: Date,
+  from: number,
+  accountId: string | null,
+) =>
   photos.map((p, i): PhotoInsert => ({
     itemId,
     src: p.src,
@@ -130,4 +159,6 @@ export const newPhotoRows = (itemId: string, photos: { src: string; by: string }
     takenAt: now,
     by: p.by,
     position: from + i,
+    accountId,
+    review: "pending",
   }));

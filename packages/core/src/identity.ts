@@ -21,6 +21,8 @@ export const SEND_CODE_ACTION = "enviar-codigo";
 export const GUEST_PIN_ACTION = "registro-convidado";
 /** The Turnstile action of a request on the data-subject channel, from someone not signed in. */
 export const DATA_REQUEST_ACTION = "pedido-titular";
+/** The Turnstile action of a report ("Denunciar") from someone not signed in. */
+export const CONTENT_REPORT_ACTION = "denuncia";
 
 /** "+5551999998888" → "(51) 9…8888": enough to recognise your own number, nothing more. */
 export const maskedPhone = (e164: string) => {

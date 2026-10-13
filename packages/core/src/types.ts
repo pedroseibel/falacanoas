@@ -46,6 +46,8 @@ export const VisibilitySchema = z.enum(["pseudonymous", "anonymous"]);
 export type Visibility = z.infer<typeof VisibilitySchema>;
 
 export const PhotoSchema = z.object({
+  /** The stored photo's id, so it can be reported or reviewed; absent on fixtures. */
+  id: z.string().optional(),
   src: z.string(),
   takenAt: z.string(),
   by: z.string(),
@@ -77,10 +79,14 @@ export const ItemEventKindSchema = z.enum([
 export type ItemEventKind = z.infer<typeof ItemEventKindSchema>;
 
 export const ItemEventSchema = z.object({
+  /** The stored event's id, so an update can be reported; absent on fixtures. */
+  id: z.string().optional(),
   at: z.string(),
   actor: z.string(),
   kind: ItemEventKindSchema,
   text: z.string(),
+  /** An update moderation took down: its words are gone from the page, the fact that it existed is not. */
+  removed: z.boolean().optional(),
 });
 export type ItemEvent = z.infer<typeof ItemEventSchema>;
 
@@ -98,7 +104,10 @@ export const ItemSchema = z.object({
   confirmations: z.number().int().nonnegative(),
   followers: z.number().int().nonnegative(),
   updates: z.number().int().nonnegative(),
+  /** Published photos only: a photo shows once moderation has looked at it. */
   photos: z.array(PhotoSchema),
+  /** Photos sent but still waiting for moderation: shown as "em análise", never as an image. */
+  pendingPhotos: z.number().int().positive().optional(),
   visibility: VisibilitySchema,
   author: z.string().nullable(),
   community: CommunityStatusSchema,

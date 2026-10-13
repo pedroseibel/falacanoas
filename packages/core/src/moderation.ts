@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { Municipality, Visibility } from "./types";
 
 /**
@@ -100,3 +101,42 @@ export function refusalFor(flags: ModerationFlag[]): string {
   if (flags.includes("name")) return "Tire o nome da pessoa: o Fala fala de órgãos públicos, não de pessoas.";
   return "Tire a ofensa do texto e envie de novo.";
 }
+
+/* ---------- Reports ("Denunciar") on pins, photos and updates ---------- */
+
+/** What a report points at: the whole pin, one of its photos, or one update in its history. */
+export type ReportTarget = "item" | "photo" | "update";
+
+/** Why someone reports. The first two are about photos that must never stay up while someone decides. */
+export const ReportReasonSchema = z.enum(["sexual", "child", "person", "offense", "spam", "other"]);
+export type ReportReason = z.infer<typeof ReportReasonSchema>;
+
+export const REPORT_REASON: Record<ReportReason, { label: string; hint: string }> = {
+  sexual: { label: "Nudez ou conteúdo sexual", hint: "Qualquer imagem íntima ou obscena." },
+  child: { label: "Mostra uma criança", hint: "Rosto ou corpo de uma criança ou adolescente." },
+  person: { label: "Expõe uma pessoa", hint: "Nome, rosto, casa, placa ou outro dado de alguém." },
+  offense: { label: "Ofensa, ameaça ou preconceito", hint: "Contra uma pessoa ou um grupo." },
+  spam: { label: "Não é um problema da cidade", hint: "Propaganda, spam, briga entre vizinhos." },
+  other: { label: "Outro motivo", hint: "Conte em poucas palavras." },
+};
+
+/** Reasons that take a photo down at once (hide first): the harm of leaving it up outweighs a wrong report. */
+const URGENT: ReadonlySet<ReportReason> = new Set(["sexual", "child"]);
+
+/**
+ * Whether a report takes the thing down before anyone looks. Only a photo, only for nudity or a
+ * child, only from a neighbour at nível 1 (a phone verified, so a burst of fake reports costs real
+ * numbers), and never again once a moderator looked at a report on that photo and kept it.
+ * Everything else stays up and waits in the queue.
+ */
+export function hidesAtOnce(r: {
+  target: ReportTarget;
+  reason: ReportReason;
+  member: boolean;
+  keptBefore: boolean;
+}): boolean {
+  return r.target === "photo" && URGENT.has(r.reason) && r.member && !r.keptBefore;
+}
+
+/** Whether a moderator should see this case's images blurred until they choose to look. */
+export const shieldsModerator = (reasons: readonly ReportReason[]) => reasons.some((r) => URGENT.has(r));

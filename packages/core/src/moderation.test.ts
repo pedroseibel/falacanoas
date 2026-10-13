@@ -1,5 +1,14 @@
 import { describe, expect, test } from "bun:test";
-import { holdsPublication, inElection, isValidCpf, prescreen, refusedInUpdates } from "./moderation";
+import {
+  hidesAtOnce,
+  holdsPublication,
+  inElection,
+  isValidCpf,
+  prescreen,
+  refusedInUpdates,
+  ReportReasonSchema,
+  shieldsModerator,
+} from "./moderation";
 
 const off = { electoral: false };
 
@@ -52,5 +61,37 @@ describe("what holds publication", () => {
     expect(inElection(muni, new Date("2026-10-25T23:00:00-03:00"))).toBeTrue();
     expect(inElection(muni, new Date("2026-10-26T00:30:00-03:00"))).toBeFalse();
     expect(inElection({}, new Date())).toBeFalse();
+  });
+});
+
+describe("reports", () => {
+  const photo = { target: "photo" as const, member: true, keptBefore: false };
+
+  test("a member's report of nudity or a child takes a photo down at once", () => {
+    expect(hidesAtOnce({ ...photo, reason: "sexual" })).toBeTrue();
+    expect(hidesAtOnce({ ...photo, reason: "child" })).toBeTrue();
+  });
+
+  test("other reasons, other targets and visitors wait for a moderator", () => {
+    expect(hidesAtOnce({ ...photo, reason: "person" })).toBeFalse();
+    expect(hidesAtOnce({ ...photo, reason: "spam" })).toBeFalse();
+    expect(hidesAtOnce({ ...photo, target: "update", reason: "sexual" })).toBeFalse();
+    expect(hidesAtOnce({ ...photo, target: "item", reason: "child" })).toBeFalse();
+    expect(hidesAtOnce({ ...photo, member: false, reason: "sexual" })).toBeFalse();
+  });
+
+  test("once a moderator kept a photo, reports no longer take it down by themselves", () => {
+    expect(hidesAtOnce({ ...photo, keptBefore: true, reason: "sexual" })).toBeFalse();
+  });
+
+  test("moderators see nudity and children blurred first", () => {
+    expect(shieldsModerator(["spam", "child"])).toBeTrue();
+    expect(shieldsModerator(["person", "offense"])).toBeFalse();
+    expect(shieldsModerator([])).toBeFalse();
+  });
+
+  test("only the known reasons parse", () => {
+    expect(ReportReasonSchema.safeParse("sexual").success).toBeTrue();
+    expect(ReportReasonSchema.safeParse("feio").success).toBeFalse();
   });
 });

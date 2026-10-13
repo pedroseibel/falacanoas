@@ -87,5 +87,5 @@ export const DONE_MESSAGE: Record<ActionInput["type"], string> = {
   still: "Registrado: continua acontecendo.",
   resolved: "Registrado. Obrigado por avisar.",
   update: "Atualização publicada no histórico.",
-  photo: "Foto publicada no histórico.",
+  photo: "Foto enviada. Ela aparece depois que a moderação olhar.",
 };

@@ -76,8 +76,8 @@ export const actOnItemFn = createServerFn({ method: "POST" })
     await markNickPublished(who.id);
     await recordEvidence(EVIDENCE[input.type], who.id, input.id);
     // The pin's followers hear of news (round 15); confirmations and "continua acontecendo" stay quiet.
+    // A new photo is announced when it passes moderation's first look (moderation.ts), not now.
     if (input.type === "update") notifyFollowers(out.item, who.id, { kind: "update", text: input.text });
-    if (input.type === "photo") notifyFollowers(out.item, who.id, { kind: "photo" });
     if (input.type === "resolved" && out.item.community === "resolved")
       notifyFollowers(out.item, who.id, { kind: "resolved" });
     return out;

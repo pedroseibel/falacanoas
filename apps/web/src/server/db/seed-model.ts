@@ -135,6 +135,8 @@ export function seedRows(
       by: p.by,
       credit: p.credit ?? null,
       position,
+      // The demo's own pictures: nothing for moderation to look at.
+      review: "approved",
     })),
   };
 }

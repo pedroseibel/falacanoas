@@ -19,11 +19,13 @@ import {
   BadgeCheck,
   Camera,
   Check,
+  Flag,
   Info,
   Loader2,
   MessageSquare,
   Pencil,
   Repeat2,
+  ScanEye,
   Send,
   Users,
   type LucideIcon,
@@ -39,8 +41,9 @@ import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
 import { PhotoViewer } from "./photo-viewer";
 import { whereOf } from "@/features/map/item-card";
+import { openContentReport } from "@/features/moderation/content-report-store";
 import { ItemActions, usePhotoInput } from "./item-actions";
-import { ModerationNotice } from "./moderation-notice";
+import { ModerationNotice, RemovalNotices } from "./moderation-notice";
 import { PinConversation } from "./pin-conversation";
 import { useItemActions } from "./use-item-actions";
 
@@ -153,14 +156,32 @@ export function ItemDetail({
       {it.photos.length ? (
         <PhotoViewer
           photos={it.photos}
+          pending={it.pendingPhotos}
           title={it.title}
           adding={a.pending === "photo"}
           onAdd={() => (member ? currentPhoto.open() : onSignIn())}
+          onReport={
+            it.moderation ? undefined : (p) => p.id && openContentReport({ itemId: it.id, target: "photo", id: p.id })
+          }
         />
       ) : (
-        <div className="grid aspect-video place-items-center content-center gap-2.5 bg-panel-3 text-center text-sm text-muted-foreground">
-          <Icon name={categoryIcon(it.category)} size={36} />
-          Sem foto ainda.
+        <div className="grid aspect-video place-items-center content-center gap-2.5 bg-panel-3 px-6 text-center text-sm text-pretty text-muted-foreground">
+          {it.pendingPhotos ? (
+            <>
+              <ScanEye className="size-7" aria-hidden="true" />
+              <span className="grid gap-0.5">
+                <b className="font-semibold text-foreground">
+                  {it.pendingPhotos === 1 ? "Foto em análise" : `${it.pendingPhotos} fotos em análise`}
+                </b>
+                A moderação olha cada foto antes de ela aparecer.
+              </span>
+            </>
+          ) : (
+            <>
+              <Icon name={categoryIcon(it.category)} size={36} />
+              Sem foto ainda.
+            </>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -196,7 +217,9 @@ export function ItemDetail({
           <DaysMeter days={it.days} deadline={muni.deadlineDays} size="lg" />
           <p className="text-xs text-muted-foreground">
             {awaitingDigest(it)
-              ? `Ainda não foi enviado. Entra no próximo resumo diário, às ${muni.digestHour}h, e o relógio começa no envio.`
+              ? it.pendingPhotos
+                ? `Ainda não foi enviado. Entra no resumo diário das ${muni.digestHour}h depois que a moderação olhar as fotos, e o relógio começa no envio.`
+                : `Ainda não foi enviado. Entra no próximo resumo diário, às ${muni.digestHour}h, e o relógio começa no envio.`
               : open
                 ? `Enviado à Prefeitura em ${it.sentAt ? localStamp(new Date(it.sentAt), muni.timezone).replace(" · ", ", às ") : `${dateAgo(now, it.days)}, às ${muni.digestHour}:00`}. O relógio conta desde então.`
                 : `Fechado pelos vizinhos em ${it.closedAt ? day(new Date(it.closedAt), muni.timezone) : dateAgo(now, 0)}.`}
@@ -246,6 +269,7 @@ export function ItemDetail({
         ) : (
           <ItemActions it={it} muni={muni} actions={a} now={now} onWrite={write} />
         )}
+        {member && <RemovalNotices it={it} />}
 
         <p className="text-sm leading-relaxed text-ink-2">{it.text}</p>
 
@@ -260,8 +284,12 @@ export function ItemDetail({
             {events.map((e, k) => {
               const EventIcon = EVENT_ICON[e.kind];
               const official = e.kind === "official_response" || e.kind === "official_status_changed";
+              const reportable = e.kind === "update_added" && e.id && !e.removed && !it.moderation;
               return (
-                <li key={`${e.at}|${e.actor}|${e.text}`} className="relative flex gap-2.5 pb-3.5 last:pb-0">
+                <li
+                  key={e.id ?? `${e.at}|${e.actor}|${e.text}`}
+                  className="group/event relative flex gap-2.5 pb-3.5 last:pb-0"
+                >
                   {k < events.length - 1 && (
                     <span className="absolute top-5 bottom-0 left-2.5 w-px bg-border" aria-hidden="true" />
                   )}
@@ -273,14 +301,29 @@ export function ItemDetail({
                   >
                     <EventIcon className="size-3" />
                   </span>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="font-mono text-2xs text-muted-foreground">{e.at}</p>
                     <p className="text-sm font-semibold">
                       {e.actor}{" "}
                       {official && <Badge variant="outline">{it.demo ? "verificada · exemplo" : "verificada"}</Badge>}
                     </p>
-                    <p className="text-sm leading-snug text-ink-2">{e.text}</p>
+                    {e.removed ? (
+                      <p className="text-sm leading-snug text-muted-foreground">Removida pela moderação.</p>
+                    ) : (
+                      <p className="text-sm leading-snug break-words text-ink-2">{e.text}</p>
+                    )}
                   </div>
+                  {reportable && (
+                    <Button
+                      variant="quiet"
+                      size="icon-sm"
+                      className="-mt-1 shrink-0"
+                      aria-label={`Denunciar a atualização de ${e.actor}`}
+                      onClick={() => openContentReport({ itemId: it.id, target: "update", id: e.id ?? "" })}
+                    >
+                      <Flag />
+                    </Button>
+                  )}
                 </li>
               );
             })}
@@ -323,7 +366,20 @@ export function ItemDetail({
         {!it.moderation && <PinConversation it={it} member={member} onSignIn={onSignIn} />}
 
         <p className="border-t border-hairline pt-4 text-xs text-pretty text-muted-foreground">
-          Você aparece neste registro, ou ele mostra um dado seu?{" "}
+          {!it.moderation && (
+            <>
+              Algo errado neste registro?{" "}
+              <button
+                type="button"
+                className={textLink}
+                onClick={() => openContentReport({ itemId: it.id, target: "item" })}
+              >
+                Denunciar
+              </button>
+              .{" "}
+            </>
+          )}
+          Você aparece nele, ou ele mostra um dado seu?{" "}
           <a
             href={`/privacidade/pedido?quem=in_content&registro=${it.id}&volta=${encodeURIComponent(`/o/${it.id}`)}`}
             className={textLink}

@@ -9,12 +9,13 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useDebouncedCallback } from "@tanstack/react-pacer";
-import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
+import { ContentReportDialog } from "@/features/moderation/content-report-dialog";
 import { ReportDialog } from "@/features/report/report-dialog";
 import { openReport } from "@/features/report/report-store";
 import { AppShell, type Section } from "@/features/shell/app-shell";
-import { accountQuery, authConfigQuery, cityQuery, memberGate } from "@/lib/city";
+import { accountQuery, authConfigQuery, cityQuery, isModeratorQuery, memberGate } from "@/lib/city";
 
 export const Route = createFileRoute("/_app")({
   loader: ({ context }) =>
@@ -47,9 +48,12 @@ function AppLayout() {
     (q: string) => void navigate({ to: "/mapa", search: (prev) => ({ ...prev, q: q.trim() || undefined }) }),
     { wait: 250 },
   );
+  const queryClient = useQueryClient();
   const { data: account } = useSuspenseQuery(accountQuery);
   const { data: city } = useSuspenseQuery(cityQuery);
   const { data: authConfig } = useQuery(authConfigQuery);
+  const member = Boolean(account?.phoneVerified && account.nick && !account.guest);
+  const { data: moderator } = useQuery({ ...isModeratorQuery, enabled: member });
   return (
     <AppShell
       section={section}
@@ -84,6 +88,17 @@ function AppLayout() {
         turnstileSiteKey={authConfig?.turnstileSiteKey ?? null}
         onChanged={() => void router.invalidate()}
         onView={(id, key) => void navigate({ to: "/o/$id", params: { id }, search: key ? { chave: key } : {} })}
+      />
+      <ContentReportDialog
+        member={member}
+        moderator={Boolean(moderator)}
+        turnstileSiteKey={authConfig?.turnstileSiteKey ?? null}
+        onChanged={(id) => {
+          void queryClient.invalidateQueries({ queryKey: ["item", id] });
+          void queryClient.invalidateQueries({ queryKey: ["moderation"] });
+          void queryClient.invalidateQueries({ queryKey: cityQuery.queryKey });
+          void router.invalidate();
+        }}
       />
     </AppShell>
   );

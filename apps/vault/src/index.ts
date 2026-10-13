@@ -1,6 +1,7 @@
 import {
   connectionFromHeaders,
   ConnectionSchema,
+  CONTENT_REPORT_ACTION,
   EvidenceActionSchema,
   DATA_REQUEST_ACTION,
   GUEST_PIN_ACTION,
@@ -243,12 +244,12 @@ export default class Vault extends WorkerEntrypoint<Env> {
   }
 
   /**
-   * RPC: a Turnstile token from a guest pin or a data-subject request, checked with the vault's
-   * secret, which the app never holds. A token minted for one can't pass for the other.
+   * RPC: a Turnstile token from a guest pin, a data-subject request or a visitor's report, checked
+   * with the vault's secret, which the app never holds. A token minted for one can't pass for another.
    */
   async human(token: unknown, ip: unknown, action: unknown = GUEST_PIN_ACTION): Promise<boolean> {
     if (typeof token !== "string" || !token || token.length > 4096) return false;
-    if (action !== GUEST_PIN_ACTION && action !== DATA_REQUEST_ACTION) return false;
+    if (action !== GUEST_PIN_ACTION && action !== DATA_REQUEST_ACTION && action !== CONTENT_REPORT_ACTION) return false;
     const check = turnstile(this.env, this.env.VAULT_MODE === "development", action);
     return check(token, typeof ip === "string" ? ip : null);
   }

@@ -143,6 +143,64 @@ describe("rowsForNewItem", () => {
   });
 });
 
+describe("what moderation lets readers see", () => {
+  const at = new Date("2026-10-12T15:00:00-03:00");
+  const base = fixtures.items[0];
+  if (!base) throw new Error("sem fixtures");
+  const rows = rowsForNewItem(
+    { ...base, id: "ABCDE", photos: [{ src: "/api/fotos/x.webp", takenAt: "", by: "b" }] },
+    at,
+    "acc-1",
+  );
+  const photo = (id: string, review: "pending" | "approved" | "removed") => ({
+    id,
+    src: `/api/fotos/${id}.webp`,
+    takenAt: at,
+    by: "biguá",
+    credit: null,
+    review,
+  });
+
+  test("a new photo waits for its first look, and remembers who sent it", () => {
+    expect(rows.photos[0]?.review).toBe("pending");
+    expect(rows.photos[0]?.accountId).toBe("acc-1");
+  });
+
+  test("only approved photos show; pending ones are a count; removed ones are gone", () => {
+    const back = itemFromRows(
+      stored(rows.row),
+      { photos: [photo("a", "approved"), photo("b", "pending"), photo("c", "removed"), photo("d", "pending")] },
+      at,
+      tz,
+    );
+    expect(back.photos.map((p) => p.id)).toEqual(["a"]);
+    expect(back.pendingPhotos).toBe(2);
+  });
+
+  test("no count when nothing waits", () => {
+    const back = itemFromRows(stored(rows.row), { photos: [photo("a", "approved")] }, at, tz);
+    expect(back.pendingPhotos).toBeUndefined();
+  });
+
+  test("a removed update keeps its place in the history, without its words", () => {
+    const back = itemFromRows(
+      stored(rows.row),
+      {
+        photos: [],
+        events: [
+          { id: "e1", at, kind: "update_added", actor: "biguá", text: "o vizinho do 145 joga lixo", hiddenAt: at },
+          { id: "e2", at, kind: "update_added", actor: "socó", text: "continua igual", hiddenAt: null },
+        ],
+      },
+      at,
+      tz,
+    );
+    expect(back.events?.[0]).toMatchObject({ id: "e1", text: "", removed: true, actor: "biguá" });
+    expect(back.events?.[1]).toMatchObject({ id: "e2", text: "continua igual" });
+    expect(back.events?.[1]?.removed).toBeUndefined();
+  });
+});
+
 describe("parseAgo", () => {
   test("reads the fixtures' relative times", () => {
     expect(parseAgo("há 40 min", now)?.toISOString()).toBe("2026-10-12T16:40:00.000Z");

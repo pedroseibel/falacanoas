@@ -313,8 +313,8 @@ export function ReportForm({
                   )}
                 </ul>
                 <p id="r-fotos-nota" className="text-caption text-muted-foreground">
-                  A foto sai do seu aparelho sem GPS e sem os dados da câmera. Rostos e placas ainda não são borrados:
-                  enquadre só o problema.
+                  A foto sai do seu aparelho sem GPS e sem os dados da câmera, e a moderação olha antes de ela aparecer.
+                  Rostos e placas ainda não são borrados: enquadre só o problema.
                 </p>
                 <FieldError errors={errors} />
               </Part>
