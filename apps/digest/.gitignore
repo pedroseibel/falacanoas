@@ -1,3 +1,7 @@
 # The development outbox: digests written as .eml files instead of sent.
 outbox/
 .env
+
+# The Typst binary (bun run typst) and the map tile cache.
+bin/
+cache/

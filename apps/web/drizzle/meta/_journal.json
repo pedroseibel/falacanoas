@@ -141,6 +141,13 @@
       "when": 1791927418246,
       "tag": "0019_photo_screens",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791934882133,
+      "tag": "0020_digest_pdf",
+      "breakpoints": true
     }
   ]
 }

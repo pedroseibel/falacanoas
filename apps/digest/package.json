@@ -8,14 +8,20 @@
     "start": "bun src/index.ts",
     "agora": "bun src/agora.ts",
     "protocolo": "bun src/protocolo.ts",
+    "amostra": "bun scripts/amostra.ts",
+    "typst": "bun scripts/typst.ts",
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
     "@elysiajs/cron": "1.4.2",
     "@fala/core": "workspace:*",
     "@fala/instance-canoas": "workspace:*",
+    "@mapbox/vector-tile": "3.0.0",
     "elysia": "1.4.30",
-    "pg": "8.23.1"
+    "pbf": "5.1.2",
+    "pg": "8.23.1",
+    "sharp": "0.35.5",
+    "uqr": "0.1.3"
   },
   "devDependencies": {
     "@types/bun": "latest",

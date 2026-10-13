@@ -574,6 +574,10 @@ export const digests = fala
     transport: text().notNull(),
     /** The provider's message id, to match replies (protocol numbers) later. */
     messageId: text(),
+    /** Its number in the year ("Resumo diário nº 0287/2026" is 287). Null before resumos were numbered. */
+    number: integer(),
+    /** SHA-256 of the PDF attached, as sent: what a printed or forwarded copy can be checked against. */
+    pdfSha256: text(),
   })
   .enableRLS();
 

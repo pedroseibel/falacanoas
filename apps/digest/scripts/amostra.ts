@@ -1,0 +1,60 @@
+import { digestDocument, type DigestItem } from "@fala/core";
+import { canoas } from "@fala/instance-canoas";
+import { fixtures } from "@fala/instance-canoas/fixtures";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { ADDRESSEE } from "../src/config";
+import { renderPdf } from "../src/pdf/render";
+import { openFreeMap } from "../src/pdf/tiles";
+
+/**
+ * `bun run amostra [registros]`: the resumo's PDF from the fictional demo data, to see the layout
+ * without a database. Every page says it's a sample. A real resumo never carries demo items; here
+ * they're let through on purpose, and photos come from the web app's public folder.
+ */
+const count = Number(process.argv[2]) || 24;
+const sentAt = new Date("2026-10-13T21:00:00Z"); // 18h in Canoas
+const out = fileURLToPath(new URL("../outbox/", import.meta.url));
+const media = fileURLToPath(new URL("../../web/public/", import.meta.url));
+
+// A plausible day: spread over the categories, in the order the fixtures list them.
+const pool = fixtures.items.filter((it) => it.kind === "occurrence" && it.scope.type !== "municipality");
+const byCategory = Map.groupBy(pool, (it) => it.category);
+const picked: DigestItem[] = [];
+for (let round = 0; picked.length < count && round < 50; round++)
+  for (const items of byCategory.values()) {
+    const it = items[round];
+    if (it && picked.length < count) picked.push(it);
+  }
+
+// The fixtures have four photos in all: lend them around so every photo layout (one to four) shows.
+const photos = fixtures.items.flatMap((it) => it.photos);
+const lend = [1, 0, 2, 0, 4, 0, 0, 3, 1, 0, 2];
+const day = picked.map((it, i): DigestItem => ({
+  ...it,
+  demo: false,
+  createdAt: new Date(sentAt.getTime() - (count - i) * 23 * 60_000 - 3600_000).toISOString(),
+  photos: it.photos.length
+    ? it.photos
+    : Array.from({ length: lend[i % lend.length] ?? 0 }, (_, k) => photos[(i + k) % photos.length]).filter(
+        (p) => p !== undefined,
+      ),
+}));
+
+const doc = digestDocument(day, canoas, sentAt, 287);
+const pdf = await renderPdf(doc, {
+  muni: canoas,
+  tiles: openFreeMap(fileURLToPath(new URL("../cache/", import.meta.url))),
+  photos: async (url) => {
+    const file = `${media}${new URL(url).pathname.replace(/^\//, "")}`;
+    return existsSync(file) ? new Uint8Array(readFileSync(file)) : null;
+  },
+  addressee: ADDRESSEE,
+  sample: true,
+  sentAt,
+});
+mkdirSync(out, { recursive: true });
+writeFileSync(`${out}amostra-resumo.pdf`, pdf);
+console.log(
+  `${out}amostra-resumo.pdf · ${doc.total} registros, ${doc.sections.length} órgãos · ${(pdf.length / 1e6).toFixed(2)} MB`,
+);

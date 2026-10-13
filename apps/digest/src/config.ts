@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { canoas } from "@fala/instance-canoas";
 
 /**
  * The digest's settings, from the environment. In development the database falls back to the web
@@ -24,6 +25,16 @@ const list = (s: string | undefined) =>
     .map((a) => a.trim())
     .filter(Boolean);
 
+/**
+ * Who the resumo is addressed to (DECISIONS round 5), named on the PDF's first page. The e-mail
+ * addresses are DIGEST_TO and DIGEST_CC (research/canoas: transparenciaouvidoria@ and
+ * atendimento.cidadao@canoas.rs.gov.br).
+ */
+export const ADDRESSEE = {
+  to: "Ouvidoria do Município de Canoas",
+  cc: ["Central de Atendimento ao Cidadão (CAC)"],
+};
+
 export interface Config {
   mode: "development" | "production";
   databaseUrl: string;
@@ -34,6 +45,10 @@ export interface Config {
   token: string;
   port: number;
   outboxDir: string;
+  /** Where the photos in the resumo are fetched from (their addresses name the public site). */
+  photoBase: string;
+  /** The map tiles' cache, kept between runs. */
+  cacheDir: string;
 }
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
@@ -48,6 +63,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     token: env.DIGEST_TOKEN ?? "",
     port: Number(env.PORT) || 3200,
     outboxDir: env.DIGEST_OUTBOX || fileURLToPath(new URL("../outbox", import.meta.url)),
+    photoBase: env.DIGEST_PHOTO_BASE || (dev ? "http://127.0.0.1:3100" : `https://${canoas.branding.domain}`),
+    cacheDir: env.DIGEST_CACHE || fileURLToPath(new URL("../cache", import.meta.url)),
   };
   const missing = [
     !config.databaseUrl && "DIGEST_DATABASE_URL",

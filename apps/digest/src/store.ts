@@ -24,7 +24,11 @@ interface PendingRow {
   photos: string[];
 }
 
-export function pgStore(connectionString: string, actor: string): DigestStore & { close(): Promise<void> } {
+export function pgStore(
+  connectionString: string,
+  actor: string,
+  timezone: string,
+): DigestStore & { close(): Promise<void> } {
   const client = new Client({ connectionString });
   const connected = client.connect();
   const q = async <T extends object>(sql: string, params: unknown[] = []) => {
@@ -65,14 +69,23 @@ export function pgStore(connectionString: string, actor: string): DigestStore & 
         createdAt: r.created_at.toISOString(),
       }));
     },
+    async nextNumber(year) {
+      // The year by the instance's clock: a resumo sent at 18h on 31 December is that year's last.
+      const [row] = await q<{ n: number }>(
+        `select coalesce(max(number), 0)::int + 1 as n from fala.digests
+          where extract(year from sent_at at time zone $2) = $1`,
+        [year, timezone],
+      );
+      return row?.n ?? 1;
+    },
     async markSent(d) {
       await connected;
       try {
         await client.query("begin");
         await client.query(
-          `insert into fala.digests (sent_at, recipients, subject, body, item_ids, transport, message_id)
-           values ($1, $2, $3, $4, $5, $6, $7)`,
-          [d.sentAt, d.recipients, d.subject, d.body, d.itemIds, d.transport, d.messageId],
+          `insert into fala.digests (sent_at, recipients, subject, body, item_ids, transport, message_id, number, pdf_sha256)
+           values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          [d.sentAt, d.recipients, d.subject, d.body, d.itemIds, d.transport, d.messageId, d.number, d.pdfSha256],
         );
         const marked = await client.query<{ id: string }>(
           `update fala.items set sent_at = $1, updated_at = $1 where id = any($2) and sent_at is null returning id`,

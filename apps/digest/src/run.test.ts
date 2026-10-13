@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { canoas } from "@fala/instance-canoas";
 import type { DigestItem } from "@fala/core";
-import { runDigest, type DigestStore, type Mail, type Outbox } from "./run";
+import { pdfName, runDigest, type DigestStore, type Mail, type Outbox } from "./run";
 
 const item = (id: string, over: Partial<DigestItem> = {}): DigestItem => ({
   id,
@@ -29,6 +29,7 @@ function fakeStore(pending: DigestItem[], locked = false) {
   const marked: Parameters<DigestStore["markSent"]>[0][] = [];
   const store: DigestStore = {
     pending: async () => pending,
+    nextNumber: async () => 288,
     markSent: async (d) => {
       marked.push(d);
     },
@@ -70,8 +71,46 @@ describe("runDigest", () => {
         recipients: ["ouvidoria@x.invalid", "cac@x.invalid"],
         transport: "teste",
         messageId: "id-1",
+        number: 288,
+        pdfSha256: null,
       }),
     ]);
+    expect(sent[0]?.attachments).toEqual([]);
+    expect(sent[0]?.subject).toContain("Resumo diário nº 0288/2026");
+  });
+
+  test("with a PDF: attached under its name, mentioned in the text, its hash on the record", async () => {
+    const { store, marked } = fakeStore([item("AAAA1")]);
+    const { outbox, sent } = fakeOutbox();
+    const pdf = new TextEncoder().encode("%PDF-1.7 teste");
+    const result = await runDigest({ store, outbox, muni: canoas, recipients, pdf: async () => pdf }, now);
+    expect(result).toMatchObject({ ok: true, sent: 1, pdf: { bytes: pdf.length } });
+    expect(sent[0]?.attachments).toEqual([
+      { filename: "Resumo-diario-0288-2026-Fala-Canoas-2026-10-12.pdf", contentType: "application/pdf", content: pdf },
+    ]);
+    expect(sent[0]?.text).toContain("Em anexo, o mesmo resumo em PDF");
+    expect(marked[0]?.pdfSha256).toBe(new Bun.CryptoHasher("sha256").update(pdf).digest("hex"));
+  });
+
+  test("a PDF that fails to build doesn't hold the reports back: the text goes alone, the run says why", async () => {
+    const { store, marked } = fakeStore([item("AAAA1")]);
+    const { outbox, sent } = fakeOutbox();
+    const result = await runDigest(
+      {
+        store,
+        outbox,
+        muni: canoas,
+        recipients,
+        pdf: async () => {
+          throw new Error("typst caiu");
+        },
+      },
+      now,
+    );
+    expect(result).toMatchObject({ ok: true, sent: 1, pdf: { error: "Error: typst caiu" } });
+    expect(sent[0]?.attachments).toEqual([]);
+    expect(sent[0]?.text).not.toContain("Em anexo");
+    expect(marked[0]?.pdfSha256).toBeNull();
   });
 
   test("nothing pending: no e-mail, nothing marked", async () => {
@@ -108,4 +147,21 @@ describe("runDigest", () => {
     expect(await runDigest({ store, outbox, muni: canoas, recipients }, now)).toEqual({ ok: false, error: "busy" });
     expect(sent).toHaveLength(0);
   });
+});
+
+test("pdfName: type, number, sender and day, in plain ASCII", () => {
+  expect(
+    pdfName({
+      number: "0007/2026",
+      day: "01/11/2026",
+      sender: "Fala, Canoas",
+      dateLine: "",
+      sentAt: "",
+      site: "",
+      municipality: "",
+      deadlineDays: 30,
+      total: 0,
+      sections: [],
+    }),
+  ).toBe("Resumo-diario-0007-2026-Fala-Canoas-2026-11-01.pdf");
 });
