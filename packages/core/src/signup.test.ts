@@ -68,3 +68,16 @@ test("missingSignups", () => {
   expect(missingSignups(52, 60)).toBe(0);
   expect(missingSignups(null, 3)).toBe(0);
 });
+
+describe("a typed or pasted +55", () => {
+  test("is stored once", () => {
+    expect(normalizeContact("whatsapp", "+55 (51) 99999-8888")).toBe("5551999998888");
+    expect(normalizeContact("whatsapp", "(51) 99999-8888")).toBe("5551999998888");
+    // DDD 55 (Santa Maria) is a DDD, not the country code.
+    expect(normalizeContact("whatsapp", "(55) 99999-8888")).toBe("5555999998888");
+  });
+  test("passes the check, and extra digits don't", () => {
+    expect(contactError("whatsapp", "+55 51 99999-8888")).toBeNull();
+    expect(contactError("whatsapp", "51 99999-88887")).toContain("dígitos a mais");
+  });
+});

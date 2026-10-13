@@ -23,7 +23,8 @@ export function maskPhoneBR(v: string): string {
 export function contactError(channel: SignupChannel, value: string): string | null {
   const v = value.trim();
   if (channel === "whatsapp") {
-    const d = digits(v);
+    const d = nationalDigits(v);
+    if (d.length > 11) return "Esse número tem dígitos a mais. Use o DDD e o número, como (51) 99999-9999.";
     if (d.length < 10)
       return d.length
         ? "Esse número parece incompleto. Use o DDD e o número, como (51) 99999-9999."
@@ -36,9 +37,15 @@ export function contactError(channel: SignupChannel, value: string): string | nu
   return null;
 }
 
+/** The national number (DDD and number), with a typed or pasted +55 taken off. */
+const nationalDigits = (v: string) => {
+  const d = digits(v);
+  return d.length >= 12 && d.startsWith("55") ? d.slice(2) : d;
+};
+
 /** How a contact is stored: 55 + digits for WhatsApp, lower-case for e-mail. */
 export const normalizeContact = (channel: SignupChannel, value: string) =>
-  channel === "whatsapp" ? `55${digits(value)}` : value.trim().toLowerCase();
+  channel === "whatsapp" ? `55${nationalDigits(value)}` : value.trim().toLowerCase();
 
 export const QueueSignupSchema = z
   .object({
@@ -55,6 +62,9 @@ export const QueueSignupSchema = z
 export type QueueSignup = z.infer<typeof QueueSignupSchema>;
 
 const CODE_ALPHABET = "ACDEFHJKMNPRTUVWXY3479";
+
+/** Whether every character could be in a readable code (any case). */
+export const isReadableCode = (s: string) => [...s.toUpperCase()].every((c) => CODE_ALPHABET.includes(c));
 
 /** A short code people can read aloud or type, without look-alikes (0/O, 1/I, 5/S…). */
 export function readableCode(random: ArrayLike<number>, length: number): string {

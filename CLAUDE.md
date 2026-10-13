@@ -29,6 +29,7 @@ bun --filter @fala/web moderator:add <apelido> [bairro…]   # who moderates (al
 bun --filter @fala/web requests                             # open data-subject requests; `requests answered <protocolo> [nota]`
 bun --filter @fala/digest agora                             # one daily digest now (development: the e-mail lands in apps/digest/outbox/)
 bun --filter @fala/digest protocolo <código> <número> [data] # the protocol the Ouvidoria answered with, on a sent pin
+bun --filter @fala/whatsapp mensagem <número> <texto…>     # development: a message as if sent to the project's WhatsApp
 ```
 
 First run: copy `apps/web/.dev.vars.example` to `apps/web/.dev.vars` and fill `BETTER_AUTH_SECRET` (`openssl rand -base64 32`), `DATABASE_URL` (the `postgres` pooler string) and the Supabase keys. Then `bun run vault:keys`, `bun run push:keys`, `bun run db:migrate`, `bun run db:roles` and `bun run db:seed`.
@@ -43,6 +44,7 @@ The landing page is the web app's `/` route; the app's map is `/mapa`. The stati
 - `apps/vault` (`@fala/vault`): the identity vault (DECISIONS round 18, Q29), its own Cloudflare Worker with its own secrets and database role (`fala_cofre` schema). It owns the phone (AES-GCM ciphertext plus a lookup HMAC, versioned keys), sends and checks codes (Turnstile, limits, the 180-day rule) and answers with an Ed25519-signed assertion naming the account. In production a route sends `/api/identidade/*` straight to it, so the app never receives a number; the app reaches it otherwise only through the `VAULT` service binding. Never add phone handling to `apps/web`.
 - `apps/cards` (`@fala/cards`): share cards (DECISIONS rounds 11 and 15), its own Worker behind the `CARDS` service binding. The app describes a card (`src/server/share-cards.ts`, `/api/cartao/*`); this Worker draws the 1200×630 PNG with Satori and resvg. No database, no secrets. `bun --filter @fala/cards preview` renders samples to /tmp. Satori stays at 0.32: later versions embed harfbuzz, which Workers can't compile.
 - `apps/digest` (`@fala/digest`): the 18h digest to the Ouvidoria (DECISIONS round 5), Elysia on Bun with a cron. It reads and marks the app's tables over plain SQL (the app owns the schema); sending is what starts each report's public clock (`sent_at`). Development writes the e-mail to `outbox/` and never schedules itself; production refuses to send until a sender is configured.
+- `apps/whatsapp` (`@fala/whatsapp`): the project's WhatsApp number, inbound (DECISIONS rounds 12 and 17), Elysia on Bun. "CONFIRMAR XXXX" confirms a queue sign-up, "SAIR" deletes it; the rules are core's `whatsapp.ts`. The number itself is instance config (`branding.whatsapp`). Sign-in codes never pass through it: the vault sends them. Development replies land in `outbox/`; production answers 501 until a provider is plugged in behind `Provider`.
 - **Standalone backend services**, when one is needed (the WhatsApp webhook, the 18h digest job, the public open-data API): **Elysia** on Bun. Don't add them to `apps/web`. (The vault is the exception: round 18 makes it a Worker behind a service binding.)
 
 ## Hard rules (lint-enforced where possible)

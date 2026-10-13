@@ -235,7 +235,15 @@ export interface Municipality {
   filterGroups: FilterGroup[];
   neighborhoods: Neighborhood[];
   geo: { neighborhoods: NeighborhoodCollection; boundary: BoundaryCollection };
-  branding: { name: string; domain: string };
+  branding: {
+    name: string;
+    domain: string;
+    /**
+     * The project's WhatsApp number (digits, with the country code), where people confirm their place
+     * in a bairro's queue. Absent until the instance has one.
+     */
+    whatsapp?: string;
+  };
   /**
    * Campaign periods (inclusive dates, local), when anonymous electoral propaganda is held for
    * moderation (round 18, Q31).

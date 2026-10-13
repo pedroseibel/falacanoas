@@ -7,8 +7,9 @@ import { queueSignups } from "./db/schema";
 
 /**
  * The landing page queue (rounds 6, 12 and 17), stored in Supabase. A bairro's count includes only
- * confirmed sign-ups. No WhatsApp number or e-mail sender exists yet (BUILD.md 3.1, 3.2), so nothing is
- * delivered: the sign-up is kept, and the done screen says the confirmation message comes later.
+ * confirmed sign-ups. WhatsApp sign-ups confirm by sending the pre-filled code to the instance's number
+ * (apps/whatsapp reads it); until the instance has one, and for e-mail until there is a sender
+ * (BUILD.md 3.1, 3.2), the sign-up is kept and the done screen says the confirmation comes later.
  */
 export const getQueue = createServerFn({ method: "GET" }).handler(async () => {
   const rows = await db
@@ -52,6 +53,6 @@ export const joinQueue = createServerFn({ method: "POST" })
       /** A confirmation message or link actually went out. False until a sender exists. */
       delivered: false,
       /** The project's WhatsApp number (digits with country code), once there is one. */
-      whatsappNumber: null,
+      whatsappNumber: canoas.branding.whatsapp ?? null,
     };
   });

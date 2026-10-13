@@ -114,11 +114,13 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - protocols: `bun --filter @fala/digest protocolo <código> <número> [data]` sets the number and date on a sent pin (never before the send) and adds it to the history; the page shows it with the legal deadline;
   - development writes each e-mail to `apps/digest/outbox/` as an `.eml` and doesn't schedule itself (`bun --filter @fala/digest agora` runs one), so a dev process never starts real reports' clocks. `POST /resumo` (bearer token) runs one by hand; `GET /saude` shows the schedule and the last run;
   - ⛔ production: needs an e-mail sender and the Ouvidoria and CAC addresses (`DIGEST_FROM`, `DIGEST_TO`, `DIGEST_CC`). Until a sender exists, production refuses to send, and no clock starts. Reading protocols from the replies (by hand for now) can follow the sender.
-- [ ] **3.2 WhatsApp sender and webhook** (rounds 11, 12, 17):
-  - sign-in codes;
-  - waitlist confirmation by `wa.me` link with a code.
-
-  ⛔ Needs a provider and the project's number. Development outbox first.
+- [x] **3.2 WhatsApp sender and webhook** (rounds 11, 12, 17). Done 2026-10-12 with a development outbox, verified from the landing's sign-up to the confirmed count.
+  - `apps/whatsapp`, Elysia on Bun, the project's number inbound: "CONFIRMAR XXXX" from the signed-up number confirms the place in the bairro's queue (the person writes first, so it costs the project nothing), and the reply says how many are missing; "SAIR" deletes the sign-up; anything else gets, once a day per number, a note on what the number does and the emergency numbers. The rules are core's (`whatsapp.ts`): a bare code counts only when it could be one, and numbers that arrive without the ninth digit (accounts from before it) still match;
+  - the instance's number is config (`branding.whatsapp`): with it, the landing's done screen turns on "Confirmar no WhatsApp" (a `wa.me` link with the code written in);
+  - a `+55` typed or pasted on the landing is no longer stored twice (`5555…`), and numbers with extra digits are refused;
+  - sign-in codes don't pass through this service: the vault sends them itself (its `Outbox`), so the phone never leaves it. In development the sign-in page shows them, as before;
+  - development: `bun --filter @fala/whatsapp mensagem <número> <texto>`, or `POST /dev/mensagem`, plays a message as if it came from WhatsApp; replies are appended to `apps/whatsapp/outbox/mensagens.txt`;
+  - ⛔ production: needs a provider (Meta's Cloud API or a BSP on it) and the number. Then: the provider's webhook (signature and parsing, behind `Provider`; `/webhook` answers 501 until then), its sender for replies, and the vault's delivery for codes (an authentication template) and number-change notices. E-mail confirmation links wait on the e-mail sender (3.1).
 - [ ] **3.3 Open-data API** (round 10):
   - pins and status timelines;
   - locations fuzzed and photos blurred;

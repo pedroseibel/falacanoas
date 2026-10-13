@@ -1,0 +1,3 @@
+# The development outbox: replies written as files instead of sent.
+outbox/
+.env
