@@ -139,7 +139,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - sent after the response (`waitUntil`, through `src/server/background.ts`); dead subscriptions (404/410) are deleted; closing the account deletes them all; signing out stops this device's first;
   - Você → Acompanhando: "Avisos neste aparelho", on or off, or why not (unsupported, iPhone outside the installed app, blocked, not configured);
   - keys: `bun run push:keys` in development; production stores VAPID_PRIVATE_KEY and VAPID_PUBLIC_KEY as Worker secrets (4.5).
-- [ ] **4.3 Icons to a signage norm** (round 16): CONTRAN, ISO 7001, AIGA/DOT or NBR 9050, kept behind `<Icon>`.
+- [x] **4.3 Icons to a signage norm** (round 16). Done 2026-10-12, checked at every size the app uses (13 to 36 px), at 2× and in both themes.
+  - the norm: public-information pictograms, ISO 7001's construction in the public-domain AIGA/DOT drawing style, with the CONTRAN subject where a traffic sign already shows it (the traffic light, the pedestrian, the road surface), never its warning plates. NBR 9050 covers accessibility symbols, which no category needs yet;
+  - eleven category pictograms and the "Agora" clock, redrawn as solid single-ink silhouettes on a 24-unit grid: 2.5-unit limbs, gaps of at least 2. Each shows the object (a tire in the hole, a car in water, a drop over a grate, a tied bag, a brick pile, a street lamp, a tree, a pedestrian on broken pavement, a pipe pouring out, a traffic light, a speech balloon with "!");
+  - the 28 unused prototype glyphs are gone from the sprite; interface icons stay lucide. DESIGN.md has the rules (Pictograms).
 - [ ] **4.4 CARTO basemap** (round 14). ⛔ Needs the key.
 - [ ] **4.5 Cloudflare deploy:**
   - Hyperdrive, one config per role (fala_app, fala_cofre);

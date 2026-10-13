@@ -415,6 +415,10 @@ The sign-in stepper, a variant of the Scoreboard Ruler. It is 18px tall with 13 
 
 Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500), a right-aligned mono queue count, and a 20-slot meter of 12px cells at 2px radius on Panel Well, filled with ink as neighbours join. Hover takes Panel Recess. The selected row gets Shelter Orange Wash, orange lit slots and an orange count.
 
+### Pictograms
+
+One pictogram per category, drawn to the public-information norm: ISO 7001's construction in the public-domain AIGA/DOT drawing style. Where a Brazilian traffic sign (CONTRAN) already shows the subject, the pictogram takes that subject (the traffic light, the pedestrian, the road surface), but never the sign's yellow diamond or red ring: nothing may read as an alert. Each is a solid single-ink silhouette on a 24-unit grid, inside 2 to 22. Limbs and bars are 2.5 units, and gaps and cut-outs are at least 2, so the set still reads at 13px. It shows the object, not a mood: a tire in the hole, a tied bag, a pipe pouring out, a car up to its doors in water. They take the text colour around them: Slate in tiles and meta lines, ink in filter chips. They live in `src/components/Icons.tsx` behind `<Icon name>`; all other interface icons are lucide strokes.
+
 ## Do's and Don'ts
 
 ### Do:

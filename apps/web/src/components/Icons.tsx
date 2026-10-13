@@ -1,79 +1,31 @@
 /**
- * Icon set: TEMPORARY. These hand-drawn glyphs are to be replaced by a set that follows a
- * signage norm (traffic and public-information pictograms; see research/DECISIONS.md, round 16).
- * Keep every icon behind <Icon name>, so the swap happens in this file only.
+ * The pictograms (DECISIONS round 16): one per category, plus the clock of the "Agora" filter. They
+ * follow the public-information norm (ISO 7001's construction, in the public-domain AIGA/DOT drawing
+ * style), with the subject of the Brazilian traffic sign (CONTRAN) where one exists: the traffic
+ * light, the pedestrian, the road surface.
+ *
+ * - Solid, single-ink silhouettes on a 24-unit grid, drawn inside 2–22. No outlines, no perspective,
+ *   no text.
+ * - Limbs and bars 2.5 units; gaps and cut-outs at least 2, so a glyph still reads at 13 px.
+ * - The object, not an emotion: a tire in the hole, a bag on the street, a pipe pouring out.
+ *
+ * Everything else in the interface is lucide. Keep every pictogram behind <Icon name>, so a change
+ * happens in this file only.
  */
-const SYMBOLS = `<symbol id="i-map" viewBox="0 0 24 24"><path d="M3.5 6.5l5-2 7 2.5 5-2v13l-5 2-7-2.5-5 2z"/><path d="M8.5 4.5v13M15.5 7v13"/></symbol>
-<symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16"/><path d="M6.5 16V11M11 16V6M15.5 16v-3.5M20 16V8.5"/></symbol>
-<symbol id="i-home" viewBox="0 0 24 24"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 9.5V20h12V9.5"/><path d="M10 20v-5h4v5"/></symbol>
-<symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.6"/><path d="M5 20c1.2-3.6 3.8-5.5 7-5.5s5.8 1.9 7 5.5"/></symbol>
-<symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
-<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
-<symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
-<symbol id="i-back" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
-<symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
-<symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V4M8 8l4-4 4 4"/><path d="M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/></symbol>
-<symbol id="i-more" viewBox="0 0 24 24"><circle cx="6" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="18" cy="12" r="1.2"/></symbol>
-<symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
-<symbol id="i-eye" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.8"/></symbol>
-<symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 3.5l3 3-3 3"/><path d="M4 11.5v-1A4 4 0 0 1 8 6.5h12"/><path d="M7 20.5l-3-3 3-3"/><path d="M20 12.5v1a4 4 0 0 1-4 4H4"/></symbol>
-<symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></symbol>
-<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol>
-<symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A1.5 1.5 0 0 1 5.5 7h2l1.5-2h6l1.5 2h2A1.5 1.5 0 0 1 20 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 4 17.5z"/><circle cx="12" cy="12.5" r="3.4"/></symbol>
-<symbol id="i-image" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M5 17l4.5-4.5 3 3 2.5-2.5 4 4"/></symbol>
-<symbol id="i-locate" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="7"/></symbol>
-<symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
-<symbol id="i-send" viewBox="0 0 24 24"><path d="M20 4L3.5 10.8l6.6 2.6 2.6 6.6L20 4zM10.1 13.4L20 4"/></symbol>
-<symbol id="i-chat" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-11.2 6.5L4 19.5l1.5-4.6A7.5 7.5 0 1 1 20 11.5z"/></symbol>
-<symbol id="i-mask" viewBox="0 0 24 24"><path d="M4 8.5c2.6-1.4 5.3-2 8-2s5.4.6 8 2c0 6-3.2 9.5-8 9.5S4 14.5 4 8.5z"/><path d="M8 11.5c.9-.7 1.9-.7 2.8 0M13.2 11.5c.9-.7 1.9-.7 2.8 0"/></symbol>
-<symbol id="i-badge" viewBox="0 0 24 24"><path d="M12 3.5l2.2 1.6 2.7-.2.9 2.6 2.2 1.6-.8 2.6.8 2.6-2.2 1.6-.9 2.6-2.7-.2L12 20.5l-2.2-1.6-2.7.2-.9-2.6L4 14.9l.8-2.6L4 9.7l2.2-1.6.9-2.6 2.7.2z"/><path d="M9 12l2 2 4-4"/></symbol>
-<symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.9-3 3-4.6 5.5-4.6s4.6 1.6 5.5 4.6"/><path d="M15 6a3 3 0 0 1 0 6M17 14.6c1.8.4 3 1.9 3.6 4.4"/></symbol>
-<symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></symbol>
-<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 11v5M12 8h.01"/></symbol>
-<symbol id="i-sliders" viewBox="0 0 24 24"><path d="M5 6h9M18 6h1M5 12h3M12 12h7M5 18h11M20 18h-1"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
-<symbol id="i-route" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 18h7.5a3 3 0 0 0 0-6h-7a3 3 0 0 1 0-6H16"/></symbol>
-<symbol id="c-buraco" viewBox="0 0 24 24"><path d="M3.5 15.5c0-2.6 3.8-4.6 8.5-4.6s8.5 2 8.5 4.6-3.8 4.5-8.5 4.5-8.5-1.9-8.5-4.5z"/><path d="M7.5 15c1.3-1 2.8-1.5 4.5-1.5s3.2.5 4.5 1.5"/><path d="M12 4v3.5M9 5.5l1 2M15 5.5l-1 2"/></symbol>
-<symbol id="c-alaga" viewBox="0 0 24 24"><path d="M12 3.5s4.8 5.2 4.8 8.7a4.8 4.8 0 0 1-9.6 0C7.2 8.7 12 3.5 12 3.5z"/><path d="M3 19.5c1.5 0 1.5-1 3-1s1.5 1 3 1 1.5-1 3-1 1.5 1 3 1 1.5-1 3-1 1.5 1 3 1"/></symbol>
-<symbol id="c-bocalobo" viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="10" rx="1.5"/><path d="M8 7v10M12 7v10M16 7v10"/><path d="M3 20h18"/></symbol>
-<symbol id="c-lixo" viewBox="0 0 24 24"><path d="M5 7h14M9.5 7V4.5h5V7"/><path d="M6.5 7l1 12.5h9l1-12.5"/><path d="M10 10.5v6M14 10.5v6"/></symbol>
-<symbol id="c-entulho" viewBox="0 0 24 24"><path d="M3.5 19.5h17"/><rect x="5" y="14.5" width="6" height="5"/><rect x="11" y="14.5" width="7.5" height="5"/><rect x="7.5" y="9.5" width="7" height="5"/><path d="M15.5 9.5l2.5-3.5 2 2.5"/></symbol>
-<symbol id="c-poste" viewBox="0 0 24 24"><path d="M9 21V6.5A2.5 2.5 0 0 1 11.5 4H15"/><path d="M13.5 4h4l1.5 3h-7z"/><path d="M6.5 21h5"/><path d="M15.5 10l.5 1.5M18.5 9.5l-.5 1.5"/></symbol>
-<symbol id="c-arvore" viewBox="0 0 24 24"><path d="M12 21v-6"/><path d="M12 15c-4 0-6.5-2.3-6.5-5.3 0-2 1.3-3.5 3-4A4.2 4.2 0 0 1 16 5.5c2 .4 3 2 3 4 0 3.2-3 5.5-7 5.5z"/><path d="M9 21h6"/></symbol>
-<symbol id="c-calcada" viewBox="0 0 24 24"><path d="M3.5 18.5h17M3.5 14h17"/><path d="M8 14v4.5M13 14l-1.5 2 1 2.5M17.5 14v4.5"/><circle cx="12" cy="5.5" r="1.6"/><path d="M10.5 11.5l1.5-3.5 2 1.5"/></symbol>
-<symbol id="c-esgoto" viewBox="0 0 24 24"><path d="M3.5 8.5h8a3 3 0 0 1 3 3v1"/><path d="M3.5 5.5h8a6 6 0 0 1 6 6v1"/><path d="M14.5 15.5s-1.5 1.8-1.5 2.8a1.5 1.5 0 0 0 3 0c0-1-1.5-2.8-1.5-2.8z"/></symbol>
-<symbol id="c-sinal" viewBox="0 0 24 24"><rect x="8.5" y="3.5" width="7" height="14" rx="2"/><circle cx="12" cy="7.2" r="1.2"/><circle cx="12" cy="10.5" r="1.2"/><circle cx="12" cy="13.8" r="1.2"/><path d="M12 17.5v3.5"/></symbol>
-<symbol id="c-questao" viewBox="0 0 24 24"><path d="M20 11.5a7.5 7.5 0 0 1-11.2 6.5L4 19.5l1.5-4.6A7.5 7.5 0 1 1 20 11.5z"/><path d="M10.2 9.5a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.2v.5M12 15.2h.01"/></symbol>`;
+const SYMBOLS = `<symbol id="c-buraco" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M12 5.5a5.75 5.75 0 1 1 0 11.5 5.75 5.75 0 0 1 0-11.5zm0 3.25a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/><path d="M2 14h2.5v1.5c0 2.4 3.4 4 7.5 4s7.5-1.6 7.5-4V14H22v8H2z"/></symbol>
+<symbol id="c-alaga" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M4.5 14.1V10.9c0-.8.5-1.4 1.3-1.6l2.6-.5 1.9-2.8c.4-.6 1-.9 1.7-.9h2.9c.7 0 1.3.3 1.7.9l1.9 2.8 1.1.3c.8.2 1.4.9 1.4 1.7v3.3c-.833 0-1.667 1.6-2.5 1.6s-1.667-1.6-2.5-1.6-1.667 1.6-2.5 1.6-1.667-1.6-2.5-1.6-1.667 1.6-2.5 1.6-1.667-1.6-2.5-1.6zM11.2 7.4h3.3l1.3 2h-5.9z"/><path d="M2 16.5c.833 0 1.667-1.6 2.5-1.6s1.667 1.6 2.5 1.6 1.667-1.6 2.5-1.6 1.667 1.6 2.5 1.6 1.667-1.6 2.5-1.6 1.667 1.6 2.5 1.6 1.667-1.6 2.5-1.6 1.667 1.6 2.5 1.6V22H2z"/></symbol>
+<symbol id="c-bocalobo" viewBox="0 0 24 24"><path d="M12 2.2s-2.6 2.9-2.6 4.6a2.6 2.6 0 0 0 5.2 0c0-1.7-2.6-4.6-2.6-4.6z"/><path fill-rule="evenodd" d="M5 12h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2zm1 2a1 1 0 0 0-1 1v3a1 1 0 0 0 2 0v-3a1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1v3a1 1 0 0 0 2 0v-3a1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1v3a1 1 0 0 0 2 0v-3a1 1 0 0 0-1-1zm4 0a1 1 0 0 0-1 1v3a1 1 0 0 0 2 0v-3a1 1 0 0 0-1-1z"/></symbol>
+<symbol id="c-lixo" viewBox="0 0 24 24"><path d="M12 8.6c3.9 0 5.4 2.5 6.6 5.9l.9 2.6c.8 2.4-.9 4.9-3.4 4.9H7.9c-2.5 0-4.2-2.5-3.4-4.9l.9-2.6C6.6 11.1 8.1 8.6 12 8.6z"/><path d="M11 6.6h2l.5 2.6h-3z"/><path d="M12 7.2C10.5 7.2 8.2 5.8 8 4c-.1-.7.5-1.1 1.1-.9 1.6.5 3.3 2.1 2.9 4.1z"/><path d="M12 7.2c1.5 0 3.8-1.4 4-3.2.1-.7-.5-1.1-1.1-.9-1.6.5-3.3 2.1-2.9 4.1z"/></symbol>
+<symbol id="c-entulho" viewBox="0 0 24 24"><rect x="2" y="17.75" width="5.33" height="3.75" rx=".6"/><rect x="9.33" y="17.75" width="5.33" height="3.75" rx=".6"/><rect x="16.67" y="17.75" width="5.33" height="3.75" rx=".6"/><rect x="5.67" y="12" width="5.33" height="3.75" rx=".6"/><rect x="13" y="12" width="5.33" height="3.75" rx=".6"/><rect x="9.33" y="5.4" width="5.33" height="3.75" rx=".6" transform="rotate(-14 12 7.3)"/></symbol>
+<symbol id="c-poste" viewBox="0 0 24 24"><rect x="5.75" y="6.5" width="2.5" height="14" /><rect x="3.75" y="19.75" width="6.5" height="2.25" rx=".75"/><path d="M7 7.5c0-2.6 1.7-4.25 4.3-4.25H14" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M13.6 2h5.1c.7 0 1.3.4 1.5 1.1l1.2 3.4c.2.6-.3 1.2-.9 1.2h-8.6c-.7 0-1.1-.6-.9-1.2l1.2-3.4c.2-.7.8-1.1 1.4-1.1z"/></symbol>
+<symbol id="c-arvore" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><circle cx="7.3" cy="11.2" r="4.2"/><circle cx="16.7" cy="11.2" r="4.2"/><path d="M10.75 13h2.5v7.5l1.75 1.5h-6l1.75-1.5z"/></symbol>
+<symbol id="c-calcada" viewBox="0 0 24 24"><circle cx="12.3" cy="3.3" r="2.1"/><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M11.7 6.9l-.7 4.7" stroke-width="3"/><path d="M11.5 7.9L9.3 10l-.7 2.4M12 7.9l2.3 1.9 2.1.8" stroke-width="2.2"/><path d="M11 11.6l-1.6 2.7-2.2 2.1M11 11.6l2 2.6.5 2.3" stroke-width="2.5"/></g><path d="M2 19.75h13.5V22H2z"/><path d="M17.5 18.5H22V22h-4.5z"/></symbol>
+<symbol id="c-esgoto" viewBox="0 0 24 24"><path d="M2 3.5h7.2c1 0 1.8 1.6 1.8 3.5s-.8 3.5-1.8 3.5H2z"/><path d="M10.2 9.2c2.9.4 4.8 2.2 4.8 5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/><path d="M4.5 19.4c1.3 0 2.2-1 3.5-1s2.2 1 3.5 1 2.2-1 3.5-1 2.2 1 3.5 1 2.2-1 3.5-1V22H4.5z"/></symbol>
+<symbol id="c-sinal" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10 1.5h4a2.5 2.5 0 0 1 2.5 2.5v10.5A2.5 2.5 0 0 1 14 17h-4a2.5 2.5 0 0 1-2.5-2.5V4A2.5 2.5 0 0 1 10 1.5zm2 1.7a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 4.6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 4.6a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path d="M10.75 16h2.5v6h-2.5z"/></symbol>
+<symbol id="c-questao" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M6.5 3h11a4 4 0 0 1 4 4v6.5a4 4 0 0 1-4 4h-6.8l-4.5 3.7c-.6.5-1.4 0-1.3-.7l.5-3.1A4 4 0 0 1 2.5 13.5V7a4 4 0 0 1 4-4zm5.5 2.75c-.7 0-1.25.55-1.25 1.25v3.5a1.25 1.25 0 0 0 2.5 0V7c0-.7-.55-1.25-1.25-1.25zm0 6.8a1.35 1.35 0 1 0 0 2.7 1.35 1.35 0 0 0 0-2.7z"/></symbol>
+<symbol id="i-clock" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.75"/><path d="M12 8v4l3.2 2.2"/></g></symbol>`;
 
 export type IconName =
-  | "i-map"
-  | "i-chart"
-  | "i-home"
-  | "i-user"
-  | "i-plus"
-  | "i-search"
-  | "i-down"
-  | "i-back"
-  | "i-close"
-  | "i-share"
-  | "i-more"
-  | "i-check"
-  | "i-eye"
-  | "i-repeat"
-  | "i-edit"
-  | "i-bell"
-  | "i-camera"
-  | "i-image"
-  | "i-locate"
-  | "i-minus"
-  | "i-send"
-  | "i-chat"
-  | "i-mask"
-  | "i-badge"
-  | "i-users"
-  | "i-clock"
-  | "i-info"
-  | "i-sliders"
-  | "i-route"
   | "c-buraco"
   | "c-alaga"
   | "c-bocalobo"
@@ -84,38 +36,10 @@ export type IconName =
   | "c-calcada"
   | "c-esgoto"
   | "c-sinal"
-  | "c-questao";
+  | "c-questao"
+  | "i-clock";
 
 const ICON_SET = new Set<string>([
-  "i-map",
-  "i-chart",
-  "i-home",
-  "i-user",
-  "i-plus",
-  "i-search",
-  "i-down",
-  "i-back",
-  "i-close",
-  "i-share",
-  "i-more",
-  "i-check",
-  "i-eye",
-  "i-repeat",
-  "i-edit",
-  "i-bell",
-  "i-camera",
-  "i-image",
-  "i-locate",
-  "i-minus",
-  "i-send",
-  "i-chat",
-  "i-mask",
-  "i-badge",
-  "i-users",
-  "i-clock",
-  "i-info",
-  "i-sliders",
-  "i-route",
   "c-buraco",
   "c-alaga",
   "c-bocalobo",
@@ -127,6 +51,7 @@ const ICON_SET = new Set<string>([
   "c-esgoto",
   "c-sinal",
   "c-questao",
+  "i-clock",
 ]);
 
 export function isIconName(s: string): s is IconName {
@@ -155,17 +80,7 @@ export function Icon({
   size?: number;
 }) {
   return (
-    <svg
-      className={className}
-      width={size}
-      height={size}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
+    <svg className={className} width={size} height={size} fill="currentColor" aria-hidden="true">
       <use href={`#${name}`} />
     </svg>
   );
