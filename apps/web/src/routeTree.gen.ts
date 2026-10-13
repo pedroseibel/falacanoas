@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as BemVindoRouteImport } from './routes/bem-vindo'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as TransparenciaRouteImport } from './routes/transparencia'
 import { Route as AppMapRouteImport } from './routes/_app/_map'
 import { Route as AppModerarRouteImport } from './routes/_app/moderar'
 import { Route as AppPlacarRouteImport } from './routes/_app/placar'
@@ -51,6 +52,11 @@ const EntrarRoute = EntrarRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransparenciaRoute = TransparenciaRouteImport.update({
+  id: '/transparencia',
+  path: '/transparencia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppMapRoute = AppMapRouteImport.update({
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/bem-vindo': typeof BemVindoRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/transparencia': typeof TransparenciaRoute
   '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
@@ -147,6 +154,7 @@ export interface FileRoutesByTo {
   '/bem-vindo': typeof BemVindoRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/transparencia': typeof TransparenciaRoute
   '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
   '/voce': typeof AppVoceRoute
@@ -168,6 +176,7 @@ export interface FileRoutesById {
   '/bem-vindo': typeof BemVindoRoute
   '/entrar': typeof EntrarRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/transparencia': typeof TransparenciaRoute
   '/_app/_map': typeof AppMapRouteWithChildren
   '/_app/moderar': typeof AppModerarRoute
   '/_app/placar': typeof AppPlacarRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/bem-vindo'
     | '/entrar'
     | '/privacidade'
+    | '/transparencia'
     | '/moderar'
     | '/placar'
     | '/voce'
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/bem-vindo'
     | '/entrar'
     | '/privacidade'
+    | '/transparencia'
     | '/moderar'
     | '/placar'
     | '/voce'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/bem-vindo'
     | '/entrar'
     | '/privacidade'
+    | '/transparencia'
     | '/_app/_map'
     | '/_app/moderar'
     | '/_app/placar'
@@ -251,6 +263,7 @@ export interface RootRouteChildren {
   BemVindoRoute: typeof BemVindoRoute
   EntrarRoute: typeof EntrarRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  TransparenciaRoute: typeof TransparenciaRoute
   PrivacidadePedidoRoute: typeof PrivacidadePedidoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFotosKeyRoute: typeof ApiFotosKeyRoute
@@ -294,6 +307,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transparencia': {
+      id: '/transparencia'
+      path: '/transparencia'
+      fullPath: '/transparencia'
+      preLoaderRoute: typeof TransparenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/_map': {
@@ -436,6 +456,7 @@ const rootRouteChildren: RootRouteChildren = {
   BemVindoRoute: BemVindoRoute,
   EntrarRoute: EntrarRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  TransparenciaRoute: TransparenciaRoute,
   PrivacidadePedidoRoute: PrivacidadePedidoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFotosKeyRoute: ApiFotosKeyRoute,

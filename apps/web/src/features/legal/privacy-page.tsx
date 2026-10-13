@@ -74,6 +74,23 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
         </ul>
       </Part>
 
+      <Part title="Moderação e triagem automática">
+        <p>
+          Antes de aparecer no mapa, cada foto passa por alguém da moderação. Antes disso, um serviço do próprio Fala,
+          em São Paulo, olha a foto procurando nudez, rostos e placas, para orientar quem modera. Ele não reconhece quem
+          aparece, não guarda a foto e não manda nada a outras empresas.
+        </p>
+        <p>
+          Quem denuncia um conteúdo não é revelado a ninguém. Se a moderação remover algo seu, silenciar ou suspender a
+          sua conta, você vê o motivo na página Você e pode contestar. Nada disso aparece em público. Os números da
+          moderação estão no{" "}
+          <a href="/transparencia" className={textLink}>
+            relatório de transparência
+          </a>
+          .
+        </p>
+      </Part>
+
       <Part title="O que não coletamos">
         <p>
           CPF, documentos, data de nascimento ou a localização do seu aparelho: o GPS só move o mapa na tela, e o ponto
@@ -84,14 +101,17 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
 
       <Part title="Com quem compartilhamos">
         <p>
-          A Prefeitura recebe os registros (texto, fotos e local) no resumo diário, sem quem os fez. Não vendemos nem
-          repassamos dados para fins comerciais.
+          A Prefeitura recebe os registros (texto, fotos e local) no resumo diário, sem quem os fez. Autoridades recebem
+          o que a lei exige: material de abuso sexual infantil, que é denunciado e preservado, e dados de acesso
+          mediante ordem judicial. Não vendemos nem repassamos dados para fins comerciais.
         </p>
       </Part>
 
       <Part title="Por quanto tempo">
         <p>
-          A conta, até você encerrá-la. Os registros de acesso, por 6 meses. O que você publicou continua no mapa como
+          A conta, até você encerrá-la. Os registros de acesso, por 6 meses. Fotos removidas pela moderação ficam
+          guardadas, sem aparecer, por 6 meses, e depois são apagadas; material de abuso sexual infantil é preservado
+          até as autoridades confirmarem que o receberam, como a lei exige. O que você publicou continua no mapa como
           parte do histórico da cidade, desligado da sua identidade se você encerrar a conta. Pedidos de remoção,
           ocultação ou anonimização são avaliados conforme a LGPD, os direitos de outras pessoas e a finalidade
           documental do Fala.

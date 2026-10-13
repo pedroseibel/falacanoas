@@ -7,6 +7,7 @@ import { getItemViewer } from "@/server/item-actions";
 import { getIsModerator, getModerationQueue } from "@/server/moderation";
 import { getQueue } from "@/server/queue";
 import { getMySanctions, getSanctionQueue } from "@/server/sanctions";
+import { getTransparency } from "@/server/transparency";
 
 /** Server state lives in TanStack Query. Loaders prefetch, components read. */
 export const cityQuery = queryOptions({
@@ -98,4 +99,11 @@ export const mySanctionsQuery = queryOptions({
   queryKey: ["account", "sanctions"],
   queryFn: () => getMySanctions(),
   staleTime: 30_000,
+});
+
+/** The transparency report's counts (round 20): public, the same for everyone. */
+export const transparencyQuery = queryOptions({
+  queryKey: ["transparency"],
+  queryFn: () => getTransparency(),
+  staleTime: 10 * 60_000,
 });

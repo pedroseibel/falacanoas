@@ -183,7 +183,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - one step from the queue or "Remover agora": removed, unviewable even to moderators, preserved, account suspended;
   - the controller's `bun --filter @fala/web escalation` covers list, reported, received, purge and contest.
 - [x] **5.10 Retention** (round 20). Done 2026-10-13: the daily job deletes removed photos' bytes six months after removal, never under an open contest or an escalation.
-- [ ] **5.11 Annual transparency report** (round 20; the STF tese on art. 19): a public page with reports, removals by reason, sanctions and contests won, by month.
+- [x] **5.11 Transparency report** (round 20; the STF tese on art. 19). Done 2026-10-13: `/transparencia`, counted live by month for the last 12 months on Canoas's calendar. It covers photos looked at and removed, the median time to a first look, reports, removals, contests and those won, sanctions, escalations to the authorities, and data-subject requests. Only counts, never people or content. The privacy notice links to it and now covers the screening, sanctions and retention (version 2026-10-13).
 
 ## Founder inputs that unblock items
 
