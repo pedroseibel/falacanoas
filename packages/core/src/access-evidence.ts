@@ -38,12 +38,27 @@ export const ConnectionSchema = z.object({
   ipVersion: z.union([z.literal(4), z.literal(6)]).nullable(),
   edgeIp: z.string().max(64).nullable(),
   edgePort: z.number().int().min(0).max(65535).nullable(),
-  /** "tcp" for HTTP/1.1 and HTTP/2, "quic" for HTTP/3. */
-  transport: z.enum(["tcp", "quic"]).nullable(),
+  /**
+   * "tcp" for HTTP/1.1 and HTTP/2, "quic" for HTTP/3. "whatsapp" when the action came through the
+   * project's WhatsApp number: the person's connection is WhatsApp's to log, so the evidence holds the
+   * account and the time, with no address.
+   */
+  transport: z.enum(["tcp", "quic", "whatsapp"]).nullable(),
   /** For correlation only: Ray IDs can repeat. */
   cfRay: z.string().max(64).nullable(),
 });
 export type Connection = z.infer<typeof ConnectionSchema>;
+
+/** An action sent from the project's WhatsApp number (whatsapp-report.ts). */
+export const WHATSAPP_CONNECTION: Connection = {
+  clientIp: null,
+  clientPort: null,
+  ipVersion: null,
+  edgeIp: null,
+  edgePort: null,
+  transport: "whatsapp",
+  cfRay: null,
+};
 
 const port = (v: string | null) => {
   if (!v || !/^\d{1,5}$/.test(v)) return null;

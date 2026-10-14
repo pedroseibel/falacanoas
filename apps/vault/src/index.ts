@@ -10,8 +10,16 @@ import {
 } from "@fala/core";
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
-import { importVaultKeys, type VaultKeys } from "./crypto";
-import { closeAccount, sendCode, sendReauthCode, verifyCode, type Gateway, type Outbox } from "./gateway";
+import { importVaultKeys, same, type VaultKeys } from "./crypto";
+import {
+  closeAccount,
+  sendCode,
+  sendReauthCode,
+  verifyCode,
+  whatsappAccount,
+  type Gateway,
+  type Outbox,
+} from "./gateway";
 import { beginChange, sendChangeCode, takeChange, verifyChangeCode } from "./number-change";
 import { outbox, peekDevCode } from "./outbox";
 import { openStore } from "./store";
@@ -31,7 +39,12 @@ export interface Env {
   TURNSTILE_HOSTNAME?: string;
   /** "development" in .dev.vars only: test Turnstile secret, codes shown instead of sent. */
   VAULT_MODE?: string;
+  /** Shared with apps/whatsapp, which asks here which account a WhatsApp number belongs to. 32+ characters. */
+  WHATSAPP_VAULT_TOKEN?: string;
 }
+
+/** Development's token for the WhatsApp service, when .dev.vars sets none (apps/whatsapp has the same). */
+const DEV_WHATSAPP_VAULT_TOKEN = "desenvolvimento-whatsapp-cofre-0000000000";
 
 /** Keys are imported once per isolate. */
 let imported: Promise<{ keys: VaultKeys; signingKey: CryptoKey }> | null = null;
@@ -41,7 +54,7 @@ const importKeys = (env: Env) =>
   ));
 
 const BodySchema = z
-  .object({ telefone: z.unknown(), token: z.unknown(), codigo: z.unknown(), ticket: z.unknown() })
+  .object({ telefone: z.unknown(), token: z.unknown(), codigo: z.unknown(), ticket: z.unknown(), de: z.unknown() })
   .partial();
 
 const STATUS = {
@@ -52,6 +65,7 @@ const STATUS = {
   taken: 409,
   rate: 429,
   send: 503,
+  unlinked: 404,
 } satisfies Record<string, number>;
 
 const ACTIONS = {
@@ -59,6 +73,7 @@ const ACTIONS = {
   "/api/identidade/verificar": "verify",
   "/api/identidade/troca/codigo": "change-send",
   "/api/identidade/troca/verificar": "change-verify",
+  "/api/identidade/whatsapp/conta": "whatsapp",
 } satisfies Record<string, string>;
 const isRoute = (path: string): path is keyof typeof ACTIONS => path in ACTIONS;
 
@@ -84,6 +99,7 @@ export default class Vault extends WorkerEntrypoint<Env> {
 
     if (!isRoute(url.pathname)) return json({ ok: false }, 404);
     const action = ACTIONS[url.pathname];
+    if (action === "whatsapp" && !this.fromWhatsapp(request)) return json({ ok: false }, 401);
     const body = BodySchema.safeParse(await request.json().catch(() => null));
     const input = body.success ? body.data : {};
     const ip = request.headers.get("cf-connecting-ip");
@@ -95,6 +111,11 @@ export default class Vault extends WorkerEntrypoint<Env> {
       if (action === "send") {
         const r = await sendCode(g, { phone: input.telefone, token: input.token, ip, now });
         return r.ok ? json({ ok: true }) : json(r, STATUS[r.error]);
+      }
+      // The reporting bot (apps/whatsapp): the account of the number that wrote, never the number back.
+      if (action === "whatsapp") {
+        const r = await whatsappAccount(g, { from: input.de, now });
+        return r.ok ? json({ ok: true, assertion: r.assertion }) : json(r, STATUS[r.error]);
       }
       if (action === "verify") {
         const r = await verifyCode(g, { phone: input.telefone, code: input.codigo, ip, now });
@@ -118,6 +139,14 @@ export default class Vault extends WorkerEntrypoint<Env> {
     } finally {
       this.ctx.waitUntil(db.close());
     }
+  }
+
+  /** The WhatsApp service's bearer token; a short or missing one shuts the route in production. */
+  private fromWhatsapp(request: Request): boolean {
+    const token =
+      this.env.WHATSAPP_VAULT_TOKEN ?? (this.env.VAULT_MODE === "development" ? DEV_WHATSAPP_VAULT_TOKEN : "");
+    const given = request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
+    return token.length >= 32 && same(given, token);
   }
 
   private async gateway(store: Gateway["store"], delivery?: Outbox): Promise<Gateway> {

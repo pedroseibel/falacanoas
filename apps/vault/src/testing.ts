@@ -105,8 +105,8 @@ export async function gateway(keys?: VaultKeys) {
     human: async (token) => token === "humano",
     signingKey: pair.privateKey,
   };
-  const read = async (token: string, now: Date): Promise<VaultAssertion | null> =>
-    readVaultAssertion(token, pair.publicKey, Math.floor(now.getTime() / 1000));
+  const read = async (token: string, now: Date, audience?: VaultAssertion["aud"]): Promise<VaultAssertion | null> =>
+    readVaultAssertion(token, pair.publicKey, Math.floor(now.getTime() / 1000), audience);
   return { g, sent, notices, mem, read };
 }
 

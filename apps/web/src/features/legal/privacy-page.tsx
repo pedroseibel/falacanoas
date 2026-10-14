@@ -78,6 +78,17 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
         </ul>
       </Part>
 
+      <Part title="Pelo WhatsApp">
+        <p>
+          Se você registra um problema pelo WhatsApp do Fala, o WhatsApp entrega ao Fala o seu número, as mensagens, as
+          fotos e a localização que você envia. O número vai só ao cofre, para descobrir qual é a sua conta: o resto do
+          Fala recebe a conta, nunca o número. Enquanto a conversa dura (até 30 minutos sem resposta), as fotos e o
+          ponto ficam só na memória do serviço; ao publicar, viram o registro, com as mesmas regras do site. O registro
+          de acesso guarda a conta, a data e a hora, sem endereço IP, que fica com o WhatsApp. As mensagens passam pela
+          Meta, dona do WhatsApp, que as trata conforme as regras dela.
+        </p>
+      </Part>
+
       <Part title="Moderação e triagem automática">
         <p>
           Antes de aparecer no mapa, cada foto passa por alguém da moderação. Antes disso, um serviço do próprio Fala,
@@ -106,8 +117,8 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
       <Part title="O que não coletamos">
         <p>
           CPF, documentos, data de nascimento ou a localização do seu aparelho: o GPS só move o mapa na tela, e o ponto
-          do registro é o que você marca. As fotos saem do seu aparelho sem GPS e sem os dados da câmera. Não usamos
-          cookies de análise nem de publicidade.
+          do registro é o que você marca no mapa, ou envia pelo WhatsApp. As fotos ficam sem GPS e sem os dados da
+          câmera. Não usamos cookies de análise nem de publicidade.
         </p>
       </Part>
 

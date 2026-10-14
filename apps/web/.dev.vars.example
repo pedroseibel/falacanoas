@@ -37,3 +37,7 @@ TRIAGEM_TOKEN=
 # has compared their fingerprint with Arachnid Shield (the service needs ARACHNID_SHIELD_USERNAME and
 # ARACHNID_SHIELD_PASSWORD). required|off; unset, production requires it and development doesn't.
 HASH_MATCHING=
+
+# Registering by WhatsApp (apps/whatsapp): the service's token for /api/whatsapp/registro, 32+ characters,
+# the same value as its WHATSAPP_APP_TOKEN. Development uses a fixed one when unset.
+WHATSAPP_APP_TOKEN=

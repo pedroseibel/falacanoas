@@ -119,7 +119,7 @@ export const accessEvidence = cofre
       ipVersion: smallint(),
       edgeIp: text(),
       edgePort: integer(),
-      /** "tcp" (HTTP/1.1, HTTP/2) or "quic" (HTTP/3). */
+      /** "tcp" (HTTP/1.1, HTTP/2), "quic" (HTTP/3), or "whatsapp" (sent from the project's number: no address). */
       transport: text(),
       /** Correlation only: Ray IDs can repeat. */
       cfRay: text(),

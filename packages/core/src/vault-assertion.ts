@@ -7,11 +7,17 @@ import { z } from "zod";
  * Short-lived and single-use (`jti`).
  */
 export const VAULT_AUDIENCE = "fala-web";
+/**
+ * For the WhatsApp service (the reporting bot): which account a WhatsApp number belongs to, never the
+ * number. A different audience, so it can't be used to sign in, and readVaultAssertion refuses it
+ * unless asked for it.
+ */
+export const WHATSAPP_AUDIENCE = "fala-whatsapp";
 /** Seconds an assertion stays valid: long enough to hand over, too short to be worth stealing. */
 export const VAULT_ASSERTION_TTL = 120;
 
 export const VaultAssertionSchema = z.object({
-  aud: z.literal(VAULT_AUDIENCE),
+  aud: z.enum([VAULT_AUDIENCE, WHATSAPP_AUDIENCE]),
   /** The account id. The vault owns the phone ↔ account link and mints new ids. */
   sub: z.uuid(),
   /** The account was created by this verification. */
@@ -65,8 +71,16 @@ export async function signVaultAssertion(a: VaultAssertion, key: CryptoKey): Pro
   return `${base64url(payload)}.${base64url(signature)}`;
 }
 
-/** The assertion, if the signature, audience and expiry hold at `now` (seconds); null otherwise. */
-export async function readVaultAssertion(token: string, key: CryptoKey, now: number): Promise<VaultAssertion | null> {
+/**
+ * The assertion, if the signature, the audience (the web app's unless given) and the expiry hold at
+ * `now` (seconds); null otherwise.
+ */
+export async function readVaultAssertion(
+  token: string,
+  key: CryptoKey,
+  now: number,
+  audience: VaultAssertion["aud"] = VAULT_AUDIENCE,
+): Promise<VaultAssertion | null> {
   const [p, s, extra] = token.split(".");
   if (!p || !s || extra !== undefined) return null;
   const payload = fromBase64url(p);
@@ -80,6 +94,6 @@ export async function readVaultAssertion(token: string, key: CryptoKey, now: num
     return null;
   }
   const a = VaultAssertionSchema.safeParse(json);
-  if (!a.success || a.data.exp <= now || a.data.iat > now + 30) return null;
+  if (!a.success || a.data.aud !== audience || a.data.exp <= now || a.data.iat > now + 30) return null;
   return a.data;
 }

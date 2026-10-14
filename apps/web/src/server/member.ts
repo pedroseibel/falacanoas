@@ -1,6 +1,8 @@
 import { standingMessage, type Standing } from "@fala/core";
-import { dayOf, standingOf } from "./sanctions-store";
+import { eq } from "drizzle-orm";
 import { db } from "./db/client";
+import { users } from "./db/schema";
+import { dayOf, standingOf } from "./sanctions-store";
 import { getSession } from "./session";
 
 export type Failure = { ok: false; error: string };
@@ -21,7 +23,30 @@ export async function member(doing = "registrar"): Promise<Member | Failure> {
   const user = (await getSession())?.user;
   if (!user || user.isAnonymous || !user.phoneVerifiedAt)
     return { ok: false, error: `Entre com o seu celular para ${doing}.` };
-  if (!user.nick) return { ok: false, error: `Escolha um apelido antes de ${doing}.` };
+  return standingFor(user, doing);
+}
+
+/**
+ * The same, for an account the vault named rather than a session: the WhatsApp number's
+ * (whatsapp-intake.ts). `missing` says what the person should fix on the site.
+ */
+export async function memberOf(accountId: string, doing = "registrar"): Promise<Member | MemberRefusal> {
+  const [user] = await db
+    .select({ id: users.id, nick: users.nick, phoneVerifiedAt: users.phoneVerifiedAt, isAnonymous: users.isAnonymous })
+    .from(users)
+    .where(eq(users.id, accountId));
+  if (!user || user.isAnonymous || !user.phoneVerifiedAt)
+    return { ok: false, error: `Entre com o seu celular para ${doing}.`, missing: "account" };
+  return standingFor(user, doing);
+}
+
+export type MemberRefusal = Failure & { missing?: "account" | "nick" };
+
+async function standingFor(
+  user: { id: string; nick?: string | null; phoneVerifiedAt?: Date | null },
+  doing: string,
+): Promise<Member | MemberRefusal> {
+  if (!user.nick) return { ok: false, error: `Escolha um apelido antes de ${doing}.`, missing: "nick" };
   const standing = await standingOf(db, user.id);
   if (standing.kind === "suspend") return { ok: false, error: standingMessage(standing, dayOf) };
   return { id: user.id, nick: user.nick, phoneVerifiedAt: user.phoneVerifiedAt ?? null, standing };

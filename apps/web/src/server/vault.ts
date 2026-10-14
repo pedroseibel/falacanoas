@@ -3,6 +3,8 @@ import {
   GUEST_PIN_ACTION,
   importVaultKey,
   readVaultAssertion,
+  VAULT_AUDIENCE,
+  type Connection,
   type EvidenceAction,
   type VaultAssertion,
 } from "@fala/core";
@@ -17,12 +19,19 @@ import { env } from "cloudflare:workers";
 
 let verifyKey: Promise<CryptoKey> | null = null;
 
-/** The assertion, if the vault signed it and it hasn't expired; null otherwise. */
-export function readAssertion(token: string, now = Date.now()): Promise<VaultAssertion | null> {
+/**
+ * The assertion, if the vault signed it for this audience (signing in, unless the WhatsApp service's)
+ * and it hasn't expired; null otherwise.
+ */
+export function readAssertion(
+  token: string,
+  now = Date.now(),
+  audience: VaultAssertion["aud"] = VAULT_AUDIENCE,
+): Promise<VaultAssertion | null> {
   const jwk = process.env.VAULT_VERIFY_KEY;
   if (!jwk) throw new Error("VAULT_VERIFY_KEY não configurada: rode `bun run keys` em apps/vault.");
   verifyKey ??= importVaultKey(jwk, "verify");
-  return verifyKey.then((key) => readVaultAssertion(token, key, Math.floor(now / 1000)));
+  return verifyKey.then((key) => readVaultAssertion(token, key, Math.floor(now / 1000), audience));
 }
 
 /**
@@ -53,8 +62,8 @@ export async function recordEvidence(
   action: EvidenceAction,
   accountId: string | null,
   itemId: string | null,
+  connection: Connection = connectionFromHeaders(new Headers(getRequestHeaders())),
 ): Promise<void> {
-  const connection = connectionFromHeaders(new Headers(getRequestHeaders()));
   await env.VAULT?.record({ action, accountId, itemId, connection }).catch((e: unknown) =>
     console.error(`cofre: evidência de ${action} falhou`, e),
   );

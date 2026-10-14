@@ -62,8 +62,11 @@ export function judgeConfirmation(
   return signup.code === code ? null : { kind: "wrong-code" };
 }
 
-/** The answer, in pt-BR. Short: it's read in a chat. */
-export function replyFor(outcome: Outcome, muni: Municipality): string {
+/**
+ * The answer, in pt-BR. Short: it's read in a chat. `reporting`: the service can register problems
+ * (whatsapp-report.ts), so the note on what this number does mentions it.
+ */
+export function replyFor(outcome: Outcome, muni: Municipality, { reporting = false } = {}): string {
   const site = muni.branding.domain;
   const bairro = (slug: string) => muni.neighborhoods.find((n) => n.slug === slug);
   switch (outcome.kind) {
@@ -90,6 +93,8 @@ export function replyFor(outcome: Outcome, muni: Municipality): string {
     case "nothing-to-leave":
       return "Este número não está em nenhuma fila. Não mandaremos mensagens para ele.";
     case "other":
-      return `Oi! Por este número o ${muni.branding.name} só confirma inscrições nas filas dos bairros. Para ver ou registrar um problema, use https://${site}. Em emergência: Defesa Civil 199, Bombeiros 193.`;
+      return reporting
+        ? `Oi! Por este número o ${muni.branding.name} confirma inscrições nas filas dos bairros e registra problemas de quem já tem conta: mande REGISTRAR ou uma foto do problema. Para ver o mapa, use https://${site}. Em emergência: Defesa Civil 199, Bombeiros 193.`
+        : `Oi! Por este número o ${muni.branding.name} só confirma inscrições nas filas dos bairros. Para ver ou registrar um problema, use https://${site}. Em emergência: Defesa Civil 199, Bombeiros 193.`;
   }
 }

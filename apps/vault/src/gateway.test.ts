@@ -1,7 +1,8 @@
 // Rate limits depend on the order of requests, so these tests await them one at a time.
 /* oxlint-disable no-await-in-loop */
 import { describe, expect, test } from "bun:test";
-import { closeAccount, DORMANT_MS, sendCode, sendReauthCode, verifyCode } from "./gateway";
+import { WHATSAPP_AUDIENCE } from "@fala/core";
+import { closeAccount, DORMANT_MS, sendCode, sendReauthCode, verifyCode, whatsappAccount } from "./gateway";
 import { gateway, keysAt, later, phone, signIn, t0, v1, v2 } from "./testing";
 
 describe("sending a code", () => {
@@ -155,5 +156,50 @@ describe("re-authenticating and closing an account", () => {
     const next = await signIn(gw, later(60_000));
     expect(next.created).toBeTrue();
     expect(next.sub).not.toBe(a.sub);
+  });
+});
+
+describe("the account behind a WhatsApp number", () => {
+  test("names the account, for the WhatsApp service only, never as a sign-in", async () => {
+    const gw = await gateway();
+    const me = await signIn(gw, t0);
+    const r = await whatsappAccount(gw.g, { from: "5551991234567", now: later(60_000) });
+    if (!r.ok) throw new Error(r.error);
+    expect(await gw.read(r.assertion, later(60_000))).toBeNull();
+    const a = await gw.read(r.assertion, later(60_000), WHATSAPP_AUDIENCE);
+    expect(a).toMatchObject({ aud: WHATSAPP_AUDIENCE, sub: me.sub, created: false, hint: "(51) 9…4567" });
+    expect(r.assertion).not.toContain("991234567");
+  });
+
+  test("finds the account when WhatsApp drops the ninth digit", async () => {
+    const gw = await gateway();
+    const me = await signIn(gw, t0);
+    const r = await whatsappAccount(gw.g, { from: "555191234567", now: t0 });
+    if (!r.ok) throw new Error(r.error);
+    expect((await gw.read(r.assertion, t0, WHATSAPP_AUDIENCE))?.sub).toBe(me.sub);
+  });
+
+  test("a number without an account, or dormant, or malformed, gets nothing", async () => {
+    const gw = await gateway();
+    expect(await whatsappAccount(gw.g, { from: "5551991234567", now: t0 })).toEqual({ ok: false, error: "unlinked" });
+    await signIn(gw, t0);
+    expect(await whatsappAccount(gw.g, { from: "5551991234567", now: later(DORMANT_MS) })).toEqual({
+      ok: false,
+      error: "unlinked",
+    });
+    expect(await whatsappAccount(gw.g, { from: "+55 51 99123", now: t0 })).toEqual({ ok: false, error: "invalid" });
+    expect(await whatsappAccount(gw.g, { from: 5551991234567, now: t0 })).toEqual({ ok: false, error: "invalid" });
+  });
+
+  test("a number is looked up at most 40 times a day", async () => {
+    const gw = await gateway();
+    await signIn(gw, t0);
+    for (let i = 0; i < 40; i++)
+      // oxlint-disable-next-line no-await-in-loop
+      expect((await whatsappAccount(gw.g, { from: "5551991234567", now: later(i * 1000) })).ok).toBeTrue();
+    expect(await whatsappAccount(gw.g, { from: "5551991234567", now: later(41_000) })).toEqual({
+      ok: false,
+      error: "rate",
+    });
   });
 });

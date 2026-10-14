@@ -31,3 +31,10 @@ export const CODE_WINDOWS_PER_IP: Window[] = [{ ms: 15 * MINUTE, max: 10 }];
 
 /** Code checks per IP address: 20 every 15 minutes (each code also allows only 3 tries). */
 export const VERIFY_WINDOWS_PER_IP: Window[] = [{ ms: 15 * MINUTE, max: 20 }];
+
+/**
+ * The WhatsApp service asking which account a number belongs to: 40 a day per number (three per
+ * report), and 300 every 15 minutes in all, so a leaked service token can't walk the phone book.
+ */
+export const WHATSAPP_LOOKUP_WINDOWS: Window[] = [{ ms: 24 * 60 * MINUTE, max: 40 }];
+export const WHATSAPP_LOOKUP_WINDOWS_ALL: Window[] = [{ ms: 15 * MINUTE, max: 300 }];

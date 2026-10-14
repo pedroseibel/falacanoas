@@ -8,6 +8,10 @@ import {
   VAULT_ASSERTION_TTL,
   VAULT_AUDIENCE,
   VERIFY_WINDOWS_PER_IP,
+  WHATSAPP_AUDIENCE,
+  WHATSAPP_LOOKUP_WINDOWS,
+  WHATSAPP_LOOKUP_WINDOWS_ALL,
+  whatsappVariants,
   type Window,
 } from "@fala/core";
 import { codeHash, newCode, phoneMacs, same, sealPhone, unsealPhone, type VaultKeys } from "./crypto";
@@ -280,4 +284,47 @@ export async function closeAccount(
   if (!(await checkReauthCode(g, input))) return { ok: false, error: "invalid" };
   await g.store.unlinkAccount(input.accountId, input.now);
   return { ok: true };
+}
+
+export type WhatsappAccountResult =
+  { ok: true; assertion: string } | { ok: false; error: "invalid" | "unlinked" | "rate" };
+
+/**
+ * Which account a WhatsApp number belongs to, for the reporting bot: an assertion the app accepts only
+ * from the WhatsApp service (audience "fala-whatsapp"), never a sign-in. The person wrote from the
+ * number, so WhatsApp itself proved it; a dormant link (180 days without signing in, the number maybe
+ * recycled) is refused, as sign-in would refuse it. The number never leaves here.
+ */
+export async function whatsappAccount(g: Gateway, input: { from: unknown; now: Date }): Promise<WhatsappAccountResult> {
+  const { from, now } = input;
+  if (typeof from !== "string" || !/^\d{12,13}$/.test(from)) return { ok: false, error: "invalid" };
+  const phones = whatsappVariants(from)
+    .map((d) => `+${d}`)
+    .filter(isBrazilianMobileE164);
+  const first = phones[0];
+  if (!first) return { ok: false, error: "invalid" };
+  const macs = (await Promise.all(phones.map((p) => phoneMacs(g.keys, p)))).flat();
+  const [current] = macs;
+  if (!current) throw new Error("sem chave");
+  if (!(await allowed(g.store, "whatsapp:todos", WHATSAPP_LOOKUP_WINDOWS_ALL, now)))
+    return { ok: false, error: "rate" };
+  if (!(await allowed(g.store, `whatsapp:telefone:${current.mac}`, WHATSAPP_LOOKUP_WINDOWS, now)))
+    return { ok: false, error: "rate" };
+  const link = await g.store.findLink(macs.map((m) => m.mac));
+  if (!link || now.getTime() - link.lastSignInAt.getTime() >= DORMANT_MS) return { ok: false, error: "unlinked" };
+  const iat = Math.floor(now.getTime() / 1000);
+  const assertion = await signVaultAssertion(
+    {
+      aud: WHATSAPP_AUDIENCE,
+      sub: link.accountId,
+      created: false,
+      phoneVerifiedAt: link.verifiedAt.toISOString(),
+      hint: maskedPhone(first),
+      iat,
+      exp: iat + VAULT_ASSERTION_TTL,
+      jti: crypto.randomUUID(),
+    },
+    g.signingKey,
+  );
+  return { ok: true, assertion };
 }

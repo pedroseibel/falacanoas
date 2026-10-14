@@ -5,6 +5,7 @@ import {
   signVaultAssertion,
   VAULT_AUDIENCE,
   type VaultAssertion,
+  WHATSAPP_AUDIENCE,
 } from "./vault-assertion";
 
 async function keys() {
@@ -47,6 +48,15 @@ describe("vault assertion", () => {
     expect(await readVaultAssertion(`${forgedPayload}.${s}`, k.verify, now)).toBeNull();
     expect(await readVaultAssertion(`${p}.${s}.x`, k.verify, now)).toBeNull();
     expect(await readVaultAssertion(token, k.verify, now + 120)).toBeNull();
+  });
+
+  test("each audience is read only where it was meant: a WhatsApp lookup never signs in", async () => {
+    const k = await keys();
+    const wa = await signVaultAssertion({ ...assertion, aud: WHATSAPP_AUDIENCE, created: false }, k.sign);
+    expect(await readVaultAssertion(wa, k.verify, now)).toBeNull();
+    expect(await readVaultAssertion(wa, k.verify, now, WHATSAPP_AUDIENCE)).toMatchObject({ aud: WHATSAPP_AUDIENCE });
+    const web = await signVaultAssertion(assertion, k.sign);
+    expect(await readVaultAssertion(web, k.verify, now, WHATSAPP_AUDIENCE)).toBeNull();
   });
 
   test("the public half can't sign", async () => {

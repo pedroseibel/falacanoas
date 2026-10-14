@@ -88,5 +88,7 @@ describe("replyFor", () => {
     const text = replyFor({ kind: "other" }, muni);
     expect(text).toContain("https://fala.test");
     expect(text).toContain("Defesa Civil 199");
+    expect(text).toContain("só confirma inscrições");
+    expect(replyFor({ kind: "other" }, muni, { reporting: true })).toContain("mande REGISTRAR");
   });
 });

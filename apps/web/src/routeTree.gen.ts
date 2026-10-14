@@ -27,6 +27,7 @@ import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiFotosKeyRouteImport } from './routes/api/fotos/$key'
 import { Route as ApiIdentidadeSplatRouteImport } from './routes/api/identidade/$'
+import { Route as ApiWhatsappRegistroRouteImport } from './routes/api/whatsapp/registro'
 import { Route as AppMapOIdRouteImport } from './routes/_app/_map/o.$id'
 import { Route as ApiCartaoBairroSlugRouteImport } from './routes/api/cartao/bairro.$slug'
 import { Route as ApiCartaoOIdRouteImport } from './routes/api/cartao/o.$id'
@@ -119,6 +120,11 @@ const ApiIdentidadeSplatRoute = ApiIdentidadeSplatRouteImport.update({
   path: '/api/identidade/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiWhatsappRegistroRoute = ApiWhatsappRegistroRouteImport.update({
+  id: '/api/whatsapp/registro',
+  path: '/api/whatsapp/registro',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppMapOIdRoute = AppMapOIdRouteImport.update({
   id: '/o/$id',
   path: '/o/$id',
@@ -151,6 +157,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/api/identidade/$': typeof ApiIdentidadeSplatRoute
+  '/api/whatsapp/registro': typeof ApiWhatsappRegistroRoute
   '/bairro/': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
   '/api/cartao/bairro/$slug': typeof ApiCartaoBairroSlugRoute
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/api/identidade/$': typeof ApiIdentidadeSplatRoute
+  '/api/whatsapp/registro': typeof ApiWhatsappRegistroRoute
   '/bairro': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
   '/api/cartao/bairro/$slug': typeof ApiCartaoBairroSlugRoute
@@ -196,6 +204,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/api/identidade/$': typeof ApiIdentidadeSplatRoute
+  '/api/whatsapp/registro': typeof ApiWhatsappRegistroRoute
   '/_app/bairro/': typeof AppBairroIndexRoute
   '/_app/_map/o/$id': typeof AppMapOIdRoute
   '/api/cartao/bairro/$slug': typeof ApiCartaoBairroSlugRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/fotos/$key'
     | '/api/identidade/$'
+    | '/api/whatsapp/registro'
     | '/bairro/'
     | '/o/$id'
     | '/api/cartao/bairro/$slug'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/fotos/$key'
     | '/api/identidade/$'
+    | '/api/whatsapp/registro'
     | '/bairro'
     | '/o/$id'
     | '/api/cartao/bairro/$slug'
@@ -263,6 +274,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/fotos/$key'
     | '/api/identidade/$'
+    | '/api/whatsapp/registro'
     | '/_app/bairro/'
     | '/_app/_map/o/$id'
     | '/api/cartao/bairro/$slug'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFotosKeyRoute: typeof ApiFotosKeyRoute
   ApiIdentidadeSplatRoute: typeof ApiIdentidadeSplatRoute
+  ApiWhatsappRegistroRoute: typeof ApiWhatsappRegistroRoute
   ApiCartaoBairroSlugRoute: typeof ApiCartaoBairroSlugRoute
   ApiCartaoOIdRoute: typeof ApiCartaoOIdRoute
 }
@@ -413,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIdentidadeSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/whatsapp/registro': {
+      id: '/api/whatsapp/registro'
+      path: '/api/whatsapp/registro'
+      fullPath: '/api/whatsapp/registro'
+      preLoaderRoute: typeof ApiWhatsappRegistroRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/_map/o/$id': {
       id: '/_app/_map/o/$id'
       path: '/o/$id'
@@ -482,6 +502,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFotosKeyRoute: ApiFotosKeyRoute,
   ApiIdentidadeSplatRoute: ApiIdentidadeSplatRoute,
+  ApiWhatsappRegistroRoute: ApiWhatsappRegistroRoute,
   ApiCartaoBairroSlugRoute: ApiCartaoBairroSlugRoute,
   ApiCartaoOIdRoute: ApiCartaoOIdRoute,
 }

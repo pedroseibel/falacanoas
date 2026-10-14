@@ -13,3 +13,6 @@ VAULT_DATABASE_URL=
 # Production only: the Turnstile secret, and the host real tokens must name.
 TURNSTILE_SECRET_KEY=
 TURNSTILE_HOSTNAME=
+# The WhatsApp service's token for asking which account a number belongs to (32+ characters, the same
+# in apps/whatsapp). Development uses a fixed one when unset.
+WHATSAPP_VAULT_TOKEN=

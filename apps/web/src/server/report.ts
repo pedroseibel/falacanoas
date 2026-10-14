@@ -1,11 +1,7 @@
 import {
   digestDay,
-  holdsPublication,
   inElection,
   itemFromReport,
-  limitMessage,
-  newItemId,
-  postingLimits,
   prescreen,
   reportSchema,
   type Item,
@@ -15,15 +11,16 @@ import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
 import { db } from "./db/client";
-import { createdSince, findItem, hashKey, insertItem, itemExists, joinItem, photosSince } from "./items";
+import { createdSince, findItem, hashKey, insertItem } from "./items";
+import { member } from "./member";
 import { openCase } from "./moderation-store";
-import { markNickPublished } from "./nicks";
-import { member, type Failure } from "./member";
 import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
 import { removePhotos } from "./photos";
+import { DAY, joinReport as join, publishReport, uniqueId, type JoinResult, type ReportResult } from "./report-store";
 import { getSession } from "./session";
-import { notifyPlaces } from "./push-send";
 import { isHuman, recordEvidence } from "./vault";
+
+export type { JoinResult, ReportResult } from "./report-store";
 
 /**
  * The report flow's writes (research/DECISIONS.md, rounds 2, 3, 4, 6, 15 and 18). Posting needs a
@@ -33,32 +30,8 @@ import { isHuman, recordEvidence } from "./vault";
 
 const schema = reportSchema(canoas);
 
-export type ReportResult =
-  | Failure
-  | {
-      ok: true;
-      item: Item;
-      digest: "hoje" | "amanhã";
-      /** A guest pin's secret link: the only way back to it until moderation publishes it. */
-      tracking?: string;
-    };
-
 /** Guest pins per guest session per day: enough for a neighbour, too few to flood moderation. */
 const GUEST_PER_DAY = 3;
-const DAY = 86_400_000;
-export type JoinResult =
-  | Failure
-  | {
-      ok: true;
-      item: Item;
-      /** "counts", or why it doesn't (yet): an earlier confirmation, or a phone verified less than 72 h ago. */
-      confirmation: "counts" | "already" | "too-new";
-    };
-
-async function uniqueId(): Promise<string> {
-  const id = newItemId(crypto.getRandomValues(new Uint32Array(5)));
-  return (await itemExists(id)) ? uniqueId() : id;
-}
 
 export const createReport = createServerFn({ method: "POST" })
   .validator(formData)
@@ -69,40 +42,7 @@ export const createReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = schema.safeParse(readReportFormData(data));
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." };
-    const now = new Date();
-    // Daily limits (round 19): far lower for an account whose phone is less than 72 h old.
-    const limits = postingLimits(who.phoneVerifiedAt, now);
-    if ((await createdSince(who.id, DAY, now)) >= limits.pins)
-      return { ok: false, error: limitMessage("pins", limits) };
-    if ((await photosSince(who.id, DAY, now)) + parsed.data.photos.length > limits.photos)
-      return { ok: false, error: limitMessage("photos", limits) };
-    const photos = await keepPhotos(parsed.data.photos);
-    if (!photos) return { ok: false, error: PHOTO_ERROR };
-    const id = await uniqueId();
-    // The pre-screen (round 5): personal data, insults, named people, anonymous propaganda in a
-    // campaign. Anything it flags waits for a moderator instead of going out; so does everything a
-    // muted account sends (round 19).
-    const flags = prescreen(`${parsed.data.title} ${parsed.data.text}`, { electoral: inElection(canoas, now) });
-    const muted = who.standing.kind === "mute";
-    const held = muted || holdsPublication(flags, parsed.data.visibility);
-    const item: Item = {
-      ...itemFromReport(parsed.data, canoas, { id, nick: who.nick, photos: photos.srcs, now }),
-      ...(held ? { moderation: "pending" } : {}),
-    };
-    try {
-      await insertItem(item, who.id, now);
-      if (held) await openCase(db, id, muted ? "muted" : "prescreen", flags);
-    } catch (e) {
-      await removePhotos(photos.keys);
-      throw e;
-    }
-    if (parsed.data.visibility === "pseudonymous") await markNickPublished(who.id);
-    await recordEvidence("publication", who.id, item.id);
-    // As readers see it: its photos wait for moderation's first look, as a count, not as images.
-    const stored = (await findItem(id, now)) ?? item;
-    // Published at once: the neighbours following this place hear of it. A held report waits for moderation.
-    if (!held) notifyPlaces(stored, who.id);
-    return { ok: true, item: stored, digest: digestDay(now, canoas) };
+    return publishReport(who, parsed.data);
   });
 
 /** "Já existe algo parecido": confirm the existing problem and add the photos to its timeline. */
@@ -113,31 +53,7 @@ export const joinReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = JoinSchema.safeParse(readJoinFormData(data));
     if (!parsed.success) return { ok: false, error: "Confira o registro." };
-    const limits = postingLimits(who.phoneVerifiedAt, new Date());
-    if (parsed.data.photos.length && (await photosSince(who.id, DAY)) + parsed.data.photos.length > limits.photos)
-      return { ok: false, error: limitMessage("photos", limits) };
-    const photos = await keepPhotos(parsed.data.photos);
-    if (!photos) return { ok: false, error: PHOTO_ERROR };
-    // Independent confirmations only (round 18, Q17): one per account, phone verified ≥72 h ago.
-    const joined = await joinItem({
-      id: parsed.data.itemId,
-      accountId: who.id,
-      by: parsed.data.visibility === "anonymous" ? "Anônimo" : who.nick,
-      photos: photos.srcs,
-      phoneVerifiedAt: who.phoneVerifiedAt,
-      now: new Date(),
-    }).catch(async (e: unknown) => {
-      await removePhotos(photos.keys);
-      throw e;
-    });
-    if (!joined) {
-      await removePhotos(photos.keys);
-      return { ok: false, error: "Esse registro não está mais aberto. Publique o seu." };
-    }
-    if (parsed.data.visibility === "pseudonymous" && (joined.confirmation === "counts" || photos.srcs.length))
-      await markNickPublished(who.id);
-    await recordEvidence("confirmation", who.id, joined.item.id);
-    return { ok: true, ...joined };
+    return join(who, parsed.data);
   });
 
 /**
