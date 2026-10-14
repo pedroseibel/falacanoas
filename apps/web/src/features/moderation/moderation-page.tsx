@@ -17,6 +17,7 @@ import { type QueueSanction } from "@/server/sanctions";
 import { emptyRemoval, RemovalNote, type Removal } from "./removal-note";
 import { EscalateAction } from "./escalate";
 import { QueueRow, useLeave } from "./leave";
+import { GuideSheet } from "./moderation-guide";
 import { SanctionActions, SanctionCard } from "./sanction-cards";
 
 const panel = "grid gap-4 rounded-2xl border border-hairline bg-card p-4 shadow-soft";
@@ -78,7 +79,10 @@ export function ModerationPage({
   return (
     <div className="mx-auto grid max-w-3xl gap-8 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
-        <h1 className="text-3xl font-semibold tracking-tight">Moderação</h1>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Moderação</h1>
+          <GuideSheet />
+        </div>
         <p className="mt-1.5 text-sm text-pretty text-muted-foreground">
           Denúncias, registros e fotos esperando alguém olhar. Você não vê quem publicou nem quem denunciou: só um
           código. Cada remoção entra no histórico do registro, e quem publicou pode contestar.

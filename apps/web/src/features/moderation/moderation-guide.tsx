@@ -1,11 +1,14 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { BookOpen } from "lucide-react";
 import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AuthFrame, type BackLink } from "@/features/auth/auth-frame";
 import { textLink } from "@/features/landing/bits";
 import { moderationStandingQuery } from "@/lib/city";
 import { acceptModerationGuide } from "@/server/volunteers";
+import { MODERATION_GUIDE_VERSION } from "./guide-version";
 
 /**
  * The moderation guide (moderation capacity; DECISIONS rounds 19 and 20). One text for everyone, and
@@ -156,6 +159,42 @@ export function GuidePage({ back }: { back: BackLink }) {
       </header>
       <ModerationGuide />
     </AuthFrame>
+  );
+}
+
+/** "2026-10-13" → "13/10/2026". */
+const versionDate = (v: string) => v.split("-").toReversed().join("/");
+
+/**
+ * The guide again, from the queue: a side panel, so re-reading a rule mid-case doesn't lose the place
+ * in the queue or a note being written.
+ */
+export function GuideSheet() {
+  return (
+    <Sheet>
+      <SheetTrigger render={<Button variant="outline" size="sm" />}>
+        <BookOpen data-icon="inline-start" />
+        Guia da moderação
+      </SheetTrigger>
+      <SheetContent className="w-full data-[side=right]:sm:max-w-lg">
+        <SheetHeader>
+          {/* Clear of the close button in the corner. */}
+          <div className="grid gap-0.5 pr-8">
+            <SheetTitle>Guia da moderação</SheetTitle>
+            <SheetDescription>
+              Versão de {versionDate(MODERATION_GUIDE_VERSION)}, a que você aceitou. É o mesmo texto público de{" "}
+              <a href="/moderacao" target="_blank" rel="noopener" className={textLink}>
+                /moderacao
+              </a>
+              .
+            </SheetDescription>
+          </div>
+        </SheetHeader>
+        <div className="-mt-4 min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-hairline p-4 pb-8">
+          <ModerationGuide />
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
