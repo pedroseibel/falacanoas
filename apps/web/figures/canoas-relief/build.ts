@@ -48,11 +48,64 @@ const thin = (ring: Ring, min = 1.4): Ring => {
   }
   return out;
 };
-const boundary = thin(ringsOf(canoas.geo.boundary.features[0]!.geometry)[0]!, 4.2);
+/** Douglas-Peucker on a closed ring: drops vertices within `tol` of the line their neighbours make. */
+function simplify(ring: Ring, tol: number): Ring {
+  const pts = [...ring, ring[0]!];
+  const keep = new Array<boolean>(pts.length).fill(false);
+  keep[0] = keep[pts.length - 1] = true;
+  const off = (p: number[], a: number[], b: number[]) => {
+    const [dx, dy] = [b[0]! - a[0]!, b[1]! - a[1]!];
+    const len = Math.hypot(dx, dy);
+    if (len < 1e-9) return Math.hypot(p[0]! - a[0]!, p[1]! - a[1]!);
+    return Math.abs(dx * (a[1]! - p[1]!) - dy * (a[0]! - p[0]!)) / len;
+  };
+  const stack: [number, number][] = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [i, j] = stack.pop()!;
+    let far = -1;
+    let at = -1;
+    for (let m = i + 1; m < j; m++) {
+      const d = off(pts[m]!, pts[i]!, pts[j]!);
+      if (d > far) [far, at] = [d, m];
+    }
+    if (far > tol) {
+      keep[at] = true;
+      stack.push([i, at], [at, j]);
+    }
+  }
+  return pts.filter((_, m) => keep[m]).slice(0, -1);
+}
+/** Douglas-Peucker on an open run: its two ends stay where the borders meet. */
+function simplifyOpen(run: Ring, tol: number): Ring {
+  if (run.length < 3) return run;
+  const closed = simplify(run, tol);
+  // simplify() treats the run as a ring closed back to its start; an open run keeps both ends.
+  const last = run.at(-1)!;
+  return closed.at(-1) === last ? closed : [...closed, last];
+}
+// One tolerance for the city's edge, a finer one for the bairros inside it: smooth sides, true borders.
+const boundary = simplify(thin(ringsOf(canoas.geo.boundary.features[0]!.geometry)[0]!, 0.5), 2.6);
 const bairros = canoas.geo.neighborhoods.features.map((f) => ({
   slug: f.properties.slug,
-  rings: ringsOf(f.geometry).map((r) => thin(r, 3)),
+  rings: ringsOf(f.geometry).map((r) => simplify(thin(r, 0.5), 0.9)),
 }));
+/** The bairros exactly as published, for borders shared vertex for vertex. */
+const bairroSource = canoas.geo.neighborhoods.features.map((f) => ({
+  slug: f.properties.slug,
+  rings: ringsOf(f.geometry),
+}));
+/** Distance from a point to the city's edge, to leave the outer bairro borders to the plinth's rim. */
+const toEdge = ([x, y]: number[]) => {
+  let best = Infinity;
+  for (let i = 0; i < boundary.length; i++) {
+    const a = boundary[i]!;
+    const b = boundary[(i + 1) % boundary.length]!;
+    const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+    const t = Math.max(0, Math.min(1, ((x! - a[0]) * dx + (y! - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+    best = Math.min(best, Math.hypot(x! - a[0] - t * dx, y! - a[1] - t * dy));
+  }
+  return best;
+};
 
 // ---- Pins ----------------------------------------------------------------------------------------------
 
@@ -93,7 +146,7 @@ const xs = boundary.map((p) => p[0]);
 const ys = boundary.map((p) => p[1]);
 const bbox = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
 // The day gauge stands on the plinth's front-right corner region, outside the city.
-const GAUGE = { x: bbox.x1 + 14, y: bbox.y0 + 40, w: 8, d: 8, r: 1.5 };
+const GAUGE = { x: bbox.x1 + 14, y: bbox.y0 + 40, w: 8, d: 8, r: 0.4 };
 const GAUGE_DAYS = 45;
 
 const P = k.fitProjection(
@@ -114,9 +167,9 @@ const FIT_POINTS = [
   [TOUR.at[0], TOUR.at[1], TOUR_MAX * DISC + 6],
   [GAUGE.x, GAUGE.y, GAUGE_DAYS * DISC + 4],
 ].map((p) => k.iso(p, P)[1]);
-const TOP = Math.min(...FIT_POINTS) - 12;
-const HEIGHT = Math.ceil(Math.max(...FIT_POINTS) + 16 - TOP);
-P.origin = [P.origin[0], P.origin[1] - TOP];
+const CROP = Math.min(...FIT_POINTS) - 12;
+const HEIGHT = Math.ceil(Math.max(...FIT_POINTS) + 16 - CROP);
+P.origin = [P.origin[0], P.origin[1] - CROP];
 
 const at = (p: number[]) => k.iso(p, P);
 const S = (paths: unknown, style?: object) => k.solidSvg(paths, style);
@@ -126,35 +179,113 @@ const depth = (p: number[]) => k.depthOf([p[0], p[1], 0], P);
 
 // ---- Parts ----------------------------------------------------------------------------------------------
 
+/**
+ * The plinth: the city's boundary as a thick board. A concave outline can't be one hull, so each wall
+ * facing the viewer is its own quad, painted far to near with its own bottom edge and seam, so a
+ * nearer wall hides a farther one in every notch; the top face, painted last, covers what is behind
+ * it, and its rim is the one outline the eye follows.
+ */
 function plinth() {
-  const out = [];
-  const base = k.extrude(boundary, -BASE_H, BASE_H, P, { convex: false, bevel: 0.8 });
-  out.push(`<path class="iso-halo" d="${k.extrude(boundary, -BASE_H - 2, 1, P, { convex: false }).fill}"/>`);
-  out.push(S(base, { tone: "mid" }));
-  // A seam a third of the way up the plinth's sides: the board the model is mounted on.
-  out.push(L(k.ringSeam(boundary, -BASE_H + 5, P), { tone: "faint" }));
+  const out = [`<path class="iso-halo" d="${k.extrude(boundary, -BASE_H - 2, 1, P, { convex: false }).fill}"/>`];
+  const n = boundary.length;
+  let area = 0;
+  for (let i = 0; i < n; i++) {
+    const [ax, ay] = boundary[i]!;
+    const [bx, by] = boundary[(i + 1) % n]!;
+    area += ax * by - bx * ay;
+  }
+  const [vx, vy] = k.towardViewer(P);
+  const { sinA, cosA } = k.cameraOf(P);
+  const edges = boundary.map((a, i) => {
+    const b = boundary[(i + 1) % n]!;
+    const len = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const nrm = area > 0 ? [(b[1] - a[1]) / len, -(b[0] - a[0]) / len] : [-(b[1] - a[1]) / len, (b[0] - a[0]) / len];
+    return { a, b, nrm, facing: nrm[0]! * vx + nrm[1]! * vy > 1e-6 };
+  });
+  const z0 = -BASE_H;
+  const seamZ = -BASE_H + 5;
+  const walls = edges
+    .map((e, i) => ({ ...e, i }))
+    .filter((e) => e.facing)
+    .map((e) => {
+      const lit = (e.nrm[0]! * -sinA + e.nrm[1]! * cosA + 1) / 2;
+      const shade = Math.min(3, Math.max(0, Math.floor(lit * 4)));
+      const quad = k.pathOf([at([...e.a, 0]), at([...e.b, 0]), at([...e.b, z0]), at([...e.a, z0])], true);
+      const lines = [k.pathOf([at([...e.a, z0]), at([...e.b, z0])])];
+      // A vertical edge only where the wall turns away (the silhouette) or turns sharply.
+      const prev = edges[(e.i + n - 1) % n]!;
+      const next = edges[(e.i + 1) % n]!;
+      const turn = (u: number[], w: number[]) => u[0]! * w[0]! + u[1]! * w[1]!;
+      if (!prev.facing || turn(prev.nrm, e.nrm) < 0.55) lines.push(k.pathOf([at([...e.a, 0]), at([...e.a, z0])]));
+      if (!next.facing || turn(next.nrm, e.nrm) < 0.55) lines.push(k.pathOf([at([...e.b, 0]), at([...e.b, z0])]));
+      const seam = k.pathOf([at([...e.a, seamZ]), at([...e.b, seamZ])]);
+      return {
+        depth: k.depthOf([(e.a[0] + e.b[0]) / 2, (e.a[1] + e.b[1]) / 2, z0 / 2], P),
+        svg: `<path class="iso-shade" data-shade="${shade}" d="${quad}"/>${L(seam, { tone: "faint" })}${L(lines.join(""), { tone: "mid" })}`,
+      };
+    })
+    .toSorted((p, q) => p.depth - q.depth);
+  out.push(`<g class="rf-walls">${walls.map((w) => w.svg).join("")}</g>`);
+  out.push(`<path class="iso-top" d="${TOP}"/>`);
   return out.join("");
 }
 
+/** The plinth's top face as a screen path: also the clip that keeps the borders and the wash on it. */
+const TOP = k.pathOf(
+  boundary.map((p) => at([...p, 0])),
+  true,
+);
+
 function bairroLines() {
-  // Shared borders are drawn twice (once per bairro); the lo tone keeps the doubles invisible.
-  const d = bairros.flatMap((b) => b.rings.map((r) => k.onTop(r, 0, P, true))).join("");
-  return L(d, { tone: "lo" });
+  // The source rings, where two bairros share exactly the same vertices along a border: each
+  // segment is drawn once. Segments running along the city's edge are left to the plinth's rim;
+  // one reaching the edge from inside stays, so every inner border ends on the rim (the clip trims
+  // what passes it).
+  const seen = new Set<string>();
+  const runs: Ring[] = [];
+  const key = (p: number[]) => `${p[0]!.toFixed(2)},${p[1]!.toFixed(2)}`;
+  for (const b of bairroSource) {
+    for (const r of b.rings) {
+      let run: Ring = [];
+      const flush = () => {
+        if (run.length > 1) runs.push(run);
+        run = [];
+      };
+      for (let i = 0; i < r.length; i++) {
+        const a = r[i]!;
+        const c = r[(i + 1) % r.length]!;
+        const id = [key(a), key(c)].toSorted().join("|");
+        const along = toEdge([(a[0] + c[0]) / 2, (a[1] + c[1]) / 2]) < 3.4 && toEdge(a) < 3.4 && toEdge(c) < 3.4;
+        if (seen.has(id) || key(a) === key(c) || along) {
+          seen.add(id);
+          flush();
+          continue;
+        }
+        seen.add(id);
+        if (!run.length) run.push(a);
+        run.push(c);
+      }
+      flush();
+    }
+  }
+  // Each border is now one run, so smoothing it can't split a shared border into two lines.
+  const d = runs.map((run) => k.pathOf(simplifyOpen(run, 0.8).map((p) => at([p[0], p[1], 0])))).join("");
+  return `<g clip-path="url(#rf-top)">${L(d, { tone: "lo" })}</g>${L(TOP, { tone: "mid" })}`;
 }
 
-/** The tour's bairro, lit underneath its outline so the eye finds where the pin lives. */
+/** The tour's bairro, washed on the plinth's top (clipped to it) so the eye finds where the pin lives. */
 function tourBairro() {
-  const b = bairros.find((x) => x.slug === tourItem.neighborhood);
+  const b = bairroSource.find((x) => x.slug === tourItem.neighborhood);
   if (!b) return "";
-  return b.rings
-    .map(
-      (r) =>
-        `<path class="rf-home" d="${k.pathOf(
-          r.map((p) => at([p[0], p[1], 0])),
-          true,
-        )}"/>`,
+  const d = b.rings
+    .map((r) =>
+      k.pathOf(
+        r.map((p) => at([p[0], p[1], 0])),
+        true,
+      ),
     )
     .join("");
+  return `<clipPath id="rf-top"><path d="${TOP}"/></clipPath><path class="rf-home" clip-path="url(#rf-top)" d="${d}"/>`;
 }
 
 /** A pin standing for `days` days: discs to the deadline in ink, the rest in the accent. */
@@ -163,8 +294,9 @@ function stack([x, y]: number[], days: number) {
   const below = Math.min(days, DEADLINE);
   out.push(S(k.cylinder(x, y, PIN_R + 1.2, 0, 0.8, P, 24), { tone: "lo" }));
   out.push(
+    `<g class="rf-pin">`,
     S(k.cylinder(x, y, PIN_R, 0.8, below * DISC, P, 24, 0.3), {
-      tone: "hi",
+      tone: "mid",
       inner: L(
         Array.from({ length: Math.floor(below / 5) }, (_, i) =>
           k.sideArc(x, y, PIN_R, 0.8 + (i + 1) * 5 * DISC, P, 16),
@@ -172,6 +304,7 @@ function stack([x, y]: number[], days: number) {
         { tone: "faint" },
       ),
     }),
+    `</g>`,
   );
   if (days > DEADLINE) {
     out.push(
@@ -204,8 +337,8 @@ function tourStack() {
     );
   const zDead = 0.8 + DEADLINE * DISC;
   const column =
-    S(k.cylinder(x, y, PIN_R, 0.8, DEADLINE * DISC, P, 24, 0.3), { tone: "hi", inner: seams(0, DEADLINE) }) +
-    `<g class="rf-late">${S(k.cylinder(x, y, PIN_R, zDead, (TOUR_MAX - DEADLINE) * DISC, P, 24, 0.3), { tone: "hi", inner: seams(DEADLINE, TOUR_MAX) })}</g>`;
+    `<g class="rf-pin">${S(k.cylinder(x, y, PIN_R, 0.8, DEADLINE * DISC, P, 24, 0.3), { tone: "mid", inner: seams(0, DEADLINE) })}</g>` +
+    `<g class="rf-late">${S(k.cylinder(x, y, PIN_R, zDead, (TOUR_MAX - DEADLINE) * DISC, P, 24, 0.3), { tone: "mid", inner: seams(DEADLINE, TOUR_MAX) })}</g>`;
   // The clip: everything at or below z = 0.8 (day 0), as a silhouette 400 units tall; slid up by days.
   const clip = k.cylinder(x, y, PIN_R + 0.6, 0.8 - 400, 400, P, 24).fill;
   out.push(`<clipPath id="rf-tour-clip"><path data-part="clip" d="${clip}"/></clipPath>`);
@@ -213,14 +346,18 @@ function tourStack() {
   // Two caps at day 0, the second in the accent; the live code moves both and shows one.
   const cap = (late: boolean) => {
     const c = k.cylinder(x, y, PIN_R, 0.8 - 0.01, 0.01, P, 24);
-    return `<g data-part="${late ? "cap-late" : "cap"}" class="iso-solid${late ? " rf-late" : ""}" style="display:none"><path class="iso-top" d="${c.top}"/><path class="iso-line" data-tone="mid" d="${c.outline}"/></g>`;
+    return `<g data-part="${late ? "cap-late" : "cap"}" class="iso-solid ${late ? "rf-late" : "rf-pin"}" style="display:none"><path class="iso-top" d="${c.top}"/><path class="iso-line" data-tone="mid" d="${c.outline}"/></g>`;
   };
   out.push(cap(false), cap(true));
-  // The two neighbours: lamps on the seat's rim that light as each confirms.
-  for (const i of [0, 1]) {
-    const a = -0.35 + i * 0.7 + Math.PI * 0.5;
-    const [cx, cy] = at([x + Math.cos(a) * 6.4, y + Math.sin(a) * 6.4, 0]);
-    out.push(`<circle data-part="vote-${i}" class="rf-vote" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="1.5"/>`);
+  // The two neighbours: studs beside the seat, lit as each confirms (drawn far one first).
+  const studs = [0, 1].map((i) => {
+    const a = Math.PI * 0.55 + (i - 0.5) * 0.9;
+    return { i, p: [x + Math.cos(a) * 7.4, y + Math.sin(a) * 7.4] };
+  });
+  for (const { i, p } of studs.toSorted((u, w) => depth(u.p) - depth(w.p))) {
+    out.push(
+      `<g data-part="vote-${i}" class="rf-vote">${S(k.cylinder(p[0]!, p[1]!, 1.5, 0, 1.6, P, 16), { tone: "mid" })}</g>`,
+    );
   }
   return out.join("");
 }
@@ -240,7 +377,7 @@ function gauge() {
       { size: 0.45 },
     ),
   );
-  out.push(S(k.slabOf(GAUGE, 2, GAUGE_DAYS * DISC, P, 3, 0.4), { tone: "mid" }));
+  out.push(S(k.slabOf(GAUGE, 2, GAUGE_DAYS * DISC, P, 2), { tone: "mid" }));
   const face = y + d; // the +y face, toward the viewer
   const top = 2 + GAUGE_DAYS * DISC;
   const minor = [];
@@ -249,12 +386,12 @@ function gauge() {
     const z = 0.8 + day * DISC;
     if (z > top) break;
     const len = day % 10 === 0 ? 3.2 : 1.8;
-    (day % 10 === 0 ? major : minor).push(k.segment([x + w, face, z], [x + w - len, face, z], P));
+    (day % 10 === 0 ? major : minor).push(k.segment([x + w - GAUGE.r, face, z], [x + w - GAUGE.r - len, face, z], P));
   }
   out.push(L(minor.join(""), { tone: "lo" }), L(major.join(""), { tone: "mid" }));
   const zDead = 0.8 + DEADLINE * DISC;
   out.push(
-    L(k.segment([x + w, face, zDead], [x, face, zDead], P), { tone: "hi" }).replace(
+    L(k.segment([x + w - GAUGE.r, face, zDead], [x + GAUGE.r, face, zDead], P), { tone: "hi" }).replace(
       'class="iso-line"',
       'class="iso-line rf-mark"',
     ),

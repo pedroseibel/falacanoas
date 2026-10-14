@@ -194,6 +194,27 @@
   --anatomy-lit-shade: var(--signal);
   --anatomy-faint: color-mix(in oklab, var(--signal) 70%, black);
 }
+/* A pin's stack stands off the board in dark, where the board's own greys would swallow it. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .rf-pin {
+    --anatomy-top: #4a4b51;
+    --anatomy-shade-0: #26272b;
+    --anatomy-shade-1: #2d2e33;
+    --anatomy-shade-2: #35363b;
+    --anatomy-shade-3: #3d3e44;
+    --anatomy-mid: #8a8c92;
+    --anatomy-faint: #45464c;
+  }
+}
+:root[data-theme="dark"] .rf-pin {
+  --anatomy-top: #4a4b51;
+  --anatomy-shade-0: #26272b;
+  --anatomy-shade-1: #2d2e33;
+  --anatomy-shade-2: #35363b;
+  --anatomy-shade-3: #3d3e44;
+  --anatomy-mid: #8a8c92;
+  --anatomy-faint: #45464c;
+}
 .rf-home {
   fill: var(--signal-wash);
 }
@@ -201,13 +222,8 @@
   stroke: var(--signal);
   stroke-width: 1px;
 }
-.rf-vote {
-  fill: var(--anatomy-paper);
-  stroke: var(--anatomy-mid);
-  stroke-width: 0.6px;
-  transition: fill 0.25s var(--ease);
-}
+/* The neighbours' studs: plain until each confirms, then inked on top. */
 .rf-vote[data-on] {
-  fill: var(--anatomy-lit);
-  stroke: var(--anatomy-lit);
+  --anatomy-top: var(--anatomy-lit);
+  --anatomy-mid: var(--anatomy-lit);
 }
