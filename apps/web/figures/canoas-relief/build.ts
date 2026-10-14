@@ -48,20 +48,25 @@ const thin = (ring: Ring, min = 1.4): Ring => {
   }
   return out;
 };
+/** Distance from p to the line through a and b (to a when they coincide). */
+const off = (p: number[], a: number[], b: number[]) => {
+  const [dx, dy] = [b[0]! - a[0]!, b[1]! - a[1]!];
+  const len = Math.hypot(dx, dy);
+  if (len < 1e-9) return Math.hypot(p[0]! - a[0]!, p[1]! - a[1]!);
+  return Math.abs(dx * (a[1]! - p[1]!) - dy * (a[0]! - p[0]!)) / len;
+};
+/** How far two unit normals agree (1 = same direction). */
+const turn = (u: number[], w: number[]) => u[0]! * w[0]! + u[1]! * w[1]!;
+/** A vertex's identity, for spotting the same border segment in two bairros. */
+const key = (p: number[]) => `${p[0]!.toFixed(2)},${p[1]!.toFixed(2)}`;
 /** Douglas-Peucker on a closed ring: drops vertices within `tol` of the line their neighbours make. */
 function simplify(ring: Ring, tol: number): Ring {
   const pts = [...ring, ring[0]!];
-  const keep = new Array<boolean>(pts.length).fill(false);
+  const keep: boolean[] = Array.from({ length: pts.length }, () => false);
   keep[0] = keep[pts.length - 1] = true;
-  const off = (p: number[], a: number[], b: number[]) => {
-    const [dx, dy] = [b[0]! - a[0]!, b[1]! - a[1]!];
-    const len = Math.hypot(dx, dy);
-    if (len < 1e-9) return Math.hypot(p[0]! - a[0]!, p[1]! - a[1]!);
-    return Math.abs(dx * (a[1]! - p[1]!) - dy * (a[0]! - p[0]!)) / len;
-  };
-  const stack: [number, number][] = [[0, pts.length - 1]];
-  while (stack.length) {
-    const [i, j] = stack.pop()!;
+  const todo: [number, number][] = [[0, pts.length - 1]];
+  while (todo.length) {
+    const [i, j] = todo.pop()!;
     let far = -1;
     let at = -1;
     for (let m = i + 1; m < j; m++) {
@@ -70,7 +75,7 @@ function simplify(ring: Ring, tol: number): Ring {
     }
     if (far > tol) {
       keep[at] = true;
-      stack.push([i, at], [at, j]);
+      todo.push([i, at], [at, j]);
     }
   }
   return pts.filter((_, m) => keep[m]).slice(0, -1);
@@ -83,12 +88,8 @@ function simplifyOpen(run: Ring, tol: number): Ring {
   const last = run.at(-1)!;
   return closed.at(-1) === last ? closed : [...closed, last];
 }
-// One tolerance for the city's edge, a finer one for the bairros inside it: smooth sides, true borders.
+// The city's edge, smoothed for the plinth's sides; the bairros keep their published shapes below.
 const boundary = simplify(thin(ringsOf(canoas.geo.boundary.features[0]!.geometry)[0]!, 0.5), 2.6);
-const bairros = canoas.geo.neighborhoods.features.map((f) => ({
-  slug: f.properties.slug,
-  rings: ringsOf(f.geometry).map((r) => simplify(thin(r, 0.5), 0.9)),
-}));
 /** The bairros exactly as published, for borders shared vertex for vertex. */
 const bairroSource = canoas.geo.neighborhoods.features.map((f) => ({
   slug: f.properties.slug,
@@ -215,7 +216,6 @@ function plinth() {
       // A vertical edge only where the wall turns away (the silhouette) or turns sharply.
       const prev = edges[(e.i + n - 1) % n]!;
       const next = edges[(e.i + 1) % n]!;
-      const turn = (u: number[], w: number[]) => u[0]! * w[0]! + u[1]! * w[1]!;
       if (!prev.facing || turn(prev.nrm, e.nrm) < 0.55) lines.push(k.pathOf([at([...e.a, 0]), at([...e.a, z0])]));
       if (!next.facing || turn(next.nrm, e.nrm) < 0.55) lines.push(k.pathOf([at([...e.b, 0]), at([...e.b, z0])]));
       const seam = k.pathOf([at([...e.a, seamZ]), at([...e.b, seamZ])]);
@@ -243,7 +243,6 @@ function bairroLines() {
   // what passes it).
   const seen = new Set<string>();
   const runs: Ring[] = [];
-  const key = (p: number[]) => `${p[0]!.toFixed(2)},${p[1]!.toFixed(2)}`;
   for (const b of bairroSource) {
     for (const r of b.rings) {
       let run: Ring = [];
