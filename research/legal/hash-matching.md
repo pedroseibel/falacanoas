@@ -79,6 +79,25 @@ The list of 12 questions is in [hash-matching/shield.md](hash-matching/shield.md
 6. What is our exposure for a false positive, including reporting and suspending on a near match?
 7. Do we reach "alto risco" (RIPD, encarregado)?
 
+## No Brazilian service (checked 2026-10-13)
+
+No Brazilian body or company offers platforms a list of known material to match against:
+
+- **The Polícia Federal's centre (CNCA, Sistema NIDUS)** receives reports. They include the cryptographic hashes of the files the provider found (Portaria MJSP 1.312/2026, art. 9 XIV), but nothing goes back to providers.
+  - The Portaria speaks of "bancos de referência utilizados pelo fornecedor", meaning the provider's own (art. 2 XIII).
+  - The centre will "articular-se com fornecedores para o aprimoramento técnico ... dos mecanismos próprios de prevenção, detecção" (art. 4 VII). That is the opening: once NIDUS registration opens (about late October 2026), ask whether it can share reference hashes or endorse a tool.
+  - [Portaria](https://www.in.gov.br/web/dou/-/portaria-mjsp-n-1.312-de-24-de-setembro-de-2026-735039189)
+- **SaferNet Brasil** is the national hotline (INHOPE member, working with the MPF). It receives and forwards reports.
+  - Its technology project, D.I.S.C.O.V.E.R., gives researchers text, metadata and keywords from reported pages, not image matching ([SaferNet](https://new.safernet.org.br/content/safernet-vence-competicao-mundial-e-desenvolvera-tecnologias-de-prevencao-ao-abuso-sexual)).
+  - Its 2024 memorandum with the PF covers prevention and training only ([SaferNet](https://new.safernet.org.br/content/safernet-e-policia-federal-assinam-memorando-de-entendimento)).
+- **No Brazilian company** offering this was found. The field runs on foreign lists and tools (PhotoDNA, Arachnid, Thorn, Google, NCMEC).
+- **Why:** only authorities and recognised hotlines may hold reference material (ECA art. 241-B §2), and no Brazilian rule asks them to build a list for platforms. Brazilian researchers note the same impasse for training detection models ([ConJur, 31/03/2026](https://www.conjur.com.br/2026-mar-31/eca-digital-viola-a-privacidade-de-todos-ha-alguma-alternativa/)).
+
+**So:** the design above (fingerprints computed in São Paulo, only the fingerprint sent to C3P) remains the working option. The best outcome would be a reference list matched locally, so nothing leaves Brazil at all. Ask three bodies for it:
+1. the CNCA, under art. 4 VII, once NIDUS opens;
+2. SaferNet;
+3. C3P, which says high-volume services can "scan content locally" with its list.
+
 ## Backstops and alternatives
 
 - **Cloudflare CSAM Scanning Tool**, once the domain is live: free. It only sees cached, served content, so it never sees pending photos. It reports to NCMEC as a third party. That doesn't discharge our duty to report to the CNCA, and accepting it means accepting a report to a US body.
