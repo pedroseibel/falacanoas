@@ -59,7 +59,6 @@ function Landing() {
     <LandingPage
       muni={canoas}
       confirmed={data.confirmed}
-      live={data.live}
       initial={{ neighborhood, channel: search.canal ?? "whatsapp" }}
       onBairroInUrl={(slug) =>
         void navigate({

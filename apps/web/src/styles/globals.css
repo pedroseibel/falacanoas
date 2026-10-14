@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "./tokens.css";
+@import "./iso.css";
 
 /* Dark follows the system unless the person picked a theme (data-theme on <html>). */
 @custom-variant dark {
@@ -236,6 +237,19 @@
       mix-blend-mode: screen;
     }
   }
+}
+/* The landing hero: copy and the figure, side by side. */
+@utility grid-cols-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+/* A faint drafting grid, fading out from behind the hero figure. */
+@utility bg-draft {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  background-position: -1px -1px;
+  mask-image: radial-gradient(60% 70% at 74% 42%, black 0%, transparent 78%);
+  opacity: 0.7;
 }
 /* Two-column splits from the landing page grid (minmax(0, n fr) keeps long words from widening a column). */
 @utility grid-cols-pair {

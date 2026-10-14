@@ -1,42 +1,16 @@
 import type { Municipality } from "@fala/core";
 import { Eye, EyeOff, Send } from "lucide-react";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MiniMap } from "./bairro-map";
-import { Bar, Claim, Num, Panel, SecHead, Section, Stage } from "./bits";
+import { Bar, Num, Panel, SecHead, Section, Stage } from "./bits";
 import { DIGEST_ROWS } from "./landing-model";
 import { countUpOnView } from "./motion";
 
 const count43 = countUpOnView(43);
-
-/** A claim beside its proof. flip puts the proof first on wide screens. */
-function Pair({
-  flip = false,
-  first = false,
-  claim,
-  children,
-}: {
-  flip?: boolean;
-  first?: boolean;
-  claim: ReactNode;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        "grid items-center gap-split max-split:grid-cols-1",
-        flip ? "grid-cols-pair-flip" : "grid-cols-pair",
-        !first && "mt-pair",
-      )}
-    >
-      <div className={cn(flip && "order-2 max-split:order-none")}>{claim}</div>
-      <Stage className="p-proof max-compact:p-3.5">{children}</Stage>
-    </div>
-  );
-}
 
 function Composer({ muni }: { muni: Municipality }) {
   const types = muni.categories.filter((c) => c.kind === "occurrence");
@@ -293,79 +267,124 @@ function Closing() {
   );
 }
 
+const STEPS: { title: string; body: string; more?: string; panel: (muni: Municipality) => ReactNode }[] = [
+  {
+    title: "Uma foto, o tipo de problema, o lugar.",
+    body: "Registrar leva menos de um minuto. Em público, você aparece só com um apelido e o seu bairro. Rostos e placas são borrados, e os dados escondidos da foto, como o GPS do celular, são apagados.",
+    more: "Dez tipos de problema na estreia, cada um ligado ao órgão responsável.",
+    panel: (muni) => <Composer muni={muni} />,
+  },
+  {
+    title: "Todo dia, a lista vai para a Prefeitura.",
+    body: "Às 18h, o Fala, Canoas manda à Ouvidoria-Geral do Município um resumo com os registros novos do dia, em nome do projeto. O relógio de cada registro começa nesse envio, e a hora fica pública.",
+    more: "Quando a fila de inscritos crescer, a Prefeitura será convidada a responder por uma conta verificada.",
+    panel: () => <Digest />,
+  },
+  {
+    title: "O relógio conta em público.",
+    body: "Cada registro mostra há quantos dias está aberto, quando foi enviado e quantos vizinhos também viram. Ninguém precisa reclamar de novo: um toque em “também vi” soma à mesma contagem.",
+    more: "Antes de registrar, o mapa mostra problemas parecidos a poucos metros, para não duplicar.",
+    panel: () => <CountCard />,
+  },
+  {
+    title: "Só fecha quando os vizinhos confirmam.",
+    body: "A Prefeitura pode responder “resolvido”. O registro só fecha quando quem registrou ou dois vizinhos confirmam, de preferência com uma foto do depois. Se ninguém contestar em 15 dias, fecha sozinho.",
+    panel: () => <Closing />,
+  },
+];
+
+/**
+ * The four steps of a pin as a tour: the steps on the left, the screen each one shows on the right.
+ * Every step's text stays in the page (collapsed when not selected), so nothing depends on clicking.
+ */
 export function HowItWorks({ muni }: { muni: Municipality }) {
+  const [step, setStep] = useState(0);
+  const move = (to: number) => {
+    const next = (to + STEPS.length) % STEPS.length;
+    setStep(next);
+    document.getElementById(`passo-${next}`)?.focus();
+  };
   return (
-    <Section id="como-funciona">
+    <Section id="como-funciona" divided>
       <SecHead id="como-funciona" title="Como vai funcionar, do celular ao conserto.">
         O mapa abre bairro por bairro. Estes são os quatro passos de cada registro, com um exemplo do começo ao fim.
       </SecHead>
-
-      <Pair
-        first
-        claim={
-          <Claim
-            step={1}
-            title="Uma foto, o tipo de problema, o lugar."
-            more="Dez tipos de problema na estreia, cada um ligado ao órgão responsável."
-          >
-            <p>
-              Registrar leva menos de um minuto. Em público, você aparece só com um apelido e o seu bairro. Rostos e
-              placas são borrados, e os dados escondidos da foto, como o GPS do celular, são apagados.
-            </p>
-          </Claim>
-        }
-      >
-        <Composer muni={muni} />
-      </Pair>
-
-      <Pair
-        flip
-        claim={
-          <Claim
-            step={2}
-            title="Todo dia, a lista vai para a Prefeitura."
-            more="Quando a fila de inscritos crescer, a Prefeitura será convidada a responder por uma conta verificada."
-          >
-            <p>
-              Às 18h, o Fala, Canoas manda à Ouvidoria-Geral do Município um resumo com os registros novos do dia, em
-              nome do projeto. O relógio de cada registro começa nesse envio, e a hora fica pública.
-            </p>
-          </Claim>
-        }
-      >
-        <Digest />
-      </Pair>
-
-      <Pair
-        claim={
-          <Claim
-            step={3}
-            title="O relógio conta em público."
-            more="Antes de registrar, o mapa mostra problemas parecidos a poucos metros, para não duplicar."
-          >
-            <p>
-              Cada registro mostra há quantos dias está aberto, quando foi enviado e quantos vizinhos também viram.
-              Ninguém precisa reclamar de novo: um toque em “também vi” soma à mesma contagem.
-            </p>
-          </Claim>
-        }
-      >
-        <CountCard />
-      </Pair>
-
-      <Pair
-        flip
-        claim={
-          <Claim step={4} title="Só fecha quando os vizinhos confirmam.">
-            <p>
-              A Prefeitura pode responder “resolvido”. O registro só fecha quando quem registrou ou dois vizinhos
-              confirmam, de preferência com uma foto do depois. Se ninguém contestar em 15 dias, fecha sozinho.
-            </p>
-          </Claim>
-        }
-      >
-        <Closing />
-      </Pair>
+      <div className="grid grid-cols-pair items-start gap-split max-split:grid-cols-1">
+        <div role="tablist" aria-orientation="vertical" aria-label="Os quatro passos de um registro" className="grid">
+          {STEPS.map((s, i) => {
+            const on = step === i;
+            return (
+              <button
+                key={s.title}
+                id={`passo-${i}`}
+                type="button"
+                role="tab"
+                aria-selected={on}
+                aria-controls="passo-tela"
+                tabIndex={on ? 0 : -1}
+                onClick={() => setStep(i)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                    e.preventDefault();
+                    move(i + 1);
+                  } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                    e.preventDefault();
+                    move(i - 1);
+                  }
+                }}
+                className="group grid gap-0 border-t border-hairline py-5 text-left last:border-b"
+              >
+                <span className="flex items-center gap-3.5">
+                  <span
+                    className={cn(
+                      "inline-flex size-7 shrink-0 items-center justify-center rounded-full border font-mono text-caption tabular-nums transition-colors duration-200 ease-fluid",
+                      on ? "border-foreground bg-foreground text-background" : "border-border text-ink-2",
+                    )}
+                  >
+                    {i + 1}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-heading font-semibold text-balance transition-colors duration-200 ease-fluid",
+                      on ? "text-foreground" : "text-muted-foreground group-hover:text-ink-2",
+                    )}
+                  >
+                    {s.title}
+                  </span>
+                </span>
+                <span
+                  className={cn(
+                    "block overflow-hidden transition-all duration-300 ease-fluid motion-reduce:transition-none",
+                    on ? "max-h-96 opacity-100" : "max-h-0 opacity-0",
+                  )}
+                >
+                  <span className="block pl-10.5">
+                    <span className="block max-w-claim pt-3 text-pretty text-ink-2">{s.body}</span>
+                    {s.more && <span className="mt-2.5 block text-sm text-muted-foreground">{s.more}</span>}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <Stage className="p-proof max-compact:p-3.5 split:sticky split:top-27">
+          <div id="passo-tela" role="tabpanel" aria-labelledby={`passo-${step}`} className="grid">
+            {STEPS.map((s, i) => (
+              <div
+                key={s.title}
+                inert={step !== i}
+                aria-hidden={step !== i}
+                className={cn(
+                  "col-start-1 row-start-1 self-center transition duration-500 ease-fluid motion-reduce:transition-none",
+                  step === i ? "opacity-100 blur-none" : "pointer-events-none opacity-0 blur-xs",
+                )}
+              >
+                {s.panel(muni)}
+              </div>
+            ))}
+          </div>
+        </Stage>
+      </div>
     </Section>
   );
 }

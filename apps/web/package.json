@@ -10,6 +10,7 @@
     "deploy": "vite build && wrangler deploy",
     "typecheck": "tsc --noEmit -p .",
     "cf-typegen": "wrangler types",
+    "figure": "bun figures/canoas-relief/build.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",

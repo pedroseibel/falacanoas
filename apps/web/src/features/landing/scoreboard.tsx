@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { DaysMeter } from "@/components/viz";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fn, Num, Panel, SecHead, Section, Stage } from "./bits";
+import { Fn, Num, Panel, SecHead, Stage, Wrap } from "./bits";
 import { BOARD_BY_AGENCY, BOARD_BY_TYPE, bairrosByQueue, fmt } from "./landing-model";
 
 /** The caption under each reading. Not a <caption>: it sits below the mobile list too. */
@@ -182,38 +182,41 @@ function ByBairro({ muni, confirmed }: { muni: Municipality; confirmed: Record<s
 
 export function Scoreboard({ muni, confirmed }: { muni: Municipality; confirmed: Record<string, number> }) {
   return (
-    <Section id="placar" divided>
-      <SecHead id="placar" title="O placar mede órgãos, nunca pessoas.">
-        Três leituras, atualizadas todo dia: quanto cada tipo de problema demora, quanto cada órgão leva do envio ao
-        conserto confirmado e onde os problemas se acumulam. Sempre a mediana, e só com pelo menos 20 registros nos
-        últimos seis meses.
-      </SecHead>
-      <Stage className="p-proof max-compact:p-3.5">
-        <Panel>
-          <Tabs defaultValue="tipo">
-            <div className="border-b border-hairline px-3 py-2.5">
-              <TabsList aria-label="Leituras do placar">
-                <TabsTrigger value="tipo">
-                  <span>
-                    Por tipo<span className="max-compact:hidden"> de problema</span>
-                  </span>
-                </TabsTrigger>
-                <TabsTrigger value="orgao">Por órgão</TabsTrigger>
-                <TabsTrigger value="bairro">Por bairro</TabsTrigger>
-              </TabsList>
-            </div>
-            <TabsContent value="tipo">
-              <ByType />
-            </TabsContent>
-            <TabsContent value="orgao">
-              <ByAgency />
-            </TabsContent>
-            <TabsContent value="bairro">
-              <ByBairro muni={muni} confirmed={confirmed} />
-            </TabsContent>
-          </Tabs>
-        </Panel>
-      </Stage>
-    </Section>
+    // The page's one inverted band: the Placar is the product's sharpest instrument.
+    <section id="placar" aria-labelledby="h-placar" className="scheme-dark py-section">
+      <Wrap>
+        <SecHead id="placar" title="O placar mede órgãos, nunca pessoas.">
+          Três leituras, atualizadas todo dia: quanto cada tipo de problema demora, quanto cada órgão leva do envio ao
+          conserto confirmado e onde os problemas se acumulam. Sempre a mediana, e só com pelo menos 20 registros nos
+          últimos seis meses.
+        </SecHead>
+        <Stage className="p-proof max-compact:p-3.5">
+          <Panel>
+            <Tabs defaultValue="tipo">
+              <div className="border-b border-hairline px-3 py-2.5">
+                <TabsList aria-label="Leituras do placar">
+                  <TabsTrigger value="tipo">
+                    <span>
+                      Por tipo<span className="max-compact:hidden"> de problema</span>
+                    </span>
+                  </TabsTrigger>
+                  <TabsTrigger value="orgao">Por órgão</TabsTrigger>
+                  <TabsTrigger value="bairro">Por bairro</TabsTrigger>
+                </TabsList>
+              </div>
+              <TabsContent value="tipo">
+                <ByType />
+              </TabsContent>
+              <TabsContent value="orgao">
+                <ByAgency />
+              </TabsContent>
+              <TabsContent value="bairro">
+                <ByBairro muni={muni} confirmed={confirmed} />
+              </TabsContent>
+            </Tabs>
+          </Panel>
+        </Stage>
+      </Wrap>
+    </section>
   );
 }

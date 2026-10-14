@@ -18,8 +18,9 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { RadioGroupSegment, RadioGroupSegmented } from "@/components/ui/radio-group";
 import { joinQueue } from "@/server/queue";
-import { Panel, Stage, Wrap, textLink } from "./bits";
-import { bairrosByName, fmt, plural, shareMessage, shareUrl, type QueueState } from "./landing-model";
+import { PickMap } from "./bairro-map";
+import { Bar, Panel, Stage, Wrap, textLink } from "./bits";
+import { bairrosByName, fmt, plural, queueState, shareMessage, shareUrl, type QueueState } from "./landing-model";
 import { QueueMeter } from "./queue-meter";
 
 export type Channel = SignupChannel;
@@ -84,6 +85,17 @@ export function Join({
   onChannel: (channel: Channel) => void;
 }) {
   const submitted = useStore(form.store, (s) => s.submissionAttempts > 0);
+  const selected = useStore(form.store, (s) => s.values.neighborhood);
+  const total = Object.values(confirmed).reduce((a, b) => a + b, 0);
+  const describe = (slug: string) => {
+    const q = queueState(
+      muni.neighborhoods.find((n) => n.slug === slug),
+      confirmed,
+    );
+    if (q.kind === "withFirst") return "abre com o 1º bairro";
+    if (q.kind === "full") return "fila cheia";
+    return q.kind === "missing" ? `faltam ${fmt(q.missing)}` : "";
+  };
   const channel = useStore(form.store, (s) => s.values.channel);
   const copy = CHANNEL_COPY[channel];
   const show = <T,>(errors: T[]) => (submitted ? errors : []);
@@ -100,6 +112,23 @@ export function Join({
               mensagem.
             </p>
             <QueueMeter state={queue} />
+            {/* The 18 bairros, each a choice: picking one here fills the form's select. */}
+            <Panel className="mt-3 overflow-visible">
+              <Bar title="Fila por bairro">
+                <span>
+                  {total
+                    ? `${fmt(total)} ${plural(total, "inscrito confirmado", "inscritos confirmados")}`
+                    : "sem inscritos ainda"}
+                </span>
+              </Bar>
+              <PickMap
+                geo={muni.geo.neighborhoods}
+                selected={selected}
+                describe={describe}
+                label={`Mapa dos ${muni.neighborhoods.length} bairros de ${muni.name}. Escolha um bairro.`}
+                onPick={onPick}
+              />
+            </Panel>
           </div>
 
           <Stage rise={false} className="p-proof max-compact:p-3.5">

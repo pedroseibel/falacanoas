@@ -2,23 +2,22 @@ import type { Municipality } from "@fala/core";
 import { useStore } from "@tanstack/react-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { About, Rules } from "./about";
-import { Bairros } from "./bairros";
+import { About } from "./about";
 import { Wrap } from "./bits";
+import { Faq } from "./faq";
 import { LandingFooter } from "./footer";
 import { Hero } from "./hero";
 import { HowItWorks } from "./how";
 import { Join, useJoinForm, type Channel } from "./join";
 import { queueState } from "./landing-model";
 import { stuckOnScroll } from "./motion";
-import { BleedPhoto, Numbers } from "./numbers";
 import { Scoreboard } from "./scoreboard";
 
 const NAV = [
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#placar", label: "Placar" },
   { href: "#quem-faz", label: "Quem faz" },
-  { href: "#bairros", label: "Bairros" },
+  { href: "#perguntas", label: "Perguntas" },
 ];
 
 function Header() {
@@ -28,7 +27,7 @@ function Header() {
       ref={stuckOnScroll}
       className="sticky top-0 z-20 border-b border-transparent bg-background/94 transition-colors duration-300 ease-fluid data-stuck:border-hairline"
     >
-      <Wrap className="flex h-17 items-center gap-7">
+      <Wrap className="flex h-16 items-center gap-7">
         <a href="#conteudo" aria-label="Fala, Canoas: início" className="inline-flex items-center gap-3 no-underline">
           <span className="text-wordmark font-semibold whitespace-nowrap">
             Fala<span className="text-signal">,</span> Canoas
@@ -39,7 +38,7 @@ function Header() {
         </a>
         <nav aria-label="Seções" className="ml-auto flex gap-6.5 text-ui text-ink-2 max-phone:hidden">
           {NAV.map((n) => (
-            <a key={n.href} href={n.href} className="py-1.5 hover:text-foreground">
+            <a key={n.href} href={n.href} className="py-1.5 transition-colors duration-200 hover:text-foreground">
               {n.label}
             </a>
           ))}
@@ -59,19 +58,18 @@ function Header() {
 }
 
 /**
- * The public landing page. The chosen bairro is shared by the hero, the map, the list and the
- * sign-up form; it lives in the form and is mirrored to ?b= so a shared link opens on the bairro.
+ * The public landing page: a product page for a public instrument. The time clock performs a pin's
+ * life in the first viewport; the chosen bairro is shared by the hero, the map and the sign-up form
+ * (it lives in the form and is mirrored to ?b= so a shared link opens on the bairro).
  */
 export function LandingPage({
   muni,
   confirmed,
-  live,
   initial,
   onBairroInUrl,
 }: {
   muni: Municipality;
   confirmed: Record<string, number>;
-  live: boolean;
   initial: { neighborhood: string; channel: Channel };
   onBairroInUrl: (slug: string) => void;
 }) {
@@ -115,11 +113,8 @@ export function LandingPage({
         <Hero muni={muni} bairro={bairro} queue={queue} onPick={pick} onJoin={goJoin} />
         <HowItWorks muni={muni} />
         <Scoreboard muni={muni} confirmed={confirmed} />
-        <BleedPhoto />
-        <Numbers />
-        <Rules />
         <About />
-        <Bairros muni={muni} confirmed={confirmed} live={live} selected={bairro} onPick={pick} />
+        <Faq />
         <Join muni={muni} confirmed={confirmed} queue={queue} join={join} onPick={pick} onChannel={setChannel} />
       </main>
       <LandingFooter />

@@ -55,5 +55,5 @@
       "rules": { "shadcn/no-restyle": "off", "shadcn/no-arbitrary-values": "off", "shadcn/require-static-classes": "off" }
     }
   ],
-  "ignorePatterns": ["node_modules", "dist", ".output", ".wrangler", "research/**", "routeTree.gen.ts", "*.config.ts", "*.config.js"]
+  "ignorePatterns": ["node_modules", "dist", ".output", ".wrangler", "research/**", "routeTree.gen.ts", "*.config.ts", "*.config.js", "apps/web/figures/kit/**", "*.generated.ts"]
 }

@@ -2,7 +2,10 @@ import type { NeighborhoodCollection } from "@fala/core";
 import { useMemo, useRef, useState, type FocusEvent, type PointerEvent } from "react";
 import { project } from "@/components/viz";
 import { cn } from "@/lib/utils";
-import { HERO_FRAME_HEIGHT, HERO_PINS, HOT_PIN } from "./landing-model";
+
+/** The example pin (the bus stop in Niterói), in the 1000 × 898 frame these maps were drawn in. */
+const HOT_PIN = { x: 662.6, y: 786.4 };
+const HERO_FRAME_HEIGHT = 898;
 
 /** The 18 bairros as SVG, from the instance's own boundaries (same projection as the app's charts). */
 function useOutlines(geo: NeighborhoodCollection) {
@@ -19,51 +22,6 @@ function useOutlines(geo: NeighborhoodCollection) {
 
 const OUTLINE = "fill-foreground/2.5 stroke-foreground/30 stroke-1 transition-colors duration-350 ease-fluid";
 const SELECTED = "fill-signal-wash stroke-signal";
-
-/** Hero product shot: every bairro, example pins popping in, and the one example pin breathing. */
-export function HeroMap({ geo }: { geo: NeighborhoodCollection }) {
-  const { W, H, ky, paths } = useOutlines(geo);
-  const pin =
-    "transform-fill origin-center motion-safe:animate-in motion-safe:zoom-in motion-safe:fill-mode-both motion-safe:duration-700 motion-safe:ease-fluid";
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" aria-hidden="true">
-      <g>
-        {paths.map((p) => (
-          <path key={p.slug} d={p.d} vectorEffect="non-scaling-stroke" strokeLinejoin="round" className={OUTLINE} />
-        ))}
-      </g>
-      <g>
-        {HERO_PINS.map((p, i) => (
-          <circle
-            key={`${p.x}-${p.y}`}
-            cx={p.x}
-            cy={p.y * ky}
-            r={p.done ? 8 : 9}
-            vectorEffect="non-scaling-stroke"
-            style={{ animationDelay: `${0.4 + (i + 1) * 0.045}s` }}
-            strokeWidth={p.done ? 1.6 : 2.5}
-            className={cn(pin, p.done ? "fill-card stroke-muted-foreground" : "fill-foreground stroke-card")}
-          />
-        ))}
-        <circle
-          cx={HOT_PIN.x}
-          cy={HOT_PIN.y * ky}
-          r={22}
-          vectorEffect="non-scaling-stroke"
-          className="transform-fill origin-center fill-none stroke-signal stroke-1 opacity-55 motion-safe:animate-breathe"
-        />
-        <circle
-          cx={HOT_PIN.x}
-          cy={HOT_PIN.y * ky}
-          r={12}
-          vectorEffect="non-scaling-stroke"
-          style={{ animationDelay: "0.4s" }}
-          className={cn(pin, "fill-signal stroke-card stroke-3")}
-        />
-      </g>
-    </svg>
-  );
-}
 
 /** The composer's location preview: a crop around the example pin, its bairro selected. */
 export function MiniMap({ geo, selected }: { geo: NeighborhoodCollection; selected: string }) {

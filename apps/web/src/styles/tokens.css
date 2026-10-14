@@ -181,3 +181,59 @@
   border: 4px solid var(--ink);
   box-shadow: 0 0 0 7px color-mix(in srgb, var(--ink) 10%, transparent);
 }
+
+/* An inverted band inside a light page (the landing's Placar): the dark scale scoped to one section.
+   In dark mode it lifts a step instead, so the band still reads as its own surface. */
+.scheme-dark {
+  color-scheme: dark;
+  --paper: #0a0a0b;
+  --ground: #16161a;
+  --panel: #121214;
+  --panel-2: #18181b;
+  --panel-3: #202024;
+  --ink: #f3f3f4;
+  --ink-2: #c6c7cb;
+  --ink-3: #979aa2;
+  --ink-4: #55585f;
+  --line: rgb(255 255 255 / 0.075);
+  --line-2: rgb(255 255 255 / 0.14);
+  --line-3: rgb(255 255 255 / 0.32);
+  --signal: #f4652a;
+  --signal-hover: #ff7840;
+  --signal-text: #ff8b57;
+  --signal-wash: rgb(244 101 42 / 0.17);
+  --shadow: 0 0 0 1px rgb(255 255 255 / 0.02), 0 2px 6px rgb(0 0 0 / 0.4), 0 32px 64px -24px rgb(0 0 0 / 0.8);
+  --shadow-sm: 0 2px 6px rgb(0 0 0 / 0.45), 0 10px 24px -12px rgb(0 0 0 / 0.7);
+  --seq-1: #4a4a4a;
+  --seq-2: #6e6e6e;
+  --seq-3: #929292;
+  --seq-4: #b6b6b6;
+  --seq-5: #dadada;
+  --seq-0: var(--panel-3);
+  --track: var(--panel-3);
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--panel);
+  --card-foreground: var(--ink);
+  --muted: var(--panel-2);
+  --muted-foreground: var(--ink-3);
+  --secondary: var(--panel-2);
+  --accent: var(--panel-2);
+  --border: var(--line-2);
+  --input: var(--line-2);
+  --ring: var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .scheme-dark {
+    --paper: #111113;
+    --panel: #18181b;
+    --panel-2: #1e1e22;
+  }
+}
+:root[data-theme="dark"] .scheme-dark {
+  --paper: #111113;
+  --panel: #18181b;
+  --panel-2: #1e1e22;
+}

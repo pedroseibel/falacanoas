@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { Neighborhood } from "@fala/core";
-import { bairrosByQueue, fmt, litSlots, queueState, shareMessage } from "./landing-model";
+import { bairrosByQueue, fmt, queueState, shareMessage } from "./landing-model";
 
 const nb = (slug: string, name: string, threshold: number | null): Neighborhood => ({
   slug,
@@ -30,13 +30,6 @@ describe("queueState", () => {
   test("missing counts down from the threshold", () =>
     expect(queueState(all[1], { centro: 2 })).toEqual({ kind: "missing", name: "Centro", missing: 50 }));
   test("full queue", () => expect(queueState(all[1], { centro: 60 }).kind).toBe("full"));
-});
-
-test("litSlots is proportional and capped at 20", () => {
-  expect(litSlots(52, 0)).toBe(0);
-  expect(litSlots(52, 26)).toBe(10);
-  expect(litSlots(52, 99)).toBe(20);
-  expect(litSlots(null, 5)).toBe(0);
 });
 
 test("share message names the bairro and links to it", () => {

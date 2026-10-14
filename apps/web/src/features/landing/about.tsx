@@ -1,54 +1,6 @@
-import type { ReactNode } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bar, Num, Panel, SecHead, Section, Stage } from "./bits";
+import { Bar, Panel, SecHead, Section, Stage } from "./bits";
 import { reveal } from "./motion";
-
-const RULES: { title: string; body: ReactNode }[] = [
-  {
-    title: "Crimes e violência",
-    body: (
-      <>
-        Para isso existem a polícia e o <Num className="text-foreground">190</Num>. Ninguém precisa se expor num mapa
-        público.
-      </>
-    ),
-  },
-  {
-    title: "Reclamação contra uma pessoa",
-    body: "O mapa aponta serviços e órgãos, nunca alguém pelo nome: nem servidor, nem motorista, nem vizinho.",
-  },
-  { title: "Briga entre vizinhos", body: "Barulho, obra do lado, cachorro do vizinho: não são serviço público." },
-  {
-    title: "Emergência",
-    body: (
-      <>
-        Fala, Canoas não é canal de emergência. Defesa Civil: <Num className="text-foreground">199</Num>. Bombeiros:{" "}
-        <Num className="text-foreground">193</Num>. Alagamento que volta toda chuva, sim, entra.
-      </>
-    ),
-  },
-];
-
-export function Rules() {
-  return (
-    <Section id="regras" divided>
-      <SecHead id="regras" title="O que não entra no mapa.">
-        O mapa é para serviços públicos. O resto tem outro lugar.
-      </SecHead>
-      <dl className="grid grid-cols-2 border-t border-hairline max-compact:grid-cols-1">
-        {RULES.map((r) => (
-          <div
-            key={r.title}
-            className="grid content-start gap-1.5 border-b border-hairline pt-6 pb-6.5 odd:pr-rule even:border-l even:pl-rule max-compact:odd:pr-0 max-compact:even:border-l-0 max-compact:even:pl-0"
-          >
-            <dt className="text-body leading-snug font-semibold tracking-tight">{r.title}</dt>
-            <dd className="max-w-copy text-ui text-ink-2">{r.body}</dd>
-          </div>
-        ))}
-      </dl>
-    </Section>
-  );
-}
 
 const FACTS: [string, string][] = [
   ["Não é da Prefeitura", "Nenhum vínculo com a Prefeitura de Canoas nem com qualquer órgão público."],
