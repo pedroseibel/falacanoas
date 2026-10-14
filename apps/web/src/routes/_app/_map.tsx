@@ -1,5 +1,5 @@
 import { Outlet, createFileRoute, useNavigate, useParams, useRouter } from "@tanstack/react-router";
-import { useDebouncedCallback } from "@tanstack/react-pacer";
+import { useDebouncer } from "@tanstack/react-pacer";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { useMemo, useState } from "react";
@@ -49,10 +49,9 @@ function MapRoute() {
   const params = useParams({ strict: false });
   const selectedId = typeof params.id === "string" ? params.id : null;
   const visible = useMemo(() => visibleItems(city.items, search, canoas, city.viewer.location), [city, search]);
-  const setQuery = useDebouncedCallback(
-    (patch: Partial<MapSearch>) => void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) }),
-    { wait: 200 },
-  );
+  const setSearch = (patch: Partial<MapSearch>) =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) });
+  const typing = useDebouncer(setSearch, { wait: 200 });
   return (
     <MapPage
       muni={canoas}
@@ -60,9 +59,13 @@ function MapRoute() {
       visible={visible}
       search={search}
       selectedId={selectedId}
-      onSearch={(patch) =>
-        "q" in patch ? setQuery(patch) : void navigate({ to: ".", search: (prev) => ({ ...prev, ...patch }) })
-      }
+      onSearch={(patch) => {
+        if (!("q" in patch)) return setSearch(patch);
+        if (patch.q) return typing.maybeExecute(patch);
+        // Cleared: at once, and nothing typed just before lands after it.
+        typing.cancel();
+        setSearch(patch);
+      }}
       onOpen={(id) => void navigate({ to: "/o/$id", params: { id }, search: (prev) => prev })}
       onClose={() => void navigate({ to: "/mapa", search: (prev) => prev })}
       intent={intent}

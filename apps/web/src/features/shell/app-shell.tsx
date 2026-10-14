@@ -3,15 +3,15 @@ import { BarChart3, Home, Map as MapIcon, Plus, Search, User } from "lucide-reac
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { ShortcutHint } from "@/features/command/command-palette";
 import { cn } from "@/lib/utils";
 
 export type Section = "mapa" | "placar" | "bairro" | "voce";
 
 export interface ShellProps {
   section: Section;
-  query: string;
-  onQuery: (q: string) => void;
+  /** Opens the ⌘K palette: the header's search is its way in for a pointer. */
+  onSearch: () => void;
   onReport: () => void;
   /** Signed in with a phone; nick is null until an apelido is chosen. */
   signedIn: boolean;
@@ -28,7 +28,7 @@ const NAV: { to: Section; label: string; Icon: typeof MapIcon }[] = [
   { to: "bairro", label: "Bairro", Icon: Home },
 ];
 
-export function AppShell({ section, query, onQuery, onReport, signedIn, nick, onSignIn, link, children }: ShellProps) {
+export function AppShell({ section, onSearch, onReport, signedIn, nick, onSignIn, link, children }: ShellProps) {
   return (
     <div className="flex h-dvh flex-col">
       <header className="relative z-30 flex h-14 items-center gap-5 border-b border-hairline bg-background pr-4 pl-5 max-phone:hidden">
@@ -40,10 +40,10 @@ export function AppShell({ section, query, onQuery, onReport, signedIn, nick, on
             </span>
             <Badge variant="outline">protótipo</Badge>
           </>,
-          "flex items-center gap-2.5",
+          "flex shrink-0 items-center gap-2.5 whitespace-nowrap",
           false,
         )}
-        <nav aria-label="Seções" className="flex gap-0.5 rounded-xl border border-hairline bg-muted p-0.75">
+        <nav aria-label="Seções" className="flex shrink-0 gap-0.5 rounded-xl border border-hairline bg-muted p-0.75">
           {NAV.map(({ to, label, Icon }) =>
             link(
               to,
@@ -59,18 +59,18 @@ export function AppShell({ section, query, onQuery, onReport, signedIn, nick, on
             ),
           )}
         </nav>
-        <InputGroup className="ml-auto max-w-105">
-          <InputGroupAddon>
-            <Search />
-          </InputGroupAddon>
-          <InputGroupInput
-            type="search"
-            aria-label="Buscar"
-            defaultValue={query}
-            onChange={(e) => onQuery(e.target.value)}
-            placeholder="Buscar registro, bairro ou código"
-          />
-        </InputGroup>
+        {/* Looks like the field it opens: the palette searches pins, bairros and pages, and filters the map. */}
+        <button
+          type="button"
+          onClick={onSearch}
+          aria-haspopup="dialog"
+          aria-keyshortcuts="Meta+K Control+K"
+          className="ml-auto flex h-8 w-full max-w-105 min-w-0 items-center gap-2 rounded-lg border border-input pr-1.5 pl-2 text-sm text-muted-foreground transition-colors outline-none hover:border-hairline-strong focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+        >
+          <Search className="size-4 shrink-0" />
+          <span className="truncate">Buscar registro, bairro ou código</span>
+          <ShortcutHint className="ml-auto" />
+        </button>
         <Button variant="signal" onClick={onReport}>
           <Plus data-icon="inline-start" />
           Registrar
@@ -81,7 +81,7 @@ export function AppShell({ section, query, onQuery, onReport, signedIn, nick, on
             <span className="text-xs font-semibold" aria-label={nick ? `Você: ${nick}` : "Você"}>
               {nick ? initials(nick) : "?"}
             </span>,
-            "grid size-8.5 place-items-center rounded-full border border-border bg-muted",
+            "grid size-8.5 shrink-0 place-items-center rounded-full border border-border bg-muted",
             section === "voce",
           )
         ) : (

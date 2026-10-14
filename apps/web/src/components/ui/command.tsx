@@ -37,14 +37,15 @@ function CommandDialog({
 }) {
   return (
     <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
       <DialogContent
         className={cn("top-1/3 translate-y-0 overflow-hidden rounded-xl! p-0", className)}
         showCloseButton={showCloseButton}
       >
+        {/* Inside the popup, so it names the dialog and isn't left in the page while closed. */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
         {children}
       </DialogContent>
     </Dialog>
@@ -111,10 +112,17 @@ function CommandSeparator({ className, ...props }: ComponentProps<typeof Command
   );
 }
 
-function CommandItem({ className, children, ...props }: ComponentProps<typeof CommandPrimitive.Item>) {
+/** `checked` marks a choice (the current theme); items without it keep their full width for content. */
+function CommandItem({
+  className,
+  children,
+  checked,
+  ...props
+}: ComponentProps<typeof CommandPrimitive.Item> & { checked?: boolean }) {
   return (
     <CommandPrimitive.Item
       data-slot="command-item"
+      data-checked={checked}
       className={cn(
         "group/command-item relative flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden select-none in-data-[slot=dialog-content]:rounded-lg! data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-50 data-selected:bg-muted data-selected:text-foreground [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 data-selected:*:[svg]:text-foreground",
         className,
@@ -122,7 +130,9 @@ function CommandItem({ className, children, ...props }: ComponentProps<typeof Co
       {...props}
     >
       {children}
-      <CheckIcon className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      {checked !== undefined && (
+        <CheckIcon className="ml-auto opacity-0 group-has-data-[slot=command-shortcut]/command-item:hidden group-data-[checked=true]/command-item:opacity-100" />
+      )}
     </CommandPrimitive.Item>
   );
 }

@@ -6,11 +6,11 @@ import {
   useMatchRoute,
   useNavigate,
   useRouter,
-  useSearch,
 } from "@tanstack/react-router";
-import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
+import { CommandPalette } from "@/features/command/command-palette";
+import { openPalette } from "@/features/command/palette-store";
 import { ContentReportDialog } from "@/features/moderation/content-report-dialog";
 import { OutboxRunner } from "@/features/report/outbox-runner";
 import { ReportDialog } from "@/features/report/report-dialog";
@@ -37,7 +37,6 @@ function AppLayout() {
   const navigate = useNavigate();
   const router = useRouter();
   const here = useLocation({ select: (l) => l.href });
-  const search = useSearch({ strict: false });
   const section: Section = match({ to: "/placar" })
     ? "placar"
     : match({ to: "/bairro", fuzzy: true })
@@ -45,30 +44,27 @@ function AppLayout() {
       : match({ to: "/voce" })
         ? "voce"
         : "mapa";
-  const onQuery = useDebouncedCallback(
-    (q: string) => void navigate({ to: "/mapa", search: (prev) => ({ ...prev, q: q.trim() || undefined }) }),
-    { wait: 250 },
-  );
   const queryClient = useQueryClient();
   const { data: account } = useSuspenseQuery(accountQuery);
   const { data: city } = useSuspenseQuery(cityQuery);
   const { data: authConfig } = useQuery(authConfigQuery);
   const member = Boolean(account?.phoneVerified && account.nick && !account.guest);
   const { data: moderator } = useQuery({ ...isModeratorQuery, enabled: member });
+  const onReport = () => {
+    const gate = memberGate(account);
+    // A guest already chose to report without an account (round 2): straight to the form.
+    if (!gate || account?.guest) return openReport();
+    void navigate({ to: gate, search: { volta: here, depois: "registrar" } });
+  };
+  const onSignIn = () => void navigate({ to: "/entrar", search: { volta: here } });
   return (
     <AppShell
       section={section}
-      query={typeof search.q === "string" ? search.q : ""}
-      onQuery={onQuery}
+      onSearch={openPalette}
       signedIn={Boolean(account && !account.guest)}
       nick={account?.nick ?? null}
-      onSignIn={() => void navigate({ to: "/entrar", search: { volta: here } })}
-      onReport={() => {
-        const gate = memberGate(account);
-        // A guest already chose to report without an account (round 2): straight to the form.
-        if (!gate || account?.guest) return openReport();
-        void navigate({ to: gate, search: { volta: here, depois: "registrar" } });
-      }}
+      onSignIn={onSignIn}
+      onReport={onReport}
       link={(to, children, className, current) => (
         <Link key={to} to={PATH[to]} className={className} aria-current={current ? "page" : undefined}>
           {children}
@@ -76,6 +72,20 @@ function AppLayout() {
       )}
     >
       <Outlet />
+      <CommandPalette
+        muni={canoas}
+        items={city.items}
+        signedIn={Boolean(account && !account.guest)}
+        moderator={Boolean(moderator)}
+        homeBairro={account?.neighborhood ?? null}
+        onPage={(to) => void navigate({ to })}
+        onBairro={(slug) => void navigate({ to: "/bairro/$slug", params: { slug } })}
+        onPin={(id) => void navigate({ to: "/o/$id", params: { id } })}
+        onPreloadPin={(id) => void router.preloadRoute({ to: "/o/$id", params: { id } }).catch(() => {})}
+        onMapSearch={(patch) => void navigate({ to: "/mapa", search: (prev) => ({ ...prev, ...patch }) })}
+        onReport={onReport}
+        onSignIn={onSignIn}
+      />
       <ReportDialog
         muni={canoas}
         items={city.items}

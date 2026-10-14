@@ -22,6 +22,11 @@ describe("visibleItems", () => {
   });
   test("search finds an item by its public code", () =>
     expect(visibleItems(all, { q: "7k3qf" }, canoas, me).map((i) => i.id)).toEqual(["7K3QF"]));
+  test("search words can land on different things: the type and the bairro", () => {
+    const r = visibleItems(all, { q: "buraco niterói" }, canoas, me);
+    expect(r.length).toBeGreaterThan(0);
+    expect(r.every((i) => i.neighborhood === "niteroi")).toBeTrue();
+  });
   test("'antigos' puts open items first, oldest first", () => {
     const r = visibleItems(all, { sort: "antigos" }, canoas, me);
     const firstResolved = r.findIndex((i) => i.community === "resolved");

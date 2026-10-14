@@ -231,9 +231,25 @@ export function MapPage({
             </h1>
             <FilterChips muni={muni} value={filter} onChange={setFilter} />
             <div className="flex items-center justify-between gap-3 text-sm text-muted-foreground">
-              <span role="status">
-                <b className="font-medium text-foreground tabular-nums">{visible.length}</b>{" "}
-                {plural(visible.length, "registro", "registros")}
+              <span className="flex min-w-0 items-center gap-2">
+                <span role="status" className="shrink-0">
+                  <b className="font-medium text-foreground tabular-nums">{visible.length}</b>{" "}
+                  {plural(visible.length, "registro", "registros")}
+                  {search.q && <span className="sr-only"> com “{search.q}”</span>}
+                </span>
+                {/* What the palette's "ver no mapa" filtered by, and the way back to everything. */}
+                {search.q && (
+                  <Button
+                    variant="outline"
+                    size="chip"
+                    className="min-w-0"
+                    aria-label={`Limpar a busca “${search.q}”`}
+                    onClick={() => onSearch({ q: undefined })}
+                  >
+                    <span className="truncate">“{search.q}”</span>
+                    <X data-icon="inline-end" />
+                  </Button>
+                )}
               </span>
               <SortSelect value={sort} onChange={setSort} />
             </div>
