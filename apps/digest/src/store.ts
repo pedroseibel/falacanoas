@@ -1,5 +1,6 @@
 import type { DigestItem } from "@fala/core";
 import { Client } from "pg";
+import type { ReplyStore, StoredReading } from "./replies";
 import type { DigestStore } from "./run";
 
 /**
@@ -116,36 +117,141 @@ export function pgStore(
 }
 
 /**
- * A protocol number the Ouvidoria sent back for a report (round 5): kept on the item, where its page
- * shows the legal deadline, and in its history. Only for reports already sent.
+ * A protocol number the Prefeitura sent back for reports (round 5): kept on each item, where its page
+ * shows the legal deadline, and in its history, naming the body that answered. Only for reports
+ * already sent; never repeated; with `keep`, a report that has a protocol keeps it (a protocol for the
+ * whole resumo doesn't replace one given to the report itself). Returns the codes written.
  */
+export async function writeProtocol(
+  client: Client,
+  input: { ids: string[]; number: string; at: Date; by: string; keep: boolean; actor: string },
+): Promise<string[]> {
+  await client.query("begin");
+  try {
+    const r = await client.query<{ id: string; protocol_at: Date }>(
+      // A date-only protocol from the day of the send can't come before the send itself.
+      `update fala.items set protocol_number = $2, protocol_at = greatest($3, sent_at), updated_at = now()
+        where id = any($1) and sent_at is not null and protocol_number is distinct from $2
+          and (not $4 or protocol_number is null)
+        returning id, protocol_at`,
+      [input.ids, input.number, input.at, input.keep],
+    );
+    await client.query(
+      `insert into fala.item_events (item_id, at, kind, actor, text)
+       select r.id, r.at, 'sent_to_authority', $3, $4 from unnest($1::text[], $2::timestamptz[]) as r(id, at)`,
+      [
+        r.rows.map((x) => x.id),
+        r.rows.map((x) => x.protocol_at),
+        input.actor,
+        `${input.by} registrou o protocolo ${input.number}.`,
+      ],
+    );
+    await client.query("commit");
+    return r.rows.map((x) => x.id);
+  } catch (e) {
+    await client.query("rollback").catch(() => undefined);
+    throw e;
+  }
+}
+
+/** The CLI's `protocolo`: one report, by hand. */
 export async function recordProtocol(
   connectionString: string,
-  actor: string,
-  input: { id: string; number: string; at: Date },
+  input: { id: string; number: string; at: Date; by: string; actor: string },
 ): Promise<boolean> {
   const client = new Client({ connectionString });
   await client.connect();
   try {
-    await client.query("begin");
-    const r = await client.query(
-      // A date-only protocol from the day of the send can't come before the send itself.
-      `update fala.items set protocol_number = $2, protocol_at = greatest($3, sent_at), updated_at = now()
-        where id = $1 and sent_at is not null returning protocol_at`,
-      [input.id, input.number, input.at],
-    );
-    const at = r.rows[0]?.protocol_at;
-    if (!at) {
-      await client.query("rollback");
-      return false;
-    }
-    await client.query(
-      `insert into fala.item_events (item_id, at, kind, actor, text) values ($1, $2, 'sent_to_authority', $3, $4)`,
-      [input.id, at, actor, `A Ouvidoria registrou o protocolo ${input.number}.`],
-    );
-    await client.query("commit");
-    return true;
+    return (await writeProtocol(client, { ...input, ids: [input.id], keep: false })).length > 0;
   } finally {
     await client.end();
   }
+}
+
+export interface ReplyRow {
+  id: string;
+  received_at: Date;
+  from_address: string;
+  subject: string;
+  body: string;
+  reading: StoredReading;
+  trusted: boolean;
+  status: "applied" | "review" | "dismissed";
+  digest_id: string | null;
+  item_ids: string[] | null;
+}
+
+/** Replies to the resumo in Postgres: what takeReply needs, and the operator's review. */
+export function pgReplyStore(connectionString: string, actor: string, timezone: string) {
+  const client = new Client({ connectionString });
+  const connected = client.connect();
+  const q = async <T extends object>(sql: string, params: unknown[] = []) => {
+    await connected;
+    return (await client.query<T>(sql, params)).rows;
+  };
+  const store: ReplyStore = {
+    async seen(messageId) {
+      return (await q("select 1 from fala.digest_replies where message_id = $1", [messageId])).length > 0;
+    },
+    async resumoFor(refs, number) {
+      const [byRef] = refs.length
+        ? await q<{ id: string; item_ids: string[] }>(
+            "select id, item_ids from fala.digests where message_id = any($1) order by sent_at desc limit 1",
+            [refs],
+          )
+        : [];
+      const [byNumber] =
+        !byRef && number
+          ? await q<{ id: string; item_ids: string[] }>(
+              `select id, item_ids from fala.digests
+                where number = $1 and extract(year from sent_at at time zone $3) = $2`,
+              [number.number, number.year, timezone],
+            )
+          : [];
+      const row = byRef ?? byNumber;
+      return row ? { id: row.id, itemIds: row.item_ids } : null;
+    },
+    async recentCodes() {
+      const rows = await q<{ id: string }>("select id from fala.items where sent_at > now() - interval '120 days'");
+      return rows.map((r) => r.id);
+    },
+    async protocol(input) {
+      await connected;
+      return writeProtocol(client, { ...input, actor });
+    },
+    async record({ mail, resumoId, body, reading, trusted, status }) {
+      const [row] = await q<{ id: string }>(
+        `insert into fala.digest_replies (received_at, message_id, digest_id, from_address, subject, body, reading, trusted, status)
+         values (now(), $1, $2, $3, $4, $5, $6, $7, $8) returning id`,
+        [mail.messageId, resumoId, mail.from, mail.subject, body, JSON.stringify(reading), trusted, status],
+      );
+      if (!row) throw new Error("resposta não gravada");
+      return row.id;
+    },
+  };
+  return {
+    ...store,
+    /** Replies waiting for a person, oldest first. */
+    waiting: () =>
+      q<ReplyRow>(
+        `select r.*, d.item_ids from fala.digest_replies r left join fala.digests d on d.id = r.digest_id
+          where r.status = 'review' order by r.received_at`,
+      ),
+    /** One reply by the start of its id, as the list shows it. */
+    async find(prefix: string) {
+      const rows = await q<ReplyRow>(
+        `select r.*, d.item_ids from fala.digest_replies r left join fala.digests d on d.id = r.digest_id
+          where r.id::text like $1 || '%'`,
+        [prefix.toLowerCase()],
+      );
+      return rows.length === 1 ? (rows[0] ?? null) : null;
+    },
+    decide: (id: string, status: "applied" | "dismissed", by: string, reading?: StoredReading) =>
+      q(
+        `update fala.digest_replies set status = $2, decided_at = now(), decided_by = $3,
+                reading = coalesce($4::jsonb, reading) where id = $1`,
+        [id, status, by, reading ? JSON.stringify(reading) : null],
+      ),
+    close: () => client.end(),
+  };
 }

@@ -162,6 +162,13 @@
       "when": 1791940174015,
       "tag": "0022_moderation_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791942309936,
+      "tag": "0023_digest_replies",
+      "breakpoints": true
     }
   ]
 }

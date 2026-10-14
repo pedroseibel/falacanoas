@@ -10,7 +10,8 @@
     "protocolo": "bun src/protocolo.ts",
     "amostra": "bun scripts/amostra.ts",
     "typst": "bun scripts/typst.ts",
-    "typecheck": "tsc --noEmit -p ."
+    "typecheck": "tsc --noEmit -p .",
+    "respostas": "bun src/respostas.ts"
   },
   "dependencies": {
     "@elysiajs/cron": "1.4.2",
@@ -20,6 +21,7 @@
     "elysia": "1.4.30",
     "pbf": "5.1.2",
     "pg": "8.23.1",
+    "postal-mime": "4.0.5",
     "sharp": "0.35.5",
     "uqr": "0.1.3"
   },

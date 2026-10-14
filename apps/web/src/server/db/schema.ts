@@ -651,6 +651,38 @@ export const digests = fala
   })
   .enableRLS();
 
+export const replyStatus = fala.enum("reply_status", ["applied", "review", "dismissed"]);
+
+/**
+ * An answer to a resumo, by e-mail (BUILD 3.1; core protocol-reply.ts): what was read from it and
+ * what became of it. Protocols read with confidence are applied to the reports at once; the rest
+ * waits for a person (`bun --filter @fala/digest respostas`). Only the reply's own text is kept,
+ * without the resumo it quotes. The Prefeitura's correspondence, not residents' data.
+ */
+export const digestReplies = fala
+  .table(
+    "digest_replies",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      receivedAt: timestamp({ withTimezone: true }).notNull(),
+      /** The e-mail's Message-ID (or a hash of it when it has none): the same reply is read once. */
+      messageId: text().notNull().unique(),
+      digestId: uuid().references(() => digests.id, { onDelete: "set null" }),
+      fromAddress: text().notNull(),
+      subject: text().notNull().default(""),
+      body: text().notNull(),
+      /** Core's ReplyReading, with `applied` on each protocol. */
+      reading: jsonb().notNull(),
+      /** From a Prefeitura address, and authenticated (DMARC by our receiving server) or handed in by the operator. */
+      trusted: boolean().notNull(),
+      status: replyStatus().notNull(),
+      decidedAt: timestamp({ withTimezone: true }),
+      decidedBy: text(),
+    },
+    (t) => [index().on(t.status)],
+  )
+  .enableRLS();
+
 /* ---------- Web push (round 15: following; BUILD 4.2) ---------- */
 
 /**

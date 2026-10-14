@@ -1,5 +1,5 @@
 import { canoas } from "@fala/instance-canoas";
-import { loadConfig } from "./config";
+import { ADDRESSEE, loadConfig } from "./config";
 import { recordProtocol } from "./store";
 
 /**
@@ -16,10 +16,12 @@ if (Number.isNaN(at.getTime())) {
   console.error("Data inválida. Use AAAA-MM-DD.");
   process.exit(1);
 }
-const ok = await recordProtocol(loadConfig().databaseUrl, canoas.branding.name, {
+const ok = await recordProtocol(loadConfig().databaseUrl, {
   id: id.toUpperCase(),
   number,
   at,
+  by: `A ${ADDRESSEE.to}`,
+  actor: canoas.branding.name,
 });
 console.log(
   ok ? `Protocolo ${number} registrado em ${id.toUpperCase()}.` : `${id} não existe ou ainda não foi enviado.`,

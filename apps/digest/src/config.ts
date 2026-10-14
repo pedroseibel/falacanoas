@@ -49,6 +49,13 @@ export interface Config {
   photoBase: string;
   /** The map tiles' cache, kept between runs. */
   cacheDir: string;
+  /** Bearer token for POST /respostas (the inbound e-mail's relay); without one, the route is closed. */
+  repliesToken: string;
+  /**
+   * The authserv-id our receiving mail server writes in Authentication-Results ("mx.cloudflare.net"
+   * for Cloudflare Email Routing). Without it, no reply arriving by HTTP is applied on its own.
+   */
+  authserv: string | null;
 }
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
@@ -65,6 +72,8 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     outboxDir: env.DIGEST_OUTBOX || fileURLToPath(new URL("../outbox", import.meta.url)),
     photoBase: env.DIGEST_PHOTO_BASE || (dev ? "http://127.0.0.1:3100" : `https://${canoas.branding.domain}`),
     cacheDir: env.DIGEST_CACHE || fileURLToPath(new URL("../cache", import.meta.url)),
+    repliesToken: env.DIGEST_REPLIES_TOKEN ?? "",
+    authserv: env.DIGEST_AUTHSERV || null,
   };
   const missing = [
     !config.databaseUrl && "DIGEST_DATABASE_URL",
