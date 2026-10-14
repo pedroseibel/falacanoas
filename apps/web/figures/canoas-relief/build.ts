@@ -61,8 +61,6 @@ const off2 = (p: number[], a: number[], b: number[]) => {
   const t = Math.max(0, Math.min(1, ((p[0]! - a[0]!) * dx + (p[1]! - a[1]!) * dy) / (dx * dx + dy * dy || 1)));
   return Math.hypot(p[0]! - a[0]! - t * dx, p[1]! - a[1]! - t * dy);
 };
-/** How far two unit normals agree (1 = same direction). */
-const turn = (u: number[], w: number[]) => u[0]! * w[0]! + u[1]! * w[1]!;
 /** A vertex's identity, for spotting the same border segment in two bairros. */
 const key = (p: number[]) => `${p[0]!.toFixed(2)},${p[1]!.toFixed(2)}`;
 /** Douglas-Peucker on a closed ring: drops vertices within `tol` of the line their neighbours make. */
@@ -95,7 +93,7 @@ function simplifyOpen(run: Ring, tol: number): Ring {
   return closed.at(-1) === last ? closed : [...closed, last];
 }
 // The city's edge, smoothed for the plinth's sides; the bairros keep their published shapes below.
-const boundary = simplify(thin(ringsOf(canoas.geo.boundary.features[0]!.geometry)[0]!, 0.5), 2.6);
+const boundary = simplify(thin(ringsOf(canoas.geo.boundary.features[0]!.geometry)[0]!, 0.5), 3.4);
 /** The bairros exactly as published, for borders shared vertex for vertex. */
 const bairroSource = canoas.geo.neighborhoods.features.map((f) => ({
   slug: f.properties.slug,
@@ -164,40 +162,7 @@ const DISC = 1.15; // world units per day
 const PIN_R = 2.6;
 const TOUR_MAX = 46; // days of discs prebuilt for the tour pin (it shows up to its own count)
 
-const xs = boundary.map((p) => p[0]);
-const ys = boundary.map((p) => p[1]);
-const bbox = { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) };
-// The model is mounted on a board cut to the city's silhouette: the convex hull of the boundary,
-// grown by a margin with round corners. Its fittings sit in the gaps between the hull and the city.
-const cross = (o: number[], a: number[], b: number[]) =>
-  (a[0]! - o[0]!) * (b[1]! - o[1]!) - (a[1]! - o[1]!) * (b[0]! - o[0]!);
-function hullOf(points: Ring): Ring {
-  const pts = points.toSorted((a, b) => a[0] - b[0] || a[1] - b[1]);
-  const half = (list: Ring) => {
-    const h: Ring = [];
-    for (const p of list) {
-      while (h.length >= 2 && cross(h.at(-2)!, h.at(-1)!, p) <= 0) h.pop();
-      h.push(p);
-    }
-    h.pop();
-    return h;
-  };
-  return [...half(pts), ...half(pts.toReversed())];
-}
-const grow = (ring: Ring, by: number): Ring =>
-  hullOf(
-    ring.flatMap(([x, y]) =>
-      Array.from({ length: 16 }, (_, i): [number, number] => [
-        x + by * Math.cos((i / 16) * 2 * Math.PI),
-        y + by * Math.sin((i / 16) * 2 * Math.PI),
-      ]),
-    ),
-  );
-const HULL = hullOf(boundary);
-const BOARD_RING = grow(HULL, 16);
-const BOARD_H = 9;
-const BOARD_TOP = -BASE_H;
-const FOOT_H = 5;
+/** Whether a point lies inside a ring (even-odd). */
 const inside = (ring: Ring, [x, y]: number[]) => {
   let hit = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -207,49 +172,10 @@ const inside = (ring: Ring, [x, y]: number[]) => {
   }
   return hit;
 };
-const toRing = (ring: Ring, p: number[]) => {
-  let best = Infinity;
-  for (let i = 0; i < ring.length; i++) {
-    const a = ring[i]!;
-    const b = ring[(i + 1) % ring.length]!;
-    const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
-    const t = Math.max(0, Math.min(1, ((p[0]! - a[0]) * dx + (p[1]! - a[1]) * dy) / (dx * dx + dy * dy || 1)));
-    best = Math.min(best, Math.hypot(p[0]! - a[0] - t * dx, p[1]! - a[1] - t * dy));
-  }
-  return best;
-};
-/** Room around a point on the board, off the city: how far to the plinth and to the board's edge. */
-const roomAt = (p: number[]) => (inside(boundary, p) ? 0 : Math.min(toRing(boundary, p), toRing(BOARD_RING, p) - 3));
-/** The free spot on the board that best suits `prefer`, with at least `need` units of room. */
-function spot(prefer: (p: number[]) => number, need: number, taken: number[][] = []): [number, number] {
-  let best: [number, number] = [0, 0];
-  let score = -Infinity;
-  const bx = BOARD_RING.map((p) => p[0]);
-  const by = BOARD_RING.map((p) => p[1]);
-  for (let x = Math.min(...bx); x <= Math.max(...bx); x += 2) {
-    for (let y = Math.min(...by); y <= Math.max(...by); y += 2) {
-      const p = [x, y];
-      if (
-        !inside(BOARD_RING, p) ||
-        roomAt(p) < need ||
-        taken.some((q) => Math.hypot(q[0]! - x, q[1]! - y) < need * 2.4)
-      )
-        continue;
-      const sc = prefer(p);
-      if (sc > score) [score, best] = [sc, [x, y]];
-    }
-  }
-  return best;
-}
-// The north plate in the roomiest gap on the right flank, in view in front of the plinth's walls.
-const NORTH = spot(([x, y]) => x! + y! * 0.3 + roomAt([x!, y!]) * 4, 10);
 
 const P = k.fitProjection(
   [
-    ...BOARD_RING.flatMap((p) => [
-      [p[0], p[1], BOARD_TOP - BOARD_H - FOOT_H],
-      [p[0], p[1], BOARD_TOP],
-    ]),
+    ...boundary.map((p) => [p[0], p[1], -BASE_H - 4]),
     ...boundary.map((p) => [p[0], p[1], 0]),
     ...PINS.map((p) => [p.at[0], p.at[1], p.days * DISC + 3]),
     [TOUR.at[0], TOUR.at[1], TOUR_MAX * DISC + 6],
@@ -259,10 +185,7 @@ const P = k.fitProjection(
   { pad: 14, azimuth: 38 },
 );
 const FIT_POINTS = [
-  ...BOARD_RING.flatMap((p) => [
-    [p[0], p[1], BOARD_TOP - BOARD_H - FOOT_H - 3],
-    [p[0], p[1], BOARD_TOP],
-  ]),
+  ...boundary.map((p) => [p[0], p[1], -BASE_H - 6]),
   ...PINS.map((p) => [p.at[0], p.at[1], p.days * DISC + 3]),
   [TOUR.at[0], TOUR.at[1], TOUR_MAX * DISC + 6],
 ].map((p) => k.iso(p, P)[1]);
@@ -273,110 +196,9 @@ P.origin = [P.origin[0], P.origin[1] - CROP];
 const at = (p: number[]) => k.iso(p, P);
 const S = (paths: unknown, style?: object) => k.solidSvg(paths, style);
 const L = (d: string, style?: object) => k.lineSvg(d, style);
-const D = (points: number[][], style?: object) => k.dotsSvg(points, style);
 const depth = (p: number[]) => k.depthOf([p[0], p[1], 0], P);
 
 // ---- Parts ----------------------------------------------------------------------------------------------
-
-/** The base board, cut to the city's hull: feet, a bevelled plate with a groove, screws at the feet. */
-function board() {
-  const out = [`<path class="iso-halo" d="${k.extrude(BOARD_RING, BOARD_TOP - BOARD_H - FOOT_H, BOARD_H, P).fill}"/>`];
-  // Feet under the four hull points furthest out along the diagonals, pulled in from the edge.
-  const centre = [(bbox.x0 + bbox.x1) / 2, (bbox.y0 + bbox.y1) / 2];
-  const feet = [
-    [1, 1],
-    [1, -1],
-    [-1, 1],
-    [-1, -1],
-  ].map(([sx, sy]) => {
-    const far = HULL.reduce((a, b) => (b[0] * sx! + b[1] * sy! > a[0] * sx! + a[1] * sy! ? b : a));
-    const [dx, dy] = [centre[0]! - far[0], centre[1]! - far[1]];
-    const len = Math.hypot(dx, dy);
-    return [far[0] + (dx / len) * 4, far[1] + (dy / len) * 4];
-  });
-  for (const [x, y] of feet.toSorted((a, b) => depth(a) - depth(b))) {
-    out.push(S(k.cylinder(x, y, 7, BOARD_TOP - BOARD_H - FOOT_H, 1.6, P, 28), { tone: "lo" }));
-    out.push(S(k.cylinder(x, y, 5.4, BOARD_TOP - BOARD_H - FOOT_H + 1.6, FOOT_H - 1.6, P, 28), { tone: "mid" }));
-  }
-  const seam = k.ringSeam(BOARD_RING, BOARD_TOP - 3, P);
-  out.push(
-    S(k.extrude(BOARD_RING, BOARD_TOP - BOARD_H, BOARD_H, P, { bevel: 1.6 }), {
-      tone: "mid",
-      inner: L(seam, { tone: "faint" }),
-    }),
-  );
-  out.push(L(k.onTop(grow(HULL, 7), BOARD_TOP, P, true), { tone: "lo" }));
-  // A screw over each foot, where the board isn't under the plinth.
-  const screws = feet.filter((f) => roomAt(f) > 3);
-  out.push(L(screws.map(([x, y]) => k.ring(x!, y!, 2.2, BOARD_TOP, P, 16)).join(""), { tone: "lo" }));
-  out.push(
-    D(
-      screws.map(([x, y]) => at([x!, y!, BOARD_TOP])),
-      { size: 0.5 },
-    ),
-  );
-  return out.join("");
-}
-
-/**
- * The maker's mark: "CANOAS" engraved on the board's most front-facing edge, in that face's plane,
- * the one word the drawing carries.
- */
-function engraving() {
-  const [vx, vy] = k.towardViewer(P);
-  const n = BOARD_RING.length;
-  let best = { score: -Infinity, a: BOARD_RING[0]!, b: BOARD_RING[1]! };
-  for (let i = 0; i < n; i++) {
-    const a = BOARD_RING[i]!;
-    const b = BOARD_RING[(i + 1) % n]!;
-    const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-    if (len < 70) continue;
-    // Outward normal of a counter-clockwise hull edge.
-    const nrm = [(b[1] - a[1]) / len, (-(a[0] - b[0]) / len) * -1];
-    const facing = nrm[0]! * vx + nrm[1]! * vy;
-    const score = facing * 100 + len * 0.05;
-    if (score > best.score) best = { score, a, b };
-  }
-  // Read left to right on screen, whichever way the hull runs along this edge.
-  const { a, b } = at([...best.b, 0])[0] > at([...best.a, 0])[0] ? best : { a: best.b, b: best.a };
-  const len = Math.hypot(b[0] - a[0], b[1] - a[1]);
-  const along = [(b[0] - a[0]) / len, (b[1] - a[1]) / len];
-  const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
-  const zText = BOARD_TOP - BOARD_H / 2 - 1.6;
-  const origin = at([mid[0]! - along[0]! * 16, mid[1]! - along[1]! * 16, zText]);
-  const u = k.axisVector(P, [along[0], along[1], 0]);
-  const down = k.axisVector(P, [0, 0, -1]);
-  const m = `matrix(${u[0].toFixed(3)} ${u[1].toFixed(3)} ${down[0].toFixed(3)} ${down[1].toFixed(3)} ${origin[0].toFixed(2)} ${origin[1].toFixed(2)})`;
-  return k
-    .faceTextSvg(m, "CANOAS", { size: 4.2, tone: "mid" })
-    .replace('class="iso-face-text"', 'class="iso-face-text rf-engraved"');
-}
-
-/** The north plate: a disc with an engraved needle pointing up the map (north is −y here). */
-function northPlate() {
-  const [x, y] = NORTH;
-  const z = BOARD_TOP;
-  const out = [S(k.cylinder(x, y, 9, z, 1.2, P, 40, 0.4), { tone: "lo" })];
-  out.push(L(k.ring(x, y, 7.2, z + 1.2, P, 40), { tone: "faint" }));
-  out.push(
-    L(
-      k.onTop(
-        [
-          [x, y - 6.4],
-          [x + 2.2, y + 3.4],
-          [x, y + 1.6],
-          [x - 2.2, y + 3.4],
-        ],
-        z + 1.2,
-        P,
-        true,
-      ),
-      { tone: "mid" },
-    ),
-  );
-  out.push(D([at([x, y, z + 1.2])], { size: 0.5, tone: "hi" }));
-  return out.join("");
-}
 
 /**
  * The plinth: the city's boundary as a thick board. A concave outline can't be one hull, so each wall
@@ -385,9 +207,7 @@ function northPlate() {
  * it, and its rim is the one outline the eye follows.
  */
 function plinth() {
-  const out = [
-    `<path class="iso-halo rf-seat-shadow" d="${k.extrude(boundary, -BASE_H, 0.5, P, { convex: false }).fill}"/>`,
-  ];
+  const out = [`<path class="iso-halo" d="${k.extrude(boundary, -BASE_H - 3, 1, P, { convex: false }).fill}"/>`];
   const n = boundary.length;
   let area = 0;
   for (let i = 0; i < n; i++) {
@@ -413,11 +233,11 @@ function plinth() {
       const shade = Math.min(3, Math.max(0, Math.floor(lit * 4)));
       const quad = k.pathOf([at([...e.a, 0]), at([...e.b, 0]), at([...e.b, z0]), at([...e.a, z0])], true);
       const lines = [k.pathOf([at([...e.a, z0]), at([...e.b, z0])])];
-      // A vertical edge only where the wall turns away (the silhouette) or turns sharply.
+      // A vertical edge only where the wall turns away: the silhouette.
       const prev = edges[(e.i + n - 1) % n]!;
       const next = edges[(e.i + 1) % n]!;
-      if (!prev.facing || turn(prev.nrm, e.nrm) < 0.55) lines.push(k.pathOf([at([...e.a, 0]), at([...e.a, z0])]));
-      if (!next.facing || turn(next.nrm, e.nrm) < 0.55) lines.push(k.pathOf([at([...e.b, 0]), at([...e.b, z0])]));
+      if (!prev.facing) lines.push(k.pathOf([at([...e.a, 0]), at([...e.a, z0])]));
+      if (!next.facing) lines.push(k.pathOf([at([...e.b, 0]), at([...e.b, z0])]));
       // A seam where the plinth's two layers meet, and the chamfer just under the rim.
       const seam =
         k.pathOf([at([...e.a, seamZ]), at([...e.b, seamZ])]) + k.pathOf([at([...e.a, -1.4]), at([...e.b, -1.4])]);
@@ -520,6 +340,64 @@ function bairroLines() {
   return `<g clip-path="url(#rf-top)">${L(d, { tone: "lo" })}</g>${L(TOP, { tone: "mid" })}`;
 }
 
+/** Where a point projects onto the city's edge, as a position along it (segment index + fraction). */
+function edgeParam([x, y]: number[]) {
+  let best = { at: 0, q: boundary[0]!, d: Infinity };
+  for (let i = 0; i < boundary.length; i++) {
+    const a = boundary[i]!;
+    const b = boundary[(i + 1) % boundary.length]!;
+    const [dx, dy] = [b[0] - a[0], b[1] - a[1]];
+    const t = Math.max(0, Math.min(1, ((x! - a[0]) * dx + (y! - a[1]) * dy) / (dx * dx + dy * dy || 1)));
+    const q: [number, number] = [a[0] + t * dx, a[1] + t * dy];
+    const d = Math.hypot(x! - q[0], y! - q[1]);
+    if (d < best.d) best = { at: i + t, q, d };
+  }
+  return best;
+}
+/** The city's edge between two positions along it, the shorter way round. */
+function edgeBetween(from: number, to: number): Ring {
+  const n = boundary.length;
+  const ahead = (((to - from) % n) + n) % n;
+  const pts: Ring = [];
+  if (ahead <= n / 2) {
+    // Forward: the vertices after `from`, up to and including the one before `to`.
+    const steps = Math.floor(from + ahead) - Math.floor(from);
+    for (let k2 = 1; k2 <= steps; k2++) pts.push(boundary[(Math.floor(from) + k2) % n]!);
+  } else {
+    // Backward: the vertex at `from`'s segment start, down to the one after `to`.
+    const steps = Math.floor(from) - Math.floor(from - (n - ahead));
+    for (let k2 = 0; k2 < steps; k2++) pts.push(boundary[(((Math.floor(from) - k2) % n) + n) % n]!);
+  }
+  return pts;
+}
+/**
+ * A bairro's outline with its stretches along the city's edge replaced by the plinth's own edge, so
+ * the panels tile the top exactly: the published bairros and the smoothed edge never quite agree,
+ * and the gap would show as a pale sliver (or, painted over, as tint on a neighbour).
+ */
+function snapped(ring: Ring): Ring {
+  const near = ring.map((p) => toEdge(p) < 5);
+  if (near.every(Boolean) || !near.some(Boolean)) return ring;
+  const n = ring.length;
+  const startAt = near.findIndex((v, i) => !v && near[(i + 1) % n]); // a far vertex followed by a near one
+  const out: Ring = [];
+  for (let k2 = 1; k2 <= n; k2++) {
+    const i = (startAt + k2) % n;
+    if (!near[i]) {
+      out.push(ring[i]!);
+      continue;
+    }
+    // A run of near vertices: from its first to its last, follow the edge.
+    let j = i;
+    while (near[(j + 1) % n] && (j + 1) % n !== startAt) j = (j + 1) % n;
+    const a = edgeParam(ring[i]!);
+    const b = edgeParam(ring[j]!);
+    out.push(a.q, ...edgeBetween(a.at, b.at), b.q);
+    k2 += (j - i + n) % n;
+  }
+  return out;
+}
+
 /**
  * The bairros as panels of the model, each a whisper of tone apart, coloured so no two neighbours
  * share one (greedy colouring over the vertices they share): the 18 read at a glance.
@@ -536,12 +414,14 @@ function bairroPanels() {
     b.rings
       .map((r) =>
         k.pathOf(
-          r.map((p) => at([p[0], p[1], 0])),
+          snapped(r).map((p) => at([p[0], p[1], 0])),
           true,
         ),
       )
       .join("");
-  return `<g clip-path="url(#rf-top)">${bairroSource.map((b, i) => `<path class="rf-panel" data-tone="${tone[i]}" d="${d(b)}"/>`).join("")}</g>`;
+  return `<g clip-path="url(#rf-top)">${bairroSource
+    .map((b, i) => `<path class="rf-panel" data-tone="${tone[i]}" d="${d(b)}"/>`)
+    .join("")}</g>`;
 }
 
 /** The tour's bairro, washed on the plinth's top (clipped to it) so the eye finds where the pin lives. */
@@ -551,7 +431,7 @@ function tourBairro() {
   const d = b.rings
     .map((r) =>
       k.pathOf(
-        r.map((p) => at([p[0], p[1], 0])),
+        snapped(r).map((p) => at([p[0], p[1], 0])),
         true,
       ),
     )
@@ -563,7 +443,7 @@ function tourBairro() {
 function stack([x, y]: number[], days: number) {
   const out = [];
   const below = Math.min(days, DEADLINE);
-  out.push(S(k.cylinder(x, y, PIN_R + 1.2, 0, 0.8, P, 24), { tone: "lo" }));
+  out.push(S(k.cylinder(x, y, PIN_R + 1.2, 0, 0.8, P, 24, 0.3), { tone: "mid" }));
   out.push(
     `<g class="rf-pin">`,
     S(k.cylinder(x, y, PIN_R, 0.8, below * DISC, P, 24, 0.3), {
@@ -601,7 +481,7 @@ function resolvedRing([x, y]: number[]) {
  */
 function tourStack() {
   const [x, y] = TOUR.at;
-  const out = [`<g data-part="seat">${S(k.cylinder(x, y, PIN_R + 1.2, 0, 0.8, P, 24), { tone: "lo" })}</g>`];
+  const out = [`<g data-part="seat">${S(k.cylinder(x, y, PIN_R + 1.2, 0, 0.8, P, 24, 0.3), { tone: "mid" })}</g>`];
   out.push(`<g data-part="ring" style="opacity:0">${resolvedRing(TOUR.at)}</g>`);
   const seams = (from: number, to: number) =>
     L(
@@ -616,25 +496,15 @@ function tourStack() {
     `<g class="rf-pin">${S(k.cylinder(x, y, PIN_R, 0.8, DEADLINE * DISC, P, 24, 0.3), { tone: "mid", inner: seams(0, DEADLINE) })}</g>` +
     `<g class="rf-late">${S(k.cylinder(x, y, PIN_R, zDead, (TOUR_MAX - DEADLINE) * DISC, P, 24, 0.3), { tone: "mid", inner: seams(DEADLINE, TOUR_MAX) })}</g>`;
   // The clip: everything at or below z = 0.8 (day 0), as a silhouette 400 units tall; slid up by days.
-  const clip = k.cylinder(x, y, PIN_R + 0.6, 0.8 - 400, 400, P, 24).fill;
+  // As wide as the cap's lip, so the column never shows past the cap that rides on top of it.
+  const clip = k.cylinder(x, y, PIN_R + 0.45, 0.8 - 400, 400, P, 24).fill;
   out.push(`<clipPath id="rf-tour-clip"><path data-part="clip" d="${clip}"/></clipPath>`);
-  out.push(`<g clip-path="url(#rf-tour-clip)">${column}</g>`);
-  // Two caps at day 0, the second in the accent; the live code moves both and shows one.
-  const cap = (late: boolean) => {
-    const c = k.cylinder(x, y, PIN_R, 0.8 - 0.01, 0.01, P, 24);
-    return `<g data-part="${late ? "cap-late" : "cap"}" class="iso-solid ${late ? "rf-late" : "rf-pin"}" style="display:none"><path class="iso-top" d="${c.top}"/><path class="iso-line" data-tone="mid" d="${c.outline}"/></g>`;
-  };
+  out.push(`<g data-part="column" clip-path="url(#rf-tour-clip)">${column}</g>`);
+  // Two caps sitting on the column at day 0 (the second in the accent), the same lip as the other
+  // pins' caps; the live code rides them up with the days and shows one.
+  const cap = (late: boolean) =>
+    `<g data-part="${late ? "cap-late" : "cap"}" class="${late ? "rf-late" : "rf-pin"}"${late ? ' style="display:none"' : ""}>${S(k.cylinder(x, y, PIN_R + 0.45, 0.8, 0.7, P, 24, 0.3), { tone: "mid" })}</g>`;
   out.push(cap(false), cap(true));
-  // The two neighbours: studs beside the seat, lit as each confirms (drawn far one first).
-  const studs = [0, 1].map((i) => {
-    const a = Math.PI * 0.55 + (i - 0.5) * 0.9;
-    return { i, p: [x + Math.cos(a) * 7.4, y + Math.sin(a) * 7.4] };
-  });
-  for (const { i, p } of studs.toSorted((u, w) => depth(u.p) - depth(w.p))) {
-    out.push(
-      `<g data-part="vote-${i}" class="rf-vote">${S(k.cylinder(p[0]!, p[1]!, 1.5, 0, 1.6, P, 16), { tone: "mid" })}</g>`,
-    );
-  }
   return out.join("");
 }
 
@@ -652,16 +522,7 @@ const svg = k.figureSvg({
   className: "rf-svg",
   label:
     "Canoas em relevo, como exemplo: o limite do município é a base, os 18 bairros estão desenhados nos seus contornos reais, e cada registro é uma pilha de discos, um por dia em aberto desde o envio das 18h. Depois de 30 dias, os discos ficam laranja. Um registro em Niterói cresce dia a dia até dois vizinhos confirmarem o conserto.",
-  body: [
-    board(),
-    engraving(),
-    northPlate(),
-    plinth(),
-    bairroPanels(),
-    tourBairro(),
-    bairroLines(),
-    ...items.map((i) => i.svg),
-  ],
+  body: [plinth(), bairroPanels(), tourBairro(), bairroLines(), ...items.map((i) => i.svg)],
 });
 
 const art = {

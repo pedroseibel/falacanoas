@@ -226,29 +226,26 @@
   font-weight: 500;
 }
 
-/* The bairros as panels of the model: a whisper of ink apart (of paper, in dark). */
+/* The bairros as panels of the model, a whisper of tone apart; the tour's bairro takes the wash. */
 .rf-panel {
-  fill: var(--ink);
-  fill-opacity: 0;
+  --rf-panel: var(--anatomy-top);
 }
-.rf-panel[data-tone="1"] {
-  fill-opacity: 0.018;
+.rf-panel[data-tone="1"][data-tone="1"] {
+  --rf-panel: color-mix(in oklab, var(--anatomy-top) 98.2%, var(--ink));
 }
-.rf-panel[data-tone="2"] {
-  fill-opacity: 0.034;
+.rf-panel[data-tone="2"][data-tone="2"] {
+  --rf-panel: color-mix(in oklab, var(--anatomy-top) 96.6%, var(--ink));
 }
-.rf-panel[data-tone="3"] {
-  fill-opacity: 0.05;
+.rf-panel[data-tone="3"][data-tone="3"] {
+  --rf-panel: color-mix(in oklab, var(--anatomy-top) 95%, var(--ink));
+}
+.rf-panel {
+  fill: var(--rf-panel);
 }
 .rf-home {
-  fill: var(--signal-wash);
+  fill: color-mix(in oklab, var(--signal) 12%, var(--anatomy-top));
 }
 .iso-line.rf-mark {
   stroke: var(--signal);
   stroke-width: 1px;
-}
-/* The neighbours' studs: plain until each confirms, then inked on top. */
-.rf-vote[data-on] {
-  --anatomy-top: var(--anatomy-lit);
-  --anatomy-mid: var(--anatomy-lit);
 }

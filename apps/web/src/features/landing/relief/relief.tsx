@@ -14,29 +14,34 @@ const up = (days: number) => `translate(${fine((ART.dayStep[0] ?? 0) * days)} ${
 
 interface Parts {
   seat: Element | null;
+  column: Element | null;
   clip: Element | null;
   cap: Element | null;
   capLate: Element | null;
   ring: Element | null;
-  votes: Element[];
 }
 
 function apply(parts: Parts, s: ReliefState) {
-  const shown = s.days * (1 - s.sink);
-  parts.seat?.setAttribute("transform", up((1 - s.drop) * DROP_DAYS));
-  parts.seat?.setAttribute("style", `opacity:${fine(s.drop * (1 - s.sink))}`);
+  // Once resolved, the stack sinks to its seat first, then the token fades into a resolved ring.
+  const gone = Math.max(0, (s.sink - 0.7) / 0.3);
+  const shown = s.days * Math.max(0, 1 - s.sink / 0.7);
+  // The pin drops in as one piece: seat and cap together, the column at day 0.
+  const lift = (1 - s.drop) * DROP_DAYS;
+  const fade = `opacity:${fine(s.drop * (1 - gone))}`;
+  parts.seat?.setAttribute("transform", up(lift));
+  parts.seat?.setAttribute("style", fade);
+  parts.column?.setAttribute("style", fade);
   parts.clip?.setAttribute("transform", up(shown));
   const late = shown > ART.deadline;
   const caps: [Element | null, boolean][] = [
-    [parts.cap, shown > 0.05 && !late],
+    [parts.cap, !late],
     [parts.capLate, late],
   ];
   for (const [cap, on] of caps) {
-    cap?.setAttribute("transform", up(shown));
-    cap?.setAttribute("style", on ? "" : "display:none");
+    cap?.setAttribute("transform", up(shown + lift));
+    cap?.setAttribute("style", on ? fade : "display:none");
   }
-  parts.ring?.setAttribute("style", `opacity:${fine(s.sink)}`);
-  parts.votes.forEach((v, i) => v.toggleAttribute("data-on", s.votes > i));
+  parts.ring?.setAttribute("style", `opacity:${fine(gone)}`);
 }
 
 /**
@@ -56,11 +61,11 @@ export function Relief({ deadline, className }: { deadline: number; className?: 
     const q = (part: string) => el.querySelector(`[data-part="${part}"]`);
     const parts: Parts = {
       seat: q("seat"),
+      column: q("column"),
       clip: q("clip"),
       cap: q("cap"),
       capLate: q("cap-late"),
       ring: q("ring"),
-      votes: [q("vote-0"), q("vote-1")].filter((n) => n !== null),
     };
     const still = matchMedia("(prefers-reduced-motion: reduce)");
     let t = STILL_AT;
@@ -195,7 +200,7 @@ export function Relief({ deadline, className }: { deadline: number; className?: 
           <span aria-hidden="true" className="shrink-0 pointer-coarse:hidden max-compact:hidden">
             passe o mouse · ← →
           </span>
-          <span ref={out} aria-hidden="true" className="ml-auto truncate text-ink-2 tabular-nums">
+          <span ref={out} data-readout aria-hidden="true" className="ml-auto truncate text-ink-2 tabular-nums">
             {resting}
           </span>
         </div>
