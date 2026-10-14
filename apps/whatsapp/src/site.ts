@@ -78,7 +78,7 @@ export function site(config: { url: string; vaultToken: string; appToken: string
       const r = await ask(
         Published,
         from,
-        { acao: "publicar", ...point(draft), texto: draft.text, visibilidade: visibility },
+        { acao: "publicar", ...point(draft), texto: draft.text, referencia: draft.reference, visibilidade: visibility },
         photos,
       );
       return r.ok ? { kind: "published", id: r.id, digest: r.digest, held: r.held } : refused(r);

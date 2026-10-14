@@ -30,8 +30,11 @@ for (let round = 0; picked.length < count && round < 50; round++)
 // The fixtures have four photos in all: lend them around so every photo layout (one to four) shows.
 const photos = fixtures.items.flatMap((it) => it.photos);
 const lend = [1, 0, 2, 0, 4, 0, 0, 3, 1, 0, 2];
+// Some residents give a ponto de referência; how one reads in a record.
+const references = ["em frente à parada de ônibus", "", "ao lado da praça", "", ""];
 const day = picked.map((it, i): DigestItem => ({
   ...it,
+  ...(references[i % references.length] ? { reference: references[i % references.length] } : {}),
   demo: false,
   createdAt: new Date(sentAt.getTime() - (count - i) * 23 * 60_000 - 3600_000).toISOString(),
   photos: it.photos.length

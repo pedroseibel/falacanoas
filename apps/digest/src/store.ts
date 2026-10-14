@@ -18,6 +18,8 @@ interface PendingRow {
   category: string;
   title: string;
   text: string;
+  reference: string | null;
+  address: string | null;
   neighborhood: string | null;
   scope: DigestItem["scope"];
   confirmations: number;
@@ -41,7 +43,7 @@ export function pgStore(
       const rows = await q<PendingRow>(
         // A report waits until moderation has looked at its photos: the Ouvidoria gets, in the Fala's
         // name, only what anyone can already see. Removed photos never go.
-        `select i.id, i.kind, i.category, i.title, i.text, i.neighborhood, i.scope, i.confirmations, i.created_at,
+        `select i.id, i.kind, i.category, i.title, i.text, i.reference, i.address, i.neighborhood, i.scope, i.confirmations, i.created_at,
                 coalesce(array_agg(p.src order by p.position) filter (where p.review = 'approved'), '{}') as photos
            from fala.items i left join fala.item_photos p on p.item_id = i.id
           where i.sent_at is null and i.moderation = 'published' and not i.demo and i.kind = 'occurrence'
@@ -55,6 +57,8 @@ export function pgStore(
         category: r.category,
         title: r.title,
         text: r.text,
+        ...(r.reference ? { reference: r.reference } : {}),
+        address: r.address,
         neighborhood: r.neighborhood,
         scope: r.scope,
         days: 0,

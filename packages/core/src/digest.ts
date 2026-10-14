@@ -28,6 +28,10 @@ export interface DigestEntry {
   text: string | null;
   /** A named place the resident chose ("Posto de saúde do bairro"). */
   place: string | null;
+  /** Street and number looked up from the point when it was registered: approximate. */
+  address: string | null;
+  /** The resident's ponto de referência ("em frente à escola"). */
+  reference: string | null;
   point: { lat: number; lng: number } | null;
   /** "12/10 às 14:20", local time. */
   registered: string | null;
@@ -156,6 +160,8 @@ export function digestDocument(
           title: it.title,
           text: it.text && it.text !== it.title ? it.text : null,
           place: it.scope.type === "place" ? it.scope.label : null,
+          address: it.address ?? null,
+          reference: it.reference ?? null,
           point: pointOf(it),
           registered: it.createdAt ? when(it.createdAt, muni.timezone) : null,
           confirmations: it.confirmations,
@@ -213,6 +219,8 @@ export function digestText(doc: DigestDocument, { attachment }: { attachment: bo
         `   ${e.title}`,
         ...(e.text ? [`   “${e.text}”`] : []),
         ...(e.place ? [`   Lugar: ${e.place}`] : []),
+        ...(e.address ? [`   Endereço aproximado: ${e.address}`] : []),
+        ...(e.reference ? [`   Ponto de referência: ${e.reference}`] : []),
         ...(e.point ? [`   Local: ${e.point.lat.toFixed(5)}, ${e.point.lng.toFixed(5)} · ${osmLink(e.point)}`] : []),
         ...e.photos.map((src, i) => `   Foto ${i + 1}: ${src}`),
         `   ${[

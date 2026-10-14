@@ -24,6 +24,8 @@ export const REPORT = {
   minTitle: 8,
   maxTitle: 90,
   maxPlace: 60,
+  /** A problem's ponto de referência ("em frente à escola"): what crews ask for (research/digest-pdf). */
+  maxReference: 80,
   /** Open items of the same type closer than this are offered as the same problem. */
   duplicateMeters: 50,
   /** Photos are re-encoded on the device to this longest edge, which also drops EXIF and GPS. */
@@ -56,6 +58,8 @@ export const ReportFieldsSchema = z.object({
   place: z.string().max(REPORT.maxPlace, `Use no máximo ${REPORT.maxPlace} caracteres.`),
   /** Bairro slug when the questão covers a whole bairro. */
   neighborhood: z.string(),
+  /** A problem's ponto de referência, to find the spot; optional. Ignored for a questão pública. */
+  reference: z.string().max(REPORT.maxReference, `Use no máximo ${REPORT.maxReference} caracteres.`),
   /** The map crosshair. Null until the person places it. */
   location: LngLatSchema.nullable(),
   text: z.string().max(REPORT.maxText, `Use no máximo ${REPORT.maxText} caracteres.`),
@@ -203,6 +207,7 @@ export function itemFromReport(v: ReportFields, muni: Municipality, ctx: ReportC
   const scope = scopeOf(v, at);
   const category = issue ? (muni.categories.find((c) => c.kind === "public_issue")?.key ?? "questao") : v.category;
   const text = v.text.trim();
+  const reference = issue ? "" : v.reference.trim();
   const n = ctx.photos.length;
   return {
     id: ctx.id,
@@ -210,6 +215,7 @@ export function itemFromReport(v: ReportFields, muni: Municipality, ctx: ReportC
     category,
     title: issue ? v.title.trim() : reportTitle(text, categoryOf(muni, category).label),
     text,
+    ...(reference ? { reference } : {}),
     neighborhood:
       scope.type === "neighborhood" ? scope.neighborhood : at ? neighborhoodAt(at, muni.geo.neighborhoods) : null,
     scope,

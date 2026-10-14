@@ -165,10 +165,12 @@ describe("registering a problem", () => {
     await say({ kind: "location", lat: praca[1], lng: praca[0] });
     await say({ kind: "text", text: String(occurrence) });
     await say({ kind: "text", text: "Cratera na frente da escola" });
+    await say({ kind: "text", text: "esquina com a Rua Tiradentes" });
     const done = await say({ kind: "text", text: "SIM" });
     expect(calls.map((c) => c.kind)).toEqual(["similar", "publish"]);
     expect(calls[1]).toMatchObject({ visibility: "pseudonymous", photos: 2 });
     expect(calls[1]?.draft?.text).toBe("Cratera na frente da escola");
+    expect(calls[1]?.draft?.reference).toBe("esquina com a Rua Tiradentes");
     expect(done.reply).toContain("M4XRT");
   });
 
@@ -177,6 +179,7 @@ describe("registering a problem", () => {
     await say({ kind: "image", mediaId: "m1" });
     await say({ kind: "location", lat: praca[1], lng: praca[0] });
     await say({ kind: "text", text: String(occurrence) });
+    await say({ kind: "text", text: "PULAR" });
     expect((await say({ kind: "text", text: "PULAR" })).reply).toContain("7K3QF");
     await say({ kind: "text", text: "1" });
     await say({ kind: "text", text: "anônimo" });
@@ -210,6 +213,7 @@ describe("registering a problem", () => {
     await say({ kind: "image", mediaId: "m1" });
     await say({ kind: "location", lat: praca[1], lng: praca[0] });
     await say({ kind: "text", text: String(occurrence) });
+    await say({ kind: "text", text: "PULAR" });
     await say({ kind: "text", text: "PULAR" });
     expect((await say({ kind: "text", text: "SIM" })).reply).toContain("Responda SIM de novo");
     expect((await say({ kind: "text", text: "SIM" })).reply).toContain("Responda SIM de novo");

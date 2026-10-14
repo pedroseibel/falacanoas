@@ -149,6 +149,12 @@ describe("the e-mail text", () => {
     expect(text).toContain("- Iluminação Pública: 1 registro (nº 1)");
     expect(text).toContain("- Secretaria de Obras: 2 registros (nº 2 a 3)");
   });
+  test("the looked-up address and the resident's reference help the crew find the spot", () => {
+    const withPlace = [item("AAAAA", { address: "Rua Tiradentes, 123", reference: "em frente à escola" })];
+    const { text } = buildDigest(withPlace, muni, sentAt);
+    expect(text).toContain("   Endereço aproximado: Rua Tiradentes, 123\n   Ponto de referência: em frente à escola");
+    expect(buildDigest([item("BBBBB")], muni, sentAt).text).not.toContain("Endereço");
+  });
   test("mentions the PDF only when it's attached", () => {
     expect(buildDigest(items, muni, sentAt, { attachment: true }).text).toContain("Em anexo, o mesmo resumo em PDF");
     expect(buildDigest(items, muni, sentAt).text).not.toContain("Em anexo");

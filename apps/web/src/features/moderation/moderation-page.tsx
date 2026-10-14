@@ -244,6 +244,11 @@ function PinContext({ c, muni, full }: { c: QueueCase; muni: Municipality; full:
         {c.item.title}
       </h3>
       {full && c.item.text && <p className="text-sm leading-relaxed text-pretty text-ink-2">{c.item.text}</p>}
+      {full && c.item.reference && (
+        <p className="text-sm text-pretty text-ink-2">
+          <span className="text-muted-foreground">Referência:</span> {c.item.reference}
+        </p>
+      )}
       <p className="text-xs text-muted-foreground">
         Código <span className="font-mono">{c.item.id}</span> ·{" "}
         {c.item.visibility === "anonymous" ? "Anônimo em público" : `por ${c.item.author ?? "—"}`}

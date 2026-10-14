@@ -23,6 +23,7 @@ import {
   Flag,
   Info,
   Loader2,
+  MapPin,
   MessageSquare,
   Pencil,
   Repeat2,
@@ -237,6 +238,24 @@ export function ItemDetail({
             </b>{" "}
             · {it.createdAt ? day(new Date(it.createdAt), muni.timezone) : dateAgo(now, it.days)}
           </p>
+          {(it.address || it.reference) && (
+            <p className="mt-2 flex min-w-0 gap-1.5 text-sm text-ink-2">
+              <MapPin className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+              <span className="min-w-0 wrap-anywhere">
+                {it.address && (
+                  <>
+                    {it.address} <span className="text-muted-foreground">(aproximado)</span>
+                  </>
+                )}
+                {it.address && it.reference && <br />}
+                {it.reference && (
+                  <>
+                    <span className="text-muted-foreground">Referência:</span> {it.reference}
+                  </>
+                )}
+              </span>
+            </p>
+          )}
         </header>
 
         <section className="grid gap-2.5 rounded-xl border border-hairline bg-muted p-3.5" aria-label="Relógio público">

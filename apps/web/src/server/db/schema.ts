@@ -105,6 +105,13 @@ export const items = fala
       category: text().notNull(),
       title: text().notNull(),
       text: text().notNull().default(""),
+      /** A problem's ponto de referência, as the resident wrote it ("em frente à escola"). */
+      reference: text(),
+      /**
+       * Street and number near the point, looked up once after it was registered (Nominatim; never
+       * again, never in a job). Null when there's no point, or the lookup found nothing.
+       */
+      address: text(),
       neighborhood: text(),
       /** Point, place, bairro or city (core's ScopeSchema). */
       scope: jsonb().$type<Scope>().notNull(),

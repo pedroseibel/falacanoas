@@ -11,6 +11,8 @@ const now = new Date(fixtures.now);
 function stored(row: ReturnType<typeof seedRows>["row"]): ItemRow {
   return {
     text: "",
+    reference: null,
+    address: null,
     neighborhood: null,
     lng: null,
     lat: null,

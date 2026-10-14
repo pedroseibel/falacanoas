@@ -106,6 +106,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - [x] **2.10 Emergency notice in the app** (round 11): "Em emergência: Defesa Civil 199 / Bombeiros 193". It now sits at the foot of the report form, with tappable numbers.
 - [ ] **2.11 Faces and plates blurred** (round 6). The original stays private, and the public copy is blurred. ⛔ Needs a choice of detection service.
 - [ ] **2.12 Optional video, up to 30 s** (round 1). Not built on purpose: a clip catches far more bystanders than a photo, and round 6 requires faces and plates blurred in public, so video waits for 2.11's service to handle frames too. It also needs server-side remuxing to strip the container's metadata (MP4 can carry the recording's GPS position) and a size and length check before storage. ⛔ After 2.11.
+- [x] **2.13 Ponto de referência and the address** (research/digest-pdf, founder input). Done 2026-10-13, verified in the browser from the form to the pin page.
+  - an optional "Ponto de referência" under the map in the report form (80 characters; "use algo público, nunca a casa de alguém"), and the same question in the WhatsApp flow (PULAR skips it). It goes through the pre-screen with the text, shows on the page and in the moderator's card, and stays out of the open data (residents' words);
+  - the street and number near the point, looked up once after the response (`src/server/address.ts`): one call to OpenStreetMap's Nominatim from the server, with only the point, never repeated and never from a job (its usage policy). A number only when the address found is within 40 m, the street within 150 m; otherwise nothing. GEOCODER_URL for a self-hosted Nominatim, GEOCODER=off to turn it off;
+  - the page shows "Rua …, 123 (aproximado)" and the reference under the byline; the resumo's records carry both ("Endereço", "Referência"), the nearest street from the map data only when no address was found;
+  - the privacy notice names Nominatim (version 2026-10-13.4).
 
 ## 3. Services (Elysia on Bun, outside `apps/web`)
 

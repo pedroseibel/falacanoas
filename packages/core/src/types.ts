@@ -98,6 +98,13 @@ export const ItemSchema = z.object({
   text: z.string(),
   neighborhood: z.string().nullable(),
   scope: ScopeSchema,
+  /** The resident's ponto de referência ("em frente à escola"), when they gave one. */
+  reference: z.string().optional(),
+  /**
+   * Street and number near the point, looked up once when it was registered (OpenStreetMap's
+   * Nominatim). Approximate: the point on the map is the truth.
+   */
+  address: z.string().nullable().optional(),
   /** Days open (or days until fixed, when resolved). */
   days: z.number().int().nonnegative(),
   updatedMinutesAgo: z.number().int().nonnegative(),

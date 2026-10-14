@@ -69,6 +69,7 @@ const fields = (patch: Partial<ReportFields> = {}): ReportFields => ({
   title: "",
   reach: "place",
   place: "",
+  reference: "",
   neighborhood: "",
   location: [-51.15, -29.95],
   text: "",

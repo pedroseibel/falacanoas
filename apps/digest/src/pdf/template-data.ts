@@ -131,8 +131,11 @@ export function templateData(
           title: e.title,
           text: e.text,
           place: e.place,
+          address: e.address ? `${e.address} (aproximado)` : null,
+          reference: e.reference,
           coords: e.point ? `${e.point.lat.toFixed(5)}, ${e.point.lng.toFixed(5)}` : null,
-          street: a?.street ? `${a.street.name} (a ${a.street.metres} m)` : null,
+          // The street read from the map data, when no address was looked up.
+          street: !e.address && a?.street ? `${a.street.name} (a ${a.street.metres} m)` : null,
           registered: e.registered,
           confirms: e.confirmations,
           confirmations:

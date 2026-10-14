@@ -126,8 +126,10 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
         <p>
           A Prefeitura recebe os registros (texto, fotos e local) no resumo diário, sem quem os fez. O Canadian Centre
           for Child Protection recebe só a impressão digital de cada foto nova, para a comparação descrita acima, nunca
-          a foto. Autoridades recebem o que a lei exige: material de abuso sexual infantil, que é denunciado e
-          preservado, e dados de acesso mediante ordem judicial. Não vendemos nem repassamos dados para fins comerciais.
+          a foto. O ponto de cada registro vai uma vez ao Nominatim, do OpenStreetMap, para achar a rua e o número mais
+          próximos, sem nada sobre quem registrou. Autoridades recebem o que a lei exige: material de abuso sexual
+          infantil, que é denunciado e preservado, e dados de acesso mediante ordem judicial. Não vendemos nem
+          repassamos dados para fins comerciais.
         </p>
       </Part>
 

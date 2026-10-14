@@ -169,6 +169,13 @@
       "when": 1791942309936,
       "tag": "0023_digest_replies",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791942777370,
+      "tag": "0024_item_reference_address",
+      "breakpoints": true
     }
   ]
 }

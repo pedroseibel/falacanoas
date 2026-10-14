@@ -162,6 +162,7 @@ export function ReportForm({
     reach: "place",
     place: "",
     neighborhood: author.neighborhood ?? "",
+    reference: "",
     location: null,
     text: "",
     visibility: "pseudonymous",
@@ -496,6 +497,31 @@ export function ReportForm({
                           ? "O ponto fica no centro do mapa. Arraste para ajustar."
                           : `Fora de ${muni.name}. Arraste o mapa até o lugar.`}
                     </p>
+                  )}
+                  {kind === "occurrence" && (
+                    <form.Field name="reference">
+                      {(ref) => (
+                        <Field data-invalid={show(ref.state.meta.errors).length > 0}>
+                          <FieldLabel htmlFor="r-referencia">
+                            Ponto de referência <span className="font-normal text-muted-foreground">(opcional)</span>
+                          </FieldLabel>
+                          <Input
+                            id="r-referencia"
+                            size="lg"
+                            maxLength={REPORT.maxReference}
+                            placeholder="Ex.: em frente à escola, perto da parada"
+                            aria-describedby="r-referencia-nota"
+                            value={ref.state.value}
+                            onBlur={ref.handleBlur}
+                            onChange={(e) => ref.handleChange(e.target.value)}
+                          />
+                          <p id="r-referencia-nota" className="text-caption text-muted-foreground">
+                            Ajuda a equipe da Prefeitura a achar o lugar. Use algo público, nunca a casa de alguém.
+                          </p>
+                          <FieldError errors={show(ref.state.meta.errors)} />
+                        </Field>
+                      )}
+                    </form.Field>
                   )}
                 </Part>
               );

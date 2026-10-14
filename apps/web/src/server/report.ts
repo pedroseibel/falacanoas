@@ -16,7 +16,15 @@ import { member } from "./member";
 import { openCase } from "./moderation-store";
 import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
 import { removePhotos } from "./photos";
-import { DAY, joinReport as join, publishReport, uniqueId, type JoinResult, type ReportResult } from "./report-store";
+import {
+  addressLater,
+  DAY,
+  joinReport as join,
+  publishReport,
+  uniqueId,
+  type JoinResult,
+  type ReportResult,
+} from "./report-store";
 import { getSession } from "./session";
 import { isHuman, recordEvidence } from "./vault";
 
@@ -93,12 +101,13 @@ async function createGuestPin(data: FormData, guestId: string): Promise<ReportRe
       db,
       id,
       "guest_pin",
-      prescreen(`${item.title} ${item.text}`, { electoral: inElection(canoas, now) }),
+      prescreen(`${item.title} ${item.text} ${item.reference ?? ""}`, { electoral: inElection(canoas, now) }),
     );
   } catch (e) {
     await removePhotos(photos.keys);
     throw e;
   }
+  addressLater(item);
   await recordEvidence("guest_pin", guestId, id);
   return {
     ok: true,

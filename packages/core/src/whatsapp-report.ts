@@ -15,7 +15,7 @@ export type WaMessage =
   | { kind: "image"; mediaId: string; caption?: string }
   | { kind: "location"; lat: number; lng: number };
 
-export type ReportStep = "photos" | "location" | "category" | "text" | "duplicate" | "confirm";
+export type ReportStep = "photos" | "location" | "category" | "text" | "reference" | "duplicate" | "confirm";
 
 export interface ReportDraft {
   /** The provider's media ids, in the order sent. */
@@ -23,6 +23,8 @@ export interface ReportDraft {
   location: LngLat | null;
   category: string | null;
   text: string;
+  /** The ponto de referência ("em frente à escola"), optional. */
+  reference: string;
   /** A nearby open problem of the same type, offered before publishing. */
   duplicate: { id: string; meters: number } | null;
 }
@@ -83,7 +85,7 @@ const ASK_LOCATION = `Agora o lugar: ${HOW_LOCATION}`;
 
 const fresh = (now: number): ReportSession => ({
   step: "photos",
-  draft: { photos: [], location: null, category: null, text: "", duplicate: null },
+  draft: { photos: [], location: null, category: null, text: "", reference: "", duplicate: null },
   updatedAt: now,
 });
 
@@ -100,7 +102,7 @@ export function summary(draft: ReportDraft, muni: Municipality): string {
     ? muni.neighborhoods.find((n) => n.slug === neighborhoodAt(draft.location ?? [0, 0], muni.geo.neighborhoods))?.name
     : null;
   return [
-    `Confira: ${category}${bairro ? ` em ${bairro}` : ""}, ${draft.photos.length === 1 ? "1 foto" : `${draft.photos.length} fotos`}${draft.text ? `, “${draft.text}”` : ""}.`,
+    `Confira: ${category}${bairro ? ` em ${bairro}` : ""}${draft.reference ? ` (${draft.reference})` : ""}, ${draft.photos.length === 1 ? "1 foto" : `${draft.photos.length} fotos`}${draft.text ? `, “${draft.text}”` : ""}.`,
     "Responda SIM para publicar com o seu apelido, ou ANÔNIMO para aparecer como Anônimo (a sua conta continua ligada ao registro, para evitar abuso). CANCELAR desiste.",
   ].join("\n\n");
 }
@@ -177,8 +179,18 @@ export function reportTurn(session: ReportSession | null, msg: WaMessage, muni: 
       const text = isSkip(msg.text) ? s.draft.text : msg.text.trim();
       if (text.length > REPORT.maxText)
         return { session: s, reply: `Use no máximo ${REPORT.maxText} caracteres (foram ${text.length}).` };
+      return {
+        session: at(s, now, { step: "reference", draft: { ...s.draft, text } }),
+        reply: `Algum ponto de referência, para a equipe da Prefeitura achar o lugar? Ex.: em frente à escola, perto da parada. Use algo público, nunca a casa de alguém. Ou responda PULAR.`,
+      };
+    }
+    case "reference": {
+      if (msg.kind !== "text") return { session: s, reply: "Escreva o ponto de referência, ou responda PULAR." };
+      const reference = isSkip(msg.text) ? "" : msg.text.trim();
+      if (reference.length > REPORT.maxReference)
+        return { session: s, reply: `Use no máximo ${REPORT.maxReference} caracteres (foram ${reference.length}).` };
       // The app looks for a similar open problem nearby before anything is published.
-      return { session: at(s, now, { draft: { ...s.draft, text } }), reply: null, need: { kind: "check" } };
+      return { session: at(s, now, { draft: { ...s.draft, reference } }), reply: null, need: { kind: "check" } };
     }
     case "duplicate": {
       const choice = msg.kind === "text" ? norm(msg.text) : "";

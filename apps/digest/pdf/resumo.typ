@@ -190,6 +190,8 @@
 
   // Where it is (the street map), what's known (facts), and the way to the full record (QR).
   let facts = (
+    if e.address != none { fact("Endereço", e.address) },
+    if e.reference != none { fact("Referência", e.reference) },
     if e.coords != none { fact("Coordenadas", mono(e.coords, size: 8pt)) },
     if e.street != none { fact("Via mais próxima", e.street) },
     if e.place != none { fact("Lugar", e.place) },

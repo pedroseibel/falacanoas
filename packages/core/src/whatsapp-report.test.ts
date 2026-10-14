@@ -88,8 +88,16 @@ describe("starting", () => {
 });
 
 describe("a whole report", () => {
-  test("photo, place, type, text, then the app checks for a duplicate", () => {
-    const turns = run([t("REGISTRAR"), img("m1"), img("m2"), inside, t("1"), t("Buraco fundo na esquina")]);
+  test("photo, place, type, text, reference, then the app checks for a duplicate", () => {
+    const turns = run([
+      t("REGISTRAR"),
+      img("m1"),
+      img("m2"),
+      inside,
+      t("1"),
+      t("Buraco fundo na esquina"),
+      t("em frente à escola"),
+    ]);
     expect(turns[0]?.reply).toContain("Mande uma foto");
     expect(turns[1]?.reply).toContain("Foto recebida");
     expect(turns[3]?.reply).toContain("Lugar marcado");
@@ -97,19 +105,23 @@ describe("a whole report", () => {
     // Questões públicas need the app: they aren't offered here.
     expect(turns[3]?.reply).not.toContain("Questão pública");
     expect(turns[4]?.reply).toContain("Buraco na rua.");
-    const last = turns[5];
+    expect(turns[5]?.reply).toContain("ponto de referência");
+    const last = turns[6];
     expect(last?.need).toEqual({ kind: "check" });
     expect(last?.session?.draft).toEqual({
       photos: ["m1", "m2"],
       location: [-51.15, -29.95],
       category: "buraco",
       text: "Buraco fundo na esquina",
+      reference: "em frente à escola",
       duplicate: null,
     });
   });
 
   test("no duplicate: the draft is read back, then SIM publishes with the apelido, ANÔNIMO without", () => {
-    const checking = run([img("m1", "Poste apagado a noite toda"), inside, t("2"), t("pular")]).at(-1)?.session;
+    const checking = run([img("m1", "Poste apagado a noite toda"), inside, t("2"), t("pular"), t("pular")]).at(
+      -1,
+    )?.session;
     if (!checking) throw new Error("sem sessão");
     const confirm = afterCheck(checking, null, muni, 2_000_000);
     expect(confirm.reply).toContain("Confira: Poste apagado em Centro, 1 foto, “Poste apagado a noite toda”.");
@@ -125,7 +137,7 @@ describe("a whole report", () => {
   });
 
   test("a duplicate nearby: 1 adds the photo to it, 2 publishes a new one", () => {
-    const checking = run([img("m1"), inside, t("1"), t("pular")]).at(-1)?.session;
+    const checking = run([img("m1"), inside, t("1"), t("pular"), t("pular")]).at(-1)?.session;
     if (!checking) throw new Error("sem sessão");
     const offer = afterCheck(checking, { id: "AB3K2", meters: 32.4, title: "Buraco na rua" }, muni, 2_000_000);
     expect(offer.reply).toContain("Já existe algo parecido a 32 m");

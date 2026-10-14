@@ -19,6 +19,8 @@ import type { Failure, Member } from "./member";
 import { openCase } from "./moderation-store";
 import { markNickPublished } from "./nicks";
 import { keepPhotos, PHOTO_ERROR } from "./photo-intake";
+import { storeAddress } from "./address";
+import { inBackground } from "./background";
 import { removePhotos } from "./photos";
 import { notifyPlaces } from "./push-send";
 import { recordEvidence } from "./vault";
@@ -49,6 +51,13 @@ export type JoinResult =
 
 export const DAY = 86_400_000;
 
+/** A report on a point gets its street and number looked up once, after the response. */
+export function addressLater(item: Item): void {
+  const s = item.scope;
+  if ((s.type === "point" || s.type === "place") && s.lng !== undefined && s.lat !== undefined)
+    inBackground("endereço", storeAddress(item.id, [s.lng, s.lat]));
+}
+
 export async function uniqueId(): Promise<string> {
   const id = newItemId(crypto.getRandomValues(new Uint32Array(5)));
   return (await itemExists(id)) ? uniqueId() : id;
@@ -68,7 +77,7 @@ export async function publishReport(who: Member, fields: ReportFields, connectio
   // The pre-screen (round 5): personal data, insults, named people, anonymous propaganda in a
   // campaign. Anything it flags waits for a moderator instead of going out; so does everything a
   // muted account sends (round 19).
-  const flags = prescreen(`${fields.title} ${fields.text}`, { electoral: inElection(canoas, now) });
+  const flags = prescreen(`${fields.title} ${fields.text} ${fields.reference}`, { electoral: inElection(canoas, now) });
   const muted = who.standing.kind === "mute";
   const held = muted || holdsPublication(flags, fields.visibility);
   const item: Item = {
@@ -83,6 +92,7 @@ export async function publishReport(who: Member, fields: ReportFields, connectio
     throw e;
   }
   if (fields.visibility === "pseudonymous") await markNickPublished(who.id);
+  addressLater(item);
   await recordEvidence("publication", who.id, item.id, connection);
   // As readers see it: its photos wait for moderation's first look, as a count, not as images.
   const stored = (await findItem(id, now)) ?? item;
