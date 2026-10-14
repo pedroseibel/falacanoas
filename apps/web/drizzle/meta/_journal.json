@@ -183,6 +183,13 @@
       "when": 1791943277656,
       "tag": "0025_item_client_key",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791944050563,
+      "tag": "0026_monthly_reports",
+      "breakpoints": true
     }
   ]
 }

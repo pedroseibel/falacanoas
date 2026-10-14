@@ -15,6 +15,8 @@ import {
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useMemo } from "react";
+import { textLink } from "@/features/landing/bits";
+import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Choropleth, DaysMeter, StatTile } from "@/components/viz";
@@ -137,6 +139,9 @@ export function PlacarPage({
             pelo menos um vizinho confirmou. Protótipo: os números vêm dos dados fictícios do mapa.
           </p>
         </div>
+        <a href="/relatorios" className={cn(textLink, "text-sm")}>
+          Relatórios mensais por órgão (PDF)
+        </a>
       </header>
 
       <section

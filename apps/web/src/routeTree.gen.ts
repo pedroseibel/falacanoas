@@ -15,6 +15,7 @@ import { Route as BemVindoRouteImport } from './routes/bem-vindo'
 import { Route as EntrarRouteImport } from './routes/entrar'
 import { Route as ModeracaoRouteImport } from './routes/moderacao'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as RelatoriosRouteImport } from './routes/relatorios'
 import { Route as TransparenciaRouteImport } from './routes/transparencia'
 import { Route as AppMapRouteImport } from './routes/_app/_map'
 import { Route as AppModerarRouteImport } from './routes/_app/moderar'
@@ -27,6 +28,7 @@ import { Route as AppBairroSlugRouteImport } from './routes/_app/bairro.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiFotosKeyRouteImport } from './routes/api/fotos/$key'
 import { Route as ApiIdentidadeSplatRouteImport } from './routes/api/identidade/$'
+import { Route as ApiRelatorioMesRouteImport } from './routes/api/relatorio/$mes'
 import { Route as ApiWhatsappRegistroRouteImport } from './routes/api/whatsapp/registro'
 import { Route as AppMapOIdRouteImport } from './routes/_app/_map/o.$id'
 import { Route as ApiCartaoBairroSlugRouteImport } from './routes/api/cartao/bairro.$slug'
@@ -59,6 +61,11 @@ const ModeracaoRoute = ModeracaoRouteImport.update({
 const PrivacidadeRoute = PrivacidadeRouteImport.update({
   id: '/privacidade',
   path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RelatoriosRoute = RelatoriosRouteImport.update({
+  id: '/relatorios',
+  path: '/relatorios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TransparenciaRoute = TransparenciaRouteImport.update({
@@ -120,6 +127,11 @@ const ApiIdentidadeSplatRoute = ApiIdentidadeSplatRouteImport.update({
   path: '/api/identidade/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRelatorioMesRoute = ApiRelatorioMesRouteImport.update({
+  id: '/api/relatorio/$mes',
+  path: '/api/relatorio/$mes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiWhatsappRegistroRoute = ApiWhatsappRegistroRouteImport.update({
   id: '/api/whatsapp/registro',
   path: '/api/whatsapp/registro',
@@ -147,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/entrar': typeof EntrarRoute
   '/moderacao': typeof ModeracaoRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/relatorios': typeof RelatoriosRoute
   '/transparencia': typeof TransparenciaRoute
   '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
@@ -157,6 +170,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/api/identidade/$': typeof ApiIdentidadeSplatRoute
+  '/api/relatorio/$mes': typeof ApiRelatorioMesRoute
   '/api/whatsapp/registro': typeof ApiWhatsappRegistroRoute
   '/bairro/': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
@@ -169,6 +183,7 @@ export interface FileRoutesByTo {
   '/entrar': typeof EntrarRoute
   '/moderacao': typeof ModeracaoRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/relatorios': typeof RelatoriosRoute
   '/transparencia': typeof TransparenciaRoute
   '/moderar': typeof AppModerarRoute
   '/placar': typeof AppPlacarRoute
@@ -179,6 +194,7 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/api/identidade/$': typeof ApiIdentidadeSplatRoute
+  '/api/relatorio/$mes': typeof ApiRelatorioMesRoute
   '/api/whatsapp/registro': typeof ApiWhatsappRegistroRoute
   '/bairro': typeof AppBairroIndexRoute
   '/o/$id': typeof AppMapOIdRoute
@@ -193,6 +209,7 @@ export interface FileRoutesById {
   '/entrar': typeof EntrarRoute
   '/moderacao': typeof ModeracaoRoute
   '/privacidade': typeof PrivacidadeRoute
+  '/relatorios': typeof RelatoriosRoute
   '/transparencia': typeof TransparenciaRoute
   '/_app/_map': typeof AppMapRouteWithChildren
   '/_app/moderar': typeof AppModerarRoute
@@ -204,6 +221,7 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/fotos/$key': typeof ApiFotosKeyRoute
   '/api/identidade/$': typeof ApiIdentidadeSplatRoute
+  '/api/relatorio/$mes': typeof ApiRelatorioMesRoute
   '/api/whatsapp/registro': typeof ApiWhatsappRegistroRoute
   '/_app/bairro/': typeof AppBairroIndexRoute
   '/_app/_map/o/$id': typeof AppMapOIdRoute
@@ -218,6 +236,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/moderacao'
     | '/privacidade'
+    | '/relatorios'
     | '/transparencia'
     | '/moderar'
     | '/placar'
@@ -228,6 +247,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/fotos/$key'
     | '/api/identidade/$'
+    | '/api/relatorio/$mes'
     | '/api/whatsapp/registro'
     | '/bairro/'
     | '/o/$id'
@@ -240,6 +260,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/moderacao'
     | '/privacidade'
+    | '/relatorios'
     | '/transparencia'
     | '/moderar'
     | '/placar'
@@ -250,6 +271,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/fotos/$key'
     | '/api/identidade/$'
+    | '/api/relatorio/$mes'
     | '/api/whatsapp/registro'
     | '/bairro'
     | '/o/$id'
@@ -263,6 +285,7 @@ export interface FileRouteTypes {
     | '/entrar'
     | '/moderacao'
     | '/privacidade'
+    | '/relatorios'
     | '/transparencia'
     | '/_app/_map'
     | '/_app/moderar'
@@ -274,6 +297,7 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/fotos/$key'
     | '/api/identidade/$'
+    | '/api/relatorio/$mes'
     | '/api/whatsapp/registro'
     | '/_app/bairro/'
     | '/_app/_map/o/$id'
@@ -288,11 +312,13 @@ export interface RootRouteChildren {
   EntrarRoute: typeof EntrarRoute
   ModeracaoRoute: typeof ModeracaoRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
+  RelatoriosRoute: typeof RelatoriosRoute
   TransparenciaRoute: typeof TransparenciaRoute
   PrivacidadePedidoRoute: typeof PrivacidadePedidoRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiFotosKeyRoute: typeof ApiFotosKeyRoute
   ApiIdentidadeSplatRoute: typeof ApiIdentidadeSplatRoute
+  ApiRelatorioMesRoute: typeof ApiRelatorioMesRoute
   ApiWhatsappRegistroRoute: typeof ApiWhatsappRegistroRoute
   ApiCartaoBairroSlugRoute: typeof ApiCartaoBairroSlugRoute
   ApiCartaoOIdRoute: typeof ApiCartaoOIdRoute
@@ -340,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/privacidade'
       fullPath: '/privacidade'
       preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/relatorios': {
+      id: '/relatorios'
+      path: '/relatorios'
+      fullPath: '/relatorios'
+      preLoaderRoute: typeof RelatoriosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/transparencia': {
@@ -426,6 +459,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIdentidadeSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/relatorio/$mes': {
+      id: '/api/relatorio/$mes'
+      path: '/api/relatorio/$mes'
+      fullPath: '/api/relatorio/$mes'
+      preLoaderRoute: typeof ApiRelatorioMesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/whatsapp/registro': {
       id: '/api/whatsapp/registro'
       path: '/api/whatsapp/registro'
@@ -497,11 +537,13 @@ const rootRouteChildren: RootRouteChildren = {
   EntrarRoute: EntrarRoute,
   ModeracaoRoute: ModeracaoRoute,
   PrivacidadeRoute: PrivacidadeRoute,
+  RelatoriosRoute: RelatoriosRoute,
   TransparenciaRoute: TransparenciaRoute,
   PrivacidadePedidoRoute: PrivacidadePedidoRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiFotosKeyRoute: ApiFotosKeyRoute,
   ApiIdentidadeSplatRoute: ApiIdentidadeSplatRoute,
+  ApiRelatorioMesRoute: ApiRelatorioMesRoute,
   ApiWhatsappRegistroRoute: ApiWhatsappRegistroRoute,
   ApiCartaoBairroSlugRoute: ApiCartaoBairroSlugRoute,
   ApiCartaoOIdRoute: ApiCartaoOIdRoute,

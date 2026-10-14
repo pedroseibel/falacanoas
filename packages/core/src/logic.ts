@@ -16,8 +16,9 @@ export const isOpen = (it: Item) => it.community !== "resolved";
  * report, two for a guest pin (DECISIONS rounds 2 and 18, Q18). Until then one person can't move a
  * bairro's numbers; the item is still on the map and still in the daily digest.
  */
-export const placarThreshold = (it: Item) => (it.guest ? 2 : 1);
-export const onPlacar = (it: Item) => it.kind === "occurrence" && it.confirmations >= placarThreshold(it);
+export const placarThreshold = (it: Pick<Item, "guest">) => (it.guest ? 2 : 1);
+export const onPlacar = (it: Pick<Item, "kind" | "confirmations" | "guest">) =>
+  it.kind === "occurrence" && it.confirmations >= placarThreshold(it);
 export const isOverDeadline = (it: Item, deadline: number) => isOpen(it) && it.days > deadline;
 
 export function itemLngLat(it: Item): LngLat | null {

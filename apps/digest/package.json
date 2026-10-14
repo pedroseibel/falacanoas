@@ -11,7 +11,9 @@
     "amostra": "bun scripts/amostra.ts",
     "typst": "bun scripts/typst.ts",
     "typecheck": "tsc --noEmit -p .",
-    "respostas": "bun src/respostas.ts"
+    "respostas": "bun src/respostas.ts",
+    "amostra-mensal": "bun scripts/amostra-mensal.ts",
+    "mensal": "bun src/mensal.ts"
   },
   "dependencies": {
     "@elysiajs/cron": "1.4.2",

@@ -1,4 +1,4 @@
-import type { DigestItem } from "@fala/core";
+import type { DigestItem, MonthlyReport, MonthlyRow } from "@fala/core";
 import { Client } from "pg";
 import type { ReplyStore, StoredReading } from "./replies";
 import type { DigestStore } from "./run";
@@ -256,6 +256,59 @@ export function pgReplyStore(connectionString: string, actor: string, timezone: 
                 reading = coalesce($4::jsonb, reading) where id = $1`,
         [id, status, by, reading ? JSON.stringify(reading) : null],
       ),
+    close: () => client.end(),
+  };
+}
+
+/**
+ * The monthly report's side of Postgres: every real report already sent (core monthly-report.ts picks
+ * the month), whether a month was already built, and keeping one. A month is built once.
+ */
+export function pgMonthlyStore(connectionString: string) {
+  const client = new Client({ connectionString });
+  const connected = client.connect();
+  const q = async <T extends object>(sql: string, params: unknown[] = []) => {
+    await connected;
+    return (await client.query<T>(sql, params)).rows;
+  };
+  return {
+    async rows(): Promise<MonthlyRow[]> {
+      const rows = await q<{
+        id: string;
+        category: string;
+        neighborhood: string | null;
+        confirmations: number;
+        guest: boolean;
+        sent_at: Date;
+        closed_at: Date | null;
+        protocol_at: Date | null;
+      }>(
+        `select id, category, neighborhood, confirmations, guest, sent_at, closed_at, protocol_at from fala.items
+          where sent_at is not null and not demo and kind = 'occurrence' and moderation = 'published'`,
+      );
+      return rows.map((r) => ({
+        id: r.id,
+        category: r.category,
+        neighborhood: r.neighborhood,
+        confirmations: r.confirmations,
+        guest: r.guest,
+        sentAt: r.sent_at,
+        closedAt: r.closed_at,
+        protocolAt: r.protocol_at,
+      }));
+    },
+    async built(month: string): Promise<boolean> {
+      return (await q("select 1 from fala.monthly_reports where month = $1", [month])).length > 0;
+    },
+    /** False when the month was built meanwhile: the first one stands. */
+    async keep(input: { report: MonthlyReport; generatedAt: Date; pdf: Uint8Array; sha256: string }): Promise<boolean> {
+      const rows = await q(
+        `insert into fala.monthly_reports (month, generated_at, figures, pdf, pdf_sha256) values ($1, $2, $3, $4, $5)
+         on conflict (month) do nothing returning month`,
+        [input.report.month, input.generatedAt, JSON.stringify(input.report), Buffer.from(input.pdf), input.sha256],
+      );
+      return rows.length > 0;
+    },
     close: () => client.end(),
   };
 }

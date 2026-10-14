@@ -17,6 +17,7 @@ export * from "./share-card";
 export * from "./notices";
 export * from "./digest";
 export * from "./protocol-reply";
+export * from "./monthly-report";
 export * from "./whatsapp";
 export * from "./whatsapp-report";
 export * from "./open-data";

@@ -1,4 +1,4 @@
-import { localTime } from "./format";
+import { localTime, MONTHS_FULL_PT } from "./format";
 import type { Item, Municipality } from "./types";
 
 /**
@@ -79,21 +79,6 @@ const when = (iso: string, timezone: string) => {
   return `${pad(t.day)}/${pad(t.month)} às ${pad(t.hour)}:${pad(t.minute)}`;
 };
 
-const MONTHS = [
-  "janeiro",
-  "fevereiro",
-  "março",
-  "abril",
-  "maio",
-  "junho",
-  "julho",
-  "agosto",
-  "setembro",
-  "outubro",
-  "novembro",
-  "dezembro",
-];
-
 /** The bucket for a category the instance doesn't route anywhere: last, so it stands out. */
 export const NO_AGENCY = "Sem órgão definido pelo Fala";
 
@@ -173,7 +158,7 @@ export function digestDocument(
 
   return {
     number: `${String(sequence).padStart(4, "0")}/${t.year}`,
-    dateLine: `${muni.name}, ${t.day === 1 ? "1º" : t.day} de ${MONTHS[t.month - 1]} de ${t.year}.`,
+    dateLine: `${muni.name}, ${t.day === 1 ? "1º" : t.day} de ${MONTHS_FULL_PT[t.month - 1]} de ${t.year}.`,
     day: `${pad(t.day)}/${pad(t.month)}/${t.year}`,
     sentAt: `${pad(t.day)}/${pad(t.month)}/${t.year} às ${pad(t.hour)}:${pad(t.minute)}`,
     sender: muni.branding.name,

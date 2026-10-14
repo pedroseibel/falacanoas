@@ -4,6 +4,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   doublePrecision,
   index,
   integer,
@@ -660,6 +661,28 @@ export const digests = fala
     number: integer(),
     /** SHA-256 of the PDF attached, as sent: what a printed or forwarded copy can be checked against. */
     pdfSha256: text(),
+  })
+  .enableRLS();
+
+/** Raw bytes (a PDF). */
+const bytea = customType<{ data: Uint8Array; driverData: Uint8Array }>({
+  dataType: () => "bytea",
+  fromDriver: (v) => new Uint8Array(v),
+});
+
+/**
+ * The monthly report per body (core monthly-report.ts), built once by apps/digest on the 1st, for the
+ * month just ended, and kept as it was built: the figures and the PDF, public at /relatorios.
+ */
+export const monthlyReports = fala
+  .table("monthly_reports", {
+    /** "2026-10". */
+    month: text().primaryKey(),
+    generatedAt: timestamp({ withTimezone: true }).notNull(),
+    /** Core's MonthlyReport. */
+    figures: jsonb().notNull(),
+    pdf: bytea().notNull(),
+    pdfSha256: text().notNull(),
   })
   .enableRLS();
 

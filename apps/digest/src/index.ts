@@ -3,7 +3,7 @@ import { canoas } from "@fala/instance-canoas";
 import { Elysia } from "elysia";
 import { loadConfig } from "./config";
 import type { RunResult } from "./run";
-import { digestNow, replyNow } from "./service";
+import { digestNow, monthlyNow, replyNow, type MonthlyOutcome } from "./service";
 
 /**
  * The daily digest to the Ouvidoria (DECISIONS round 5; BUILD 3.1): every day at the instance's
@@ -24,15 +24,39 @@ async function run(trigger: string) {
 }
 
 const pattern = `0 ${canoas.digestHour} * * *`;
+/** The monthly report per body: the 1st at 08h, for the month that just ended. */
+const monthly = "0 8 1 * *";
+
+async function runMonthly(trigger: string, month?: string) {
+  const outcome = await monthlyNow(config, new Date(), month).catch((e): MonthlyOutcome => ({
+    ok: false,
+    month: month ?? "",
+    error: "invalid",
+    detail: String(e),
+  }));
+  const { pdf: _pdf, ...shown } = outcome.ok ? outcome : { ...outcome, pdf: null };
+  console.log(JSON.stringify({ mensal: trigger, ...shown }));
+  return shown;
+}
 
 const scheduled = config.mode === "production";
 
 new Elysia()
   .use(cron({ name: "resumo", pattern, timezone: canoas.timezone, paused: !scheduled, run: () => run("cron") }))
+  .use(
+    cron({
+      name: "mensal",
+      pattern: monthly,
+      timezone: canoas.timezone,
+      paused: !scheduled,
+      run: () => void runMonthly("cron"),
+    }),
+  )
   .get("/saude", ({ store }) => ({
     mode: config.mode,
     schedule: scheduled ? `${pattern} (${canoas.timezone})` : null,
     next: scheduled ? (store.cron.resumo.nextRun()?.toISOString() ?? null) : null,
+    monthly: scheduled ? (store.cron.mensal.nextRun()?.toISOString() ?? null) : null,
     last,
   }))
   .post("/resumo", async ({ headers, status }) => {
@@ -40,6 +64,12 @@ new Elysia()
     const result = await run("manual");
     if (result.ok) return result;
     return status(result.error === "busy" ? 409 : 502, result);
+  })
+  // The monthly report by hand: the month that just ended, or ?mes=AAAA-MM. Built once.
+  .post("/mensal", async ({ headers, query, status }) => {
+    if (!config.token || headers.authorization !== `Bearer ${config.token}`) return status(401, "Não autorizado.");
+    const shown = await runMonthly("manual", typeof query.mes === "string" ? query.mes : undefined);
+    return shown.ok ? shown : status(shown.error === "built" ? 409 : shown.error === "empty" ? 404 : 400, shown);
   })
   // Answers to the resumo, as raw e-mail (message/rfc822), from whatever receives mail for the sender
   // address (BUILD 3.1): protocols are read and, when safe, applied (replies.ts).

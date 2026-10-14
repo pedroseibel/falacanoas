@@ -47,6 +47,36 @@ export interface RenderOptions {
   sentAt: Date;
 }
 
+/**
+ * Typst over a template and its data.json in `dir`, with the bundled fonts only, as tagged PDF/A-2a and
+ * PDF/UA-1. `createdAt` is the file's creation date, so the same input builds the same file.
+ */
+export async function compileTypst(dir: string, template: string, data: unknown, createdAt: Date): Promise<Uint8Array> {
+  writeFileSync(join(dir, "data.json"), JSON.stringify(data));
+  copyFileSync(template, join(dir, "doc.typ"));
+  const run = Bun.spawn(
+    [
+      TYPST_BIN,
+      "compile",
+      "--root",
+      dir,
+      "--ignore-system-fonts",
+      "--font-path",
+      FONTS,
+      "--pdf-standard",
+      "a-2a,ua-1",
+      "--creation-timestamp",
+      String(Math.floor(createdAt.getTime() / 1000)),
+      join(dir, "doc.typ"),
+      join(dir, "doc.pdf"),
+    ],
+    { stdout: "pipe", stderr: "pipe" },
+  );
+  const [code, err] = await Promise.all([run.exited, new Response(run.stderr).text()]);
+  if (code !== 0) throw new Error(`Typst não gerou o PDF:\n${err}`);
+  return new Uint8Array(readFileSync(join(dir, "doc.pdf")));
+}
+
 /** Runs `f` over `items`, `n` at a time. */
 async function pool<T, R>(items: T[], n: number, f: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = Array.from({ length: items.length });
@@ -200,29 +230,7 @@ export async function renderPdf(doc: DigestDocument, opts: RenderOptions): Promi
   const dir = mkdtempSync(join(tmpdir(), "resumo-"));
   try {
     const data = await assemble(doc, dir, opts);
-    writeFileSync(join(dir, "data.json"), JSON.stringify(data));
-    copyFileSync(TEMPLATE, join(dir, "resumo.typ"));
-    const run = Bun.spawn(
-      [
-        TYPST_BIN,
-        "compile",
-        "--root",
-        dir,
-        "--ignore-system-fonts",
-        "--font-path",
-        FONTS,
-        "--pdf-standard",
-        "a-2a,ua-1",
-        "--creation-timestamp",
-        String(Math.floor(opts.sentAt.getTime() / 1000)),
-        join(dir, "resumo.typ"),
-        join(dir, "resumo.pdf"),
-      ],
-      { stdout: "pipe", stderr: "pipe" },
-    );
-    const [code, err] = await Promise.all([run.exited, new Response(run.stderr).text()]);
-    if (code !== 0) throw new Error(`Typst não gerou o PDF:\n${err}`);
-    return new Uint8Array(readFileSync(join(dir, "resumo.pdf")));
+    return await compileTypst(dir, TEMPLATE, data, opts.sentAt);
   } finally {
     if (!process.env.RESUMO_KEEP_BUILD) rmSync(dir, { recursive: true, force: true });
     else console.log(`Pasta de montagem mantida: ${dir}`);
