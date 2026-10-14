@@ -9,6 +9,7 @@ import {
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { JoinSchema, readJoinFormData, readReportFormData } from "@/features/report/report-model";
 import { db } from "./db/client";
 import { createdSince, findItem, hashKey, insertItem } from "./items";
@@ -50,7 +51,8 @@ export const createReport = createServerFn({ method: "POST" })
     if ("error" in who) return who;
     const parsed = schema.safeParse(readReportFormData(data));
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." };
-    return publishReport(who, parsed.data);
+    const key = z.uuid().safeParse(data.get("chave"));
+    return publishReport(who, parsed.data, undefined, key.success ? key.data : undefined);
   });
 
 /** "Já existe algo parecido": confirm the existing problem and add the photos to its timeline. */

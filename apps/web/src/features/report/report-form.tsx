@@ -40,6 +40,8 @@ import { mapControls } from "@/features/map/map-engine";
 import { cn } from "@/lib/utils";
 import { createReport, joinReport, type JoinResult, type ReportResult } from "@/server/report";
 import { LocationPicker } from "./location-picker";
+import { draftAnswered, draftFailed, keepDraft, sendDraft } from "./outbox";
+import { SEND_TIMEOUT_MS, type Draft } from "./outbox-model";
 import { Thumb } from "./photo-thumb";
 import { useTurnstile } from "@/features/auth/turnstile";
 import { preparePhoto } from "./photo";
@@ -118,6 +120,7 @@ export function ReportForm({
   phone,
   head,
   onCreated,
+  onQueued,
   onJoined,
   guest,
 }: {
@@ -128,6 +131,8 @@ export function ReportForm({
   phone: boolean;
   head: Head;
   onCreated: (result: Created) => void;
+  /** The connection failed; the report waits on the phone and goes on its own (outbox.ts). */
+  onQueued: () => void;
   onJoined: (result: Joined) => void;
   /**
    * A guest pin (round 2): no account, so a robot check instead, occurrences only, shown as Anônimo
@@ -144,10 +149,11 @@ export function ReportForm({
   const [dismissed, setDismissed] = useState<string[]>([]);
   const { mount: mountRobot, token: robotToken } = useTurnstile(guest?.turnstileSiteKey ?? "", GUEST_PIN_ACTION);
   const create = useMutation({
-    mutationFn: ({ v, token }: { v: ReportFields; token: string | null }) => {
+    mutationFn: ({ v, token, draft }: { v: ReportFields; token: string | null; draft: Draft | null }) => {
+      if (draft) return sendDraft(draft);
       const fd = toReportFormData(v);
       if (token) fd.set("turnstile", token);
-      return createReport({ data: fd });
+      return createReport({ data: fd, signal: AbortSignal.timeout(SEND_TIMEOUT_MS) });
     },
   });
   const join = useMutation({ mutationFn: (v: Join) => joinReport({ data: toJoinFormData(v) }) });
@@ -174,8 +180,16 @@ export function ReportForm({
       setProblem(null);
       const token = guest ? await robotToken().catch(() => null) : null;
       if (guest && !token) return setProblem(ROBOT_CHECK_FAILED);
-      const r = await create.mutateAsync({ v: value, token }).catch(() => null);
-      if (!r) return setProblem("Não deu para publicar agora. Confira a conexão e tente de novo.");
+      // A member's report is kept on the phone first: if the connection drops, it goes later on its own.
+      // A guest's can't wait: its robot check expires.
+      const draft = guest ? null : await keepDraft(value);
+      const r = await create.mutateAsync({ v: value, token, draft }).catch(() => null);
+      if (!r) {
+        if (!draft) return setProblem("Não deu para publicar agora. Confira a conexão e tente de novo.");
+        await draftFailed(draft);
+        return onQueued();
+      }
+      if (draft) await draftAnswered(draft);
       if (!r.ok) return setProblem(r.error);
       onCreated(r);
     },

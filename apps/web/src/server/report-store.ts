@@ -14,7 +14,7 @@ import {
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { db } from "./db/client";
-import { createdSince, findItem, insertItem, itemExists, joinItem, photosSince } from "./items";
+import { createdSince, findItem, insertItem, itemExists, itemIdByClientKey, joinItem, photosSince } from "./items";
 import type { Failure, Member } from "./member";
 import { openCase } from "./moderation-store";
 import { markNickPublished } from "./nicks";
@@ -63,9 +63,27 @@ export async function uniqueId(): Promise<string> {
   return (await itemExists(id)) ? uniqueId() : id;
 }
 
-/** A member's report, already parsed with reportSchema. `connection` defaults to this request's. */
-export async function publishReport(who: Member, fields: ReportFields, connection?: Connection): Promise<ReportResult> {
+/** The report a retry repeats, as the first send would have answered. */
+async function already(id: string, now: Date): Promise<ReportResult> {
+  const item = await findItem(id, now);
+  return item ? { ok: true, item, digest: digestDay(now, canoas) } : { ok: false, error: "Confira o registro." };
+}
+
+/**
+ * A member's report, already parsed with reportSchema. `connection` defaults to this request's.
+ * `clientKey`: the key the phone gave it before sending (the form's outbox), so a retry after a lost
+ * response gets the same item back instead of a second one.
+ */
+export async function publishReport(
+  who: Member,
+  fields: ReportFields,
+  connection?: Connection,
+  clientKey?: string,
+): Promise<ReportResult> {
   const now = new Date();
+  // Before the limits: a retry of a report that already counted must not be refused by them.
+  const known = clientKey ? await itemIdByClientKey(clientKey, who.id) : null;
+  if (known) return already(known, now);
   // Daily limits (round 19): far lower for an account whose phone is less than 72 h old.
   const limits = postingLimits(who.phoneVerifiedAt, now);
   if ((await createdSince(who.id, DAY, now)) >= limits.pins) return { ok: false, error: limitMessage("pins", limits) };
@@ -85,10 +103,13 @@ export async function publishReport(who: Member, fields: ReportFields, connectio
     ...(held ? { moderation: "pending" } : {}),
   };
   try {
-    await insertItem(item, who.id, now);
+    await insertItem(item, who.id, now, null, clientKey ?? null);
     if (held) await openCase(db, id, muted ? "muted" : "prescreen", flags);
   } catch (e) {
     await removePhotos(photos.keys);
+    // The same report sent twice at once: the other request made it.
+    const raced = clientKey ? await itemIdByClientKey(clientKey, who.id) : null;
+    if (raced) return already(raced, now);
     throw e;
   }
   if (fields.visibility === "pseudonymous") await markNickPublished(who.id);

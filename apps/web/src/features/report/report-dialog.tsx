@@ -79,7 +79,7 @@ function ReportFlow({
   turnstileSiteKey,
 }: Omit<ReportDialogProps, "author"> & { author: Author | "guest"; phone: boolean; head: Head }) {
   const queryClient = useQueryClient();
-  const [done, setDone] = useState<Created | null>(null);
+  const [done, setDone] = useState<Created | "queued" | null>(null);
 
   const guest = author === "guest";
   /** Puts the server's copy of the item in the cache, so the rail, the map and the item page show it at once. */
@@ -95,6 +95,7 @@ function ReportFlow({
     onChanged();
   };
 
+  if (done === "queued") return <QueuedDone head={head} />;
   if (done) return <ReportDone muni={muni} done={done} phone={phone} head={head} onView={onView} />;
   return (
     <ReportForm
@@ -108,6 +109,7 @@ function ReportFlow({
         remember(r.item);
         setDone(r);
       }}
+      onQueued={() => setDone("queued")}
       onJoined={(r) => {
         remember(r.item);
         closeReport();
@@ -115,6 +117,26 @@ function ReportFlow({
         toast(joinMessage(r.confirmation, r.withPhoto));
       }}
     />
+  );
+}
+
+/** The connection dropped: the report waits on the phone, and goes on its own (outbox.ts). */
+function QueuedDone({ head }: { head: Head }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <Header head={head} title="Guardado neste celular" focus>
+        A conexão falhou, mas nada se perdeu: o registro e as fotos ficaram guardados aqui. Eles vão ser enviados
+        sozinhos quando a internet voltar, com o Fala aberto. Não precisa registrar de novo.
+      </Header>
+      <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
+        <p className="rounded-xl border border-hairline bg-muted px-3.5 py-2.5 text-sm text-pretty text-ink-2">
+          Um aviso no canto da tela mostra o que está esperando. Quando for enviado, aparece o código do registro.
+        </p>
+        <Button variant="outline" className="justify-self-start" onClick={closeReport}>
+          Fechar
+        </Button>
+      </div>
+    </div>
   );
 }
 

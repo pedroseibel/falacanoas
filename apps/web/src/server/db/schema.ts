@@ -143,6 +143,11 @@ export const items = fala
       moderationHandle: text().unique(),
       /** Fictional demonstration data, always labelled "exemplo". */
       demo: boolean().notNull().default(false),
+      /**
+       * The key the person's phone gave the report before sending it (the report form's outbox): a
+       * retry after a lost response finds this item instead of making a second one.
+       */
+      clientKey: uuid().unique(),
       createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
       updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
       /** enviadoEm: when the daily digest carried it. The public clock starts here. */

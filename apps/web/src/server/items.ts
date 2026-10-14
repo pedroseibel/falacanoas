@@ -203,10 +203,11 @@ export async function insertItem(
   accountId: string,
   now: Date,
   trackingKeyHash: string | null = null,
+  clientKey: string | null = null,
 ): Promise<void> {
   const rows = rowsForNewItem(item, now, accountId);
   await db.transaction(async (tx) => {
-    await tx.insert(items).values({ ...rows.row, trackingKeyHash });
+    await tx.insert(items).values({ ...rows.row, trackingKeyHash, clientKey });
     await tx.insert(itemAuthors).values({ itemId: item.id, accountId });
     if (rows.events.length) await tx.insert(itemEvents).values(rows.events);
     if (!rows.photos.length) return;
@@ -218,6 +219,16 @@ export async function insertItem(
         added.map((p) => p.id),
       );
   });
+}
+
+/** The item this account already made with this key (a retry from the report form's outbox), if any. */
+export async function itemIdByClientKey(clientKey: string, accountId: string): Promise<string | null> {
+  const [row] = await db
+    .select({ id: items.id })
+    .from(items)
+    .innerJoin(itemAuthors, eq(itemAuthors.itemId, items.id))
+    .where(and(eq(items.clientKey, clientKey), eq(itemAuthors.accountId, accountId)));
+  return row?.id ?? null;
 }
 
 export type JoinOutcome = { item: Item; confirmation: ConfirmationStatus } | null;

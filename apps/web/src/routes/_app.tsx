@@ -12,6 +12,7 @@ import { useDebouncedCallback } from "@tanstack/react-pacer";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
 import { ContentReportDialog } from "@/features/moderation/content-report-dialog";
+import { OutboxRunner } from "@/features/report/outbox-runner";
 import { ReportDialog } from "@/features/report/report-dialog";
 import { openReport } from "@/features/report/report-store";
 import { AppShell, type Section } from "@/features/shell/app-shell";
@@ -89,6 +90,8 @@ function AppLayout() {
         onChanged={() => void router.invalidate()}
         onView={(id, key) => void navigate({ to: "/o/$id", params: { id }, search: key ? { chave: key } : {} })}
       />
+      {/* A member's reports kept on the phone after a dropped connection go on their own (outbox.ts). */}
+      {member && <OutboxRunner onView={(id) => void navigate({ to: "/o/$id", params: { id } })} />}
       <ContentReportDialog
         member={member}
         moderator={Boolean(moderator)}
