@@ -10,7 +10,7 @@
 - **Lei 15.487/2026** (in force 7 Aug 2026, per [Senado](https://www12.senado.leg.br/noticias/materias/2026/08/07/lei-aumenta-penas-para-crimes-sexuais-contra-criancas-na-internet)) rewrote arts. 240–241-B around "violência sexual contra criança ou adolescente". It raised penalties, covered AI-generated material (art. 241-E), and added liability for whoever hosts or moderates an environment for storing or sharing it [não verificado: read the consolidated text].
 
 **ECA Digital (Lei 15.211/2025)** ([text](https://www.planalto.gov.br/ccivil_03/_ato2023-2026/2025/lei/l15211.htm)), in force since 17 Mar 2026
-- **Art. 27:** providers "disponíveis no território nacional", not only children's services, must remove apparent exploitation or abuse content and report it to the authorities.
+- **Art. 27:** providers "disponíveis no território nacional" must remove apparent exploitation or abuse content and report it to the authorities. But art. 1 limits the whole law to services directed at, or likely accessed by, minors, so whether art. 27 reaches an 18+ map is open (correction, 2026-10-13; [hash-matching/criminal.md](hash-matching/criminal.md)). ECA art. 241-A and Decreto 8.771 art. 16-B apply either way.
 - **Art. 27 §§2–3:** they must retain the content, the user's data and the metadata for the Marco Civil art. 15 period (6 months), extendable.
 - **Art. 39:** duties scale with the provider's size and its control over content. There is no small-provider exemption.
 - **Arts. 28–29** (a reporting mechanism for minors; takedown on notice from victims, MP or child-rights bodies without a court order) apply to services directed at, or likely to be accessed by, minors. Whether a civic map is one is [não verificado]. The Fala is 18+ (round 6), but ask counsel.
@@ -37,7 +37,7 @@
 ## What the Fala does (built 2026-10-13)
 
 - **Before anyone sees a photo:** moderation looks at every photo before it goes public (round 19).
-- **Hash matching:** automatic matching against known material isn't connected yet (BUILD 5.7).
+- **Hash matching:** automatic matching against known material isn't connected yet (BUILD 5.8). The lawful design (PDQ fingerprints computed in São Paulo, never the photo) is in [hash-matching.md](hash-matching.md).
 - **Reports:** "Denunciar" on pins, photos and updates, open to anyone. A report of nudity or a child takes a photo down at once, until a moderator looks. That covers art. 21 notices from people without an account. The data-subject channel (`/privacidade/pedido`) stays the formal path.
 - **Escalation:**
   1. A moderator who meets child abuse material presses "É abuso sexual infantil", or ticks the box in "Remover agora".
@@ -49,6 +49,7 @@
   2. Report it, then `reported <código> <canal> <protocolo>`.
   3. When the authority confirms receipt, `received <código>`.
   4. Only then `purge <código>`, which deletes the bytes and keeps the metadata.
+  - **Correction (2026-10-13):** Portaria MJSP 1.312/2026 says to delete after the authority **validates** the report (art. 23 §2), and that confirming receipt "não implica a validação" (art. 11 §1). The purge must move behind a validation step ([hash-matching.md](hash-matching.md)).
 - **Retention:** removed photos lose their bytes six months after removal (the daily job). That excludes anything under an open contest or an escalation.
 
 ## Draft procedure, for counsel
@@ -61,7 +62,7 @@
    - Until Nidus registration exists: SaferNet Brasil ([denuncie](https://new.safernet.org.br/denuncie)), plus a direct report to the Polícia Federal or the MPF. Whether that satisfies art. 27 is [não verificado]; confirm with counsel.
    - Then register the Fala on Nidus and meet the 12 h / 72 h / 7-day deadlines.
    - Record each protocol with `escalation reported`.
-6. **After the authority confirms receipt:** `escalation purge`. Check first that no preservation request covers it.
+6. **After the authority validates the report** (not just confirms receipt; Portaria 1.312 arts. 11 §1 and 23 §2): `escalation purge`. Check first that no preservation request covers it.
 7. **Account:** suspended automatically. Counsel should decide how far to inform the person (Marco Civil art. 20; Lei 15.211 art. 30). Until then the app says only that a post was removed for violating the law and the case is with the team.
 8. **Adult intimate images:**
    - On a report, the photo comes down at once.
@@ -74,7 +75,7 @@
 
 | Option | Cost | Notes |
 |---|---|---|
-| [Arachnid Shield](https://projectarachnid.com/shield) (Canadian Centre for Child Protection) | Free | Self-serve registration and API key. Exact and perceptual hashes. Scans bytes at upload, before a volunteer sees them. Brazilian eligibility not stated: ask. **First choice.** |
+| [Arachnid Shield](https://projectarachnid.com/shield) (Canadian Centre for Child Protection) | Free | Registration reviewed by C3P; no API-specific terms published. **First choice, with PDQ fingerprints only, never the photo**: see [hash-matching.md](hash-matching.md). |
 | [PhotoDNA Cloud Service](https://www.microsoft.com/en-us/photodna/CloudService) | Free for vetted organisations | Unpublished criteria, slow approval. Apply in parallel. |
 | [Google Content Safety API](https://protectingchildren.google/tools-for-partners/) | Free for approved partners | A classifier for previously unseen material. Apply in parallel. |
 | [Cloudflare CSAM Scanning Tool](https://developers.cloudflare.com/cache/reference/csam-scanning/) | Free | Scans images passing through the Cloudflare cache, at serve time. Whether it sees Worker-streamed photos is [não verificado]. A backstop once the domain is live, not the main control. |

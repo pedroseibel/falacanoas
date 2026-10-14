@@ -179,7 +179,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - **The app** screens each upload in the background and records the result (`photo_screens`). The queue puts likely nudity first, blurred, and tags "N rostos" and "N placas".
   - **Spot test** on public photos: 17 faces in a crowd, 6 at a busy crossing, plates on close-ups. A 15-pixel profile face was missed, which is why the human first look stays.
 - [ ] **2.11 follow-up: switch the public copy to blurred.** The service's `/borrar` exists. Before turning it on, label 200–300 real Canoas photos and measure recall on faces, grey plates and Mercosul plates, with a bar of about 95%.
-- [ ] **5.8 Hash matching for known abuse material**, at upload, before any volunteer sees a photo. ⛔ Needs the registration with Arachnid Shield (or PhotoDNA, or Google's API).
+- [ ] **5.8 Hash matching for known abuse material**, at upload, before any volunteer sees a photo. Only as PDQ fingerprints computed in São Paulo and sent to Arachnid Shield, never the photo (research/legal/hash-matching.md); first the escalation purge moves behind the authority's validation, and the privacy notice changes. ⛔ Needs C3P's written answers and the registration, and counsel's confirmation.
 - [x] **5.9 Escalation of child abuse material** (round 20). Done 2026-10-13, verified end to end with test accounts.
   - one step from the queue or "Remover agora": removed, unviewable even to moderators, preserved, account suspended;
   - the controller's `bun --filter @fala/web escalation` covers list, reported, received, purge and contest.
