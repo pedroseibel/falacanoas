@@ -56,6 +56,16 @@
   - a RIPD for the whole upload pipeline (nudity, faces, plates, fingerprints). Automated decisions plus child and sensitive data plausibly make it high risk under Res. 2/2022 art. 4, which also removes the small-agent exemption from naming an encarregado;
   - a vendor file with Shield's terms, C3P's written answers and a dated transfer analysis.
 
+## What was built (2026-10-13)
+
+The design above, switched off until the credentials exist (BUILD 5.8):
+- PDQ in the screening service, ported from Meta's reference and tested against its hashes, plus the eight orientations so a flipped copy still matches.
+- Only fingerprints go to `/v1/pdq`; the worst class wins.
+- The gate on the queue, the photo route and decisions.
+- Automatic escalation of `csam` with the source recorded; the controller's review of other classes.
+- The 10-minute retry and the moderators' waiting count.
+- The purge behind validation, and the privacy notice.
+
 ## Before registering: ask C3P in writing
 
 The list of 12 questions is in [hash-matching/shield.md](hash-matching/shield.md). The essential ones:
@@ -66,8 +76,9 @@ The list of 12 questions is in [hash-matching/shield.md](hash-matching/shield.md
 4. **Coverage:** does the PDQ index cover the same material as photo scanning, which uses PhotoDNA?
 5. **Disclosure:** is a client's match or identity ever disclosed to any police or hotline?
 6. **Data processing agreement:** is there one, or would they accept the ANPD's standard clauses?
-7. **Operations:** what are the rate limits, uptime and test hashes?
-8. **Local hash lists:** C3P mentions letting high-volume services "scan content locally" with its hash list. Is that open to us? It would make even the fingerprint transfer unnecessary.
+7. **Byte order:** is a base64 PDQ hash the 32 bytes in the order of the reference implementation's hex string? A test hash that returns `test` would confirm it; the wrong order would fail silently.
+8. **Operations:** what are the rate limits, uptime and test hashes?
+9. **Local hash lists:** C3P mentions letting high-volume services "scan content locally" with its hash list. Is that open to us? It would make even the fingerprint transfer unnecessary.
 
 ## Questions for counsel
 

@@ -4,7 +4,7 @@ import { getPinThread, getReportedPosts, getThreads } from "@/server/forum";
 import { getAccount, getAuthConfig } from "@/server/account";
 import { getFollowing } from "@/server/follows";
 import { getItemViewer } from "@/server/item-actions";
-import { getIsModerator, getModerationQueue } from "@/server/moderation";
+import { getAwaitingCheck, getIsModerator, getModerationQueue } from "@/server/moderation";
 import { getQueue } from "@/server/queue";
 import { getMySanctions, getSanctionQueue } from "@/server/sanctions";
 import { getTransparency } from "@/server/transparency";
@@ -67,6 +67,13 @@ export const authConfigQuery = queryOptions({
 export const moderationQueueQuery = queryOptions({
   queryKey: ["moderation"],
   queryFn: () => getModerationQueue(),
+  staleTime: 15_000,
+});
+
+/** New photos waiting for the known-material check (null when it isn't required, or for non-moderators). */
+export const awaitingCheckQuery = queryOptions({
+  queryKey: ["moderation", "awaiting-check"],
+  queryFn: () => getAwaitingCheck(),
   staleTime: 15_000,
 });
 

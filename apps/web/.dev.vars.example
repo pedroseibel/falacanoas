@@ -33,3 +33,7 @@ VAPID_PUBLIC_KEY=
 # TRIAGEM_TOKEN, the same value as the service's.
 TRIAGEM_URL=
 TRIAGEM_TOKEN=
+# Known abuse material (BUILD 5.8): new photos stay out of every moderator's sight until the service
+# has compared their fingerprint with Arachnid Shield (the service needs ARACHNID_SHIELD_USERNAME and
+# ARACHNID_SHIELD_PASSWORD). required|off; unset, production requires it and development doesn't.
+HASH_MATCHING=

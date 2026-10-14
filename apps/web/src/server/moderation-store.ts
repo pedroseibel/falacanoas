@@ -1,7 +1,16 @@
-import type { ModerationFlag } from "@fala/core";
+import { SUSPEND_DAYS, type ModerationFlag } from "@fala/core";
 import { and, eq, sql } from "drizzle-orm";
 import { db, type Db } from "./db/client";
-import { itemAuthors, itemEvents, itemPhotos, items, moderationCases, moderators } from "./db/schema";
+import {
+  escalations,
+  itemAuthors,
+  itemEvents,
+  itemPhotos,
+  items,
+  moderationCases,
+  moderators,
+  sanctions,
+} from "./db/schema";
 
 /**
  * Moderation's plain server helpers, apart from the server functions in moderation.ts: a module the
@@ -177,4 +186,66 @@ export async function restore(q: Q, c: CaseRow, note: string, now: Date): Promis
         .where(and(eq(itemPhotos.itemId, c.itemId), eq(itemPhotos.review, "removed")));
   }
   await history(q, c.itemId, now, `${RESTORED[target]} ${note}`);
+}
+
+/** What the item's history says: neutral, so the history itself never describes the material. */
+export const ILLEGAL = "Conteúdo ilegal removido.";
+export const SUSPENDED_FOR_LAW =
+  "Uma publicação sua foi removida por violar a lei. O caso está com a equipe responsável pelo Fala.";
+const DAY = 86_400_000;
+
+/**
+ * Hands a case over as child abuse material (round 20; ECA arts. 241-A and 241-B), in the caller's
+ * transaction: the content comes down and is never served again, not even to moderators; the bytes
+ * stay for the authorities; the escalation is recorded; the account is suspended. A moderator does
+ * this from the queue; a known-material match does it with no one having seen the photo
+ * (research/legal/hash-matching.md), and the escalation says so, as the report to the PF must.
+ */
+export async function escalateCase(
+  tx: Tx,
+  c: CaseRow,
+  by: {
+    userId: string | null;
+    source: "moderation" | "hash_match";
+    matchClass?: string | null;
+    matchType?: string | null;
+  },
+  now: Date,
+): Promise<"escalated" | "already"> {
+  const [already] = await tx.select({ id: escalations.id }).from(escalations).where(eq(escalations.caseId, c.id));
+  if (already) return "already";
+  const account = await targetAccount(tx, c);
+  if (c.status !== "rejected") {
+    await tx
+      .update(moderationCases)
+      .set({ status: "rejected", note: ILLEGAL, weight: "grave", decidedBy: by.userId, decidedAt: now })
+      .where(eq(moderationCases.id, c.id));
+    await applyDecision(tx, c, "reject", ILLEGAL, now);
+  }
+  const [escalation] = await tx
+    .insert(escalations)
+    .values({
+      kind: "child_abuse",
+      caseId: c.id,
+      itemId: c.itemId,
+      photoId: c.photoId,
+      accountId: account,
+      createdBy: by.userId,
+      source: by.source,
+      matchClass: by.matchClass ?? null,
+      matchType: by.matchType ?? null,
+    })
+    .returning({ id: escalations.id });
+  if (account && escalation)
+    await tx.insert(sanctions).values({
+      accountId: account,
+      kind: "suspend",
+      source: "auto",
+      reason: SUSPENDED_FOR_LAW,
+      startsAt: now,
+      endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY),
+      confirmedAt: now,
+      escalationId: escalation.id,
+    });
+  return "escalated";
 }

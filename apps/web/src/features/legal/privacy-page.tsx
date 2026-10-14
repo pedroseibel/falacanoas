@@ -22,8 +22,12 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
       <header className="grid gap-2">
         <h1 className="text-heading font-semibold text-balance">Aviso de privacidade do app</h1>
         <p className="text-caption text-muted-foreground">
-          Versão preliminar de <span className="tabular-nums">{version.split("-").toReversed().join("/")}</span>, em
-          revisão jurídica. Vale para o protótipo. A fila de espera tem aviso próprio, na{" "}
+          Versão preliminar de{" "}
+          <span className="tabular-nums">
+            {version.split(".")[0]?.split("-").toReversed().join("/")}
+            {version.includes(".") && ` (${version.split(".")[1]}ª do dia)`}
+          </span>
+          , em revisão jurídica. Vale para o protótipo. A fila de espera tem aviso próprio, na{" "}
           <a href="/#privacidade" className={textLink}>
             página inicial
           </a>
@@ -78,7 +82,15 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
         <p>
           Antes de aparecer no mapa, cada foto passa por alguém da moderação. Antes disso, um serviço do próprio Fala,
           em São Paulo, olha a foto procurando nudez, rostos e placas, para orientar quem modera. Ele não reconhece quem
-          aparece, não guarda a foto e não manda nada a outras empresas.
+          aparece e não guarda a foto.
+        </p>
+        <p>
+          Antes de qualquer pessoa ver a foto, esse serviço calcula uma impressão digital da imagem (um código curto,
+          que não permite refazer a foto) e a compara com uma lista de material de abuso sexual infantil já conhecido,
+          mantida pelo Canadian Centre for Child Protection, no Canadá. Só esse código sai do Brasil: sem a foto, sem
+          seu nome e sem sua conta. Se houver correspondência, ninguém vê a foto, ela é preservada para as autoridades,
+          a conta é suspensa e o caso é denunciado, como a lei exige. Você pode contestar a suspensão; não detalhamos o
+          que possa atrapalhar uma investigação.
         </p>
         <p>
           Quem denuncia um conteúdo não é revelado a ninguém. Se a moderação remover algo seu, silenciar ou suspender a
@@ -101,9 +113,10 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
 
       <Part title="Com quem compartilhamos">
         <p>
-          A Prefeitura recebe os registros (texto, fotos e local) no resumo diário, sem quem os fez. Autoridades recebem
-          o que a lei exige: material de abuso sexual infantil, que é denunciado e preservado, e dados de acesso
-          mediante ordem judicial. Não vendemos nem repassamos dados para fins comerciais.
+          A Prefeitura recebe os registros (texto, fotos e local) no resumo diário, sem quem os fez. O Canadian Centre
+          for Child Protection recebe só a impressão digital de cada foto nova, para a comparação descrita acima, nunca
+          a foto. Autoridades recebem o que a lei exige: material de abuso sexual infantil, que é denunciado e
+          preservado, e dados de acesso mediante ordem judicial. Não vendemos nem repassamos dados para fins comerciais.
         </p>
       </Part>
 
@@ -111,10 +124,9 @@ export function PrivacyPage({ back, version }: { back: BackLink; version: string
         <p>
           A conta, até você encerrá-la. Os registros de acesso, por 6 meses. Fotos removidas pela moderação ficam
           guardadas, sem aparecer, por 6 meses, e depois são apagadas; material de abuso sexual infantil é preservado
-          até as autoridades confirmarem que o receberam, como a lei exige. O que você publicou continua no mapa como
-          parte do histórico da cidade, desligado da sua identidade se você encerrar a conta. Pedidos de remoção,
-          ocultação ou anonimização são avaliados conforme a LGPD, os direitos de outras pessoas e a finalidade
-          documental do Fala.
+          até as autoridades validarem a denúncia, como a lei exige. O que você publicou continua no mapa como parte do
+          histórico da cidade, desligado da sua identidade se você encerrar a conta. Pedidos de remoção, ocultação ou
+          anonimização são avaliados conforme a LGPD, os direitos de outras pessoas e a finalidade documental do Fala.
         </p>
       </Part>
 

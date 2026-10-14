@@ -1,6 +1,7 @@
 import { and, eq, isNull, or } from "drizzle-orm";
 import { db } from "./db/client";
-import { escalations, itemPhotos, items } from "./db/schema";
+import { escalations, itemPhotos, items, photoScreens } from "./db/schema";
+import { hashMatchingRequired, visibleToModerators } from "./known-material";
 
 /**
  * Who may see a stored photo (the abuse review of 2026-10-13): everyone, once moderation approved it
@@ -10,9 +11,16 @@ import { escalations, itemPhotos, items } from "./db/schema";
  */
 export async function photoAudience(key: string): Promise<"public" | "moderators" | null> {
   const [row] = await db
-    .select({ review: itemPhotos.review, moderation: items.moderation, escalated: escalations.id })
+    .select({
+      review: itemPhotos.review,
+      moderation: items.moderation,
+      escalated: escalations.id,
+      known: photoScreens.known,
+      knownReview: photoScreens.knownReview,
+    })
     .from(itemPhotos)
     .innerJoin(items, eq(items.id, itemPhotos.itemId))
+    .leftJoin(photoScreens, eq(photoScreens.storageKey, itemPhotos.storageKey))
     .leftJoin(
       escalations,
       and(
@@ -23,5 +31,7 @@ export async function photoAudience(key: string): Promise<"public" | "moderators
     .where(eq(itemPhotos.storageKey, key))
     .limit(1);
   if (!row || row.escalated) return null;
-  return row.review === "approved" && row.moderation === "published" ? "public" : "moderators";
+  if (row.review === "approved" && row.moderation === "published") return "public";
+  // Known abuse material (BUILD 5.8): until the check is in, not even moderators get the bytes.
+  return visibleToModerators(row.review, row, hashMatchingRequired()) ? "moderators" : null;
 }

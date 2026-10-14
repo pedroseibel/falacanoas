@@ -38,15 +38,34 @@ function firstLooks(cases: QueueCase[]): { itemId: string; cases: PhotoCase[] }[
  * first look. Nobody here sees who posted: a random handle and, at most, how many of that person's
  * posts were refused before.
  */
+/**
+ * Photos nobody can see yet: each is compared with known abuse material before it reaches this queue
+ * (BUILD 5.8). Usually a matter of seconds; past an hour, something is stuck and someone should know.
+ */
+function AwaitingCheck({ count, oldestMinutes }: { count: number; oldestMinutes: number }) {
+  const stuck = oldestMinutes >= 60;
+  return (
+    <p className={cn(panel, "text-sm text-pretty text-muted-foreground")} role="status">
+      {count === 1 ? "1 foto nova aguarda" : `${count} fotos novas aguardam`} a verificação automática de material de
+      abuso conhecido e {count === 1 ? "aparece" : "aparecem"} aqui quando ela terminar.
+      {stuck &&
+        ` A mais antiga espera há ${oldestMinutes >= 120 ? `${Math.floor(oldestMinutes / 60)} horas` : "mais de uma hora"}: avise quem cuida do Fala.`}
+    </p>
+  );
+}
+
 export function ModerationPage({
   cases,
   posts,
   sanctions,
+  awaiting,
   muni,
 }: {
   cases: QueueCase[];
   posts: ReportedPost[];
   sanctions: QueueSanction[];
+  /** New photos still waiting for the known-material check, out of everyone's sight. */
+  awaiting: { count: number; oldestMinutes: number } | null;
   muni: Municipality;
 }) {
   const reports = cases.filter((c) => !c.contest && (c.reason === "report" || c.reason === "takedown"));
@@ -55,7 +74,7 @@ export function ModerationPage({
     (c) => !c.contest && (c.reason === "guest_pin" || c.reason === "prescreen" || c.reason === "muted"),
   );
   const photos = firstLooks(cases.filter((c) => !c.contest));
-  const empty = !cases.length && !posts.length && !sanctions.length;
+  const empty = !cases.length && !posts.length && !sanctions.length && !awaiting?.count;
   return (
     <div className="mx-auto grid max-w-3xl gap-8 px-7 pt-8 pb-16 max-phone:px-4 max-phone:pt-5 max-phone:pb-24">
       <header>
@@ -99,6 +118,7 @@ export function ModerationPage({
           <FirstLook key={g.itemId} cases={g.cases} muni={muni} />
         ))}
       </Section>
+      {awaiting && awaiting.count > 0 && <AwaitingCheck {...awaiting} />}
       <Section id="denuncias" title="Conversas denunciadas" count={posts.length}>
         {posts.map((p) => (
           <ReportedPostCard key={p.id} post={p} />

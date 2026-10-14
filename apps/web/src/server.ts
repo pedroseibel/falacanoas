@@ -5,6 +5,7 @@ import { runWith } from "./server/background";
 import { openDb } from "./server/db/client";
 import { rateLimits } from "./server/db/schema";
 import { closeQuietItems } from "./server/items";
+import { recheckPending } from "./server/known-material";
 import { purgeRemovedPhotos } from "./server/retention";
 
 /**
@@ -12,6 +13,8 @@ import { purgeRemovedPhotos } from "./server/retention";
  * pins someone said were fixed close on their own after 15 days without dispute (round 4);
  * rate-limit rows, which Better Auth keys by IP and never deletes, go once a day old (the longest
  * window is 15 minutes); and removed photos lose their bytes six months after removal (round 20).
+ * Every ten minutes, photos still waiting for the known-material check are screened again, and any
+ * match is escalated (BUILD 5.8): a photo nobody may see yet shouldn't wait on a single attempt.
  */
 const handler = createStartHandler(defaultStreamHandler);
 
@@ -33,9 +36,20 @@ async function daily(now: Date): Promise<void> {
   }
 }
 
+async function everyTenMinutes(now: Date): Promise<void> {
+  const { db, close } = await openDb();
+  try {
+    const { checked, escalated } = await recheckPending(db, now);
+    if (checked || escalated)
+      console.info(`verificação: ${checked} fotos verificadas de novo; ${escalated} encaminhadas`);
+  } finally {
+    await close();
+  }
+}
+
 export default {
   fetch,
-  scheduled(_controller: unknown, _env: unknown, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
-    ctx.waitUntil(daily(new Date()));
+  scheduled(controller: { cron: string }, _env: unknown, ctx: { waitUntil: (p: Promise<unknown>) => void }) {
+    ctx.waitUntil(controller.cron === "*/10 * * * *" ? everyTenMinutes(new Date()) : daily(new Date()));
   },
 };

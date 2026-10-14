@@ -5,16 +5,15 @@ import {
   postingLimits,
   ReportReasonSchema,
   standingMessage,
-  SUSPEND_DAYS,
   weightOf,
 } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, gte, inArray, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db/client";
-import { contentReports, escalations, itemEvents, itemPhotos, items, moderationCases, sanctions } from "./db/schema";
+import { contentReports, escalations, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
 import type { Failure } from "./member";
-import { applyDecision, moderatorOf, openCase, targetAccount } from "./moderation-store";
+import { applyDecision, escalateCase, moderatorOf, openCase, targetAccount } from "./moderation-store";
 import { dayOf, standingOf, strike } from "./sanctions-store";
 import { getSession } from "./session";
 import { isHuman } from "./vault";
@@ -182,11 +181,6 @@ export const takeDown = createServerFn({ method: "POST" })
     });
   });
 
-/** What the item's history says: neutral, so the history itself never describes the material. */
-const ILLEGAL = "Conteúdo ilegal removido.";
-const SUSPENDED_FOR_LAW =
-  "Uma publicação sua foi removida por violar a lei. O caso está com a equipe responsável pelo Fala.";
-
 /**
  * Child sexual abuse material (round 20; ECA arts. 241-A and 241-B; Lei 15.211/2025 art. 27). A
  * moderator who meets it removes it and hands it on in one step: it comes down at once, is never shown
@@ -223,35 +217,7 @@ export const escalateChildAbuse = createServerFn({ method: "POST" })
       if (already) return { ok: true };
       const account = await targetAccount(tx, c);
       if (account === user.id) return { ok: false, error: "Outra pessoa da moderação precisa encaminhar." };
-      if (c.status !== "rejected") {
-        await tx
-          .update(moderationCases)
-          .set({ status: "rejected", note: ILLEGAL, weight: "grave", decidedBy: user.id, decidedAt: now })
-          .where(eq(moderationCases.id, c.id));
-        await applyDecision(tx, c, "reject", ILLEGAL, now);
-      }
-      const [escalation] = await tx
-        .insert(escalations)
-        .values({
-          kind: "child_abuse",
-          caseId: c.id,
-          itemId: c.itemId,
-          photoId: c.photoId,
-          accountId: account,
-          createdBy: user.id,
-        })
-        .returning({ id: escalations.id });
-      if (account && escalation)
-        await tx.insert(sanctions).values({
-          accountId: account,
-          kind: "suspend",
-          source: "auto",
-          reason: SUSPENDED_FOR_LAW,
-          startsAt: now,
-          endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY),
-          confirmedAt: now,
-          escalationId: escalation.id,
-        });
+      await escalateCase(tx, c, { userId: user.id, source: "moderation" }, now);
       return { ok: true };
     });
   });

@@ -12,6 +12,7 @@
     { "binding": "VAULT", "service": "falacanoas-vault" },
     { "binding": "CARDS", "service": "falacanoas-cards" }
   ],
-  // Daily at 03:05 in Canoas (06:05 UTC): pins closed by 15 days without dispute (src/server.ts).
-  "triggers": { "crons": ["5 6 * * *"] }
+  // Daily at 03:05 in Canoas (06:05 UTC): pins closed by 15 days without dispute; every 10 minutes:
+  // photos still waiting for the known-material check, screened again (src/server.ts).
+  "triggers": { "crons": ["5 6 * * *", "*/10 * * * *"] }
 }

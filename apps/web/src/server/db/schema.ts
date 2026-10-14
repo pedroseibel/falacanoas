@@ -244,6 +244,29 @@ export const photoScreens = fala
     faces: integer().notNull(),
     plates: integer().notNull(),
     screenedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+    /**
+     * Known abuse material (BUILD 5.8; research/legal/hash-matching.md): the photo's PDQ fingerprint,
+     * computed in São Paulo, is the only thing sent to Arachnid Shield, never the photo. `known` is
+     * Shield's verdict ("no-known-match", "csam", "harmful-abusive-material", "test"), null until a
+     * check succeeds; until then the photo stays out of the moderators' sight.
+     */
+    pdq: text(),
+    /** PDQ's own quality score, 0 to 100; below 50 the fingerprint says little and Shield isn't asked. */
+    pdqQuality: integer(),
+    known: text(),
+    /** "exact" or "near". */
+    knownMatch: text(),
+    /** Shield's database version (its timestamp) at the check: evidence of the state of the art. */
+    knownDbVersion: text(),
+    knownCheckedAt: timestamp({ withTimezone: true }),
+    /**
+     * The designated person's call on a match that isn't plainly csam (harmful-abusive-material, test),
+     * made from the match record, never the image: "escalated" (reported like any escalation) or
+     * "released" (back to ordinary moderation).
+     */
+    knownReview: text(),
+    knownReviewedAt: timestamp({ withTimezone: true }),
+    knownReviewNote: text(),
   })
   .enableRLS();
 
@@ -481,9 +504,19 @@ export const escalations = fala
       reportedAt: timestamp({ withTimezone: true }),
       reportChannel: text(),
       reportProtocol: text(),
-      /** The authority confirmed it received the material: from here it may be deleted (Decreto 12.880, art. 39). */
+      /** The authority confirmed it received the report (Decreto 12.880, art. 39 §2). Receipt isn't validation. */
       receiptAt: timestamp({ withTimezone: true }),
+      /**
+       * The authority validated the report: only from here may the bytes be deleted (Portaria MJSP
+       * 1.312/2026, arts. 11 §1 and 23 §2). Account data and logs stay.
+       */
+      validatedAt: timestamp({ withTimezone: true }),
       purgedAt: timestamp({ withTimezone: true }),
+      /** "moderation" (a moderator escalated it) or "hash_match" (a known-material match, no one saw it). */
+      source: text().notNull().default("moderation"),
+      /** For a hash match: Shield's class and match type, as the report states its source. */
+      matchClass: text(),
+      matchType: text(),
       note: text(),
     },
     (t) => [index().on(t.itemId), index().on(t.photoId)],

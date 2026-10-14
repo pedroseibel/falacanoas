@@ -39,6 +39,13 @@ import {
 import { notifyFollowers, notifyPlaces } from "./push-send";
 import { recheck, strike } from "./sanctions-store";
 import type { PhotoScreen } from "./screening";
+import {
+  awaitingCheck,
+  caseCleared,
+  hashMatchingRequired,
+  visibleToModerators,
+  type KnownScreen,
+} from "./known-material";
 import { getSession } from "./session";
 
 /**
@@ -115,7 +122,9 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
       pinAuthor: pinAuthor.accountId,
       account: targetAccountSql,
       photo: { id: itemPhotos.id, src: itemPhotos.src, by: itemPhotos.by, takenAt: itemPhotos.takenAt },
+      photoReview: itemPhotos.review,
       screen: { nudity: photoScreens.nudity, faces: photoScreens.faces, plates: photoScreens.plates },
+      known: { known: photoScreens.known, knownReview: photoScreens.knownReview },
       update: { actor: itemEvents.actor, text: itemEvents.text, at: itemEvents.at },
     })
     .from(moderationCases)
@@ -178,7 +187,9 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
         src: itemPhotos.src,
         by: itemPhotos.by,
         takenAt: itemPhotos.takenAt,
+        review: itemPhotos.review,
         screen: { nudity: photoScreens.nudity, faces: photoScreens.faces, plates: photoScreens.plates },
+        known: { known: photoScreens.known, knownReview: photoScreens.knownReview },
       })
       .from(itemPhotos)
       .leftJoin(photoScreens, eq(photoScreens.storageKey, itemPhotos.storageKey))
@@ -189,49 +200,69 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
   const refusedBy = new Map(refusals.map((r) => [r.account, r.n]));
   const itemOf = new Map(its);
 
-  const out = mine.flatMap(({ c, handle, pinAuthor: author, account, photo, screen, update }): QueueCase[] => {
-    const item = itemOf.get(c.itemId);
-    if (!item) return [];
-    const target = targetOf(c);
-    const mineReports = reports.filter((r) => r.caseId === c.id);
-    const refused = account ? (refusedBy.get(account) ?? 0) : 0;
-    const base: CaseBase = {
-      id: c.id,
-      reason: c.reason,
-      // Whoever posted the pin keeps the pin's handle; someone who added to it gets one for this case only.
-      handle: account && account === author ? (handle ?? "—") : c.id.slice(0, 8),
-      priorRefusals: Math.max(0, refused - (c.status === "rejected" || c.status === "republish" ? 1 : 0)),
-      item,
-      reports: mineReports.length
-        ? {
-            reasons: mineReports.flatMap((r) => (isReason(r.reason) ? [{ reason: r.reason, n: r.n }] : [])),
-            notes: mineReports.flatMap((r) => r.notes.flatMap((n) => (n ? [n] : []))),
-          }
-        : null,
-      contest:
-        c.contestStatus === "open" && c.contestText && c.contestedAt
-          ? { text: c.contestText, at: iso(c.contestedAt) }
+  // Known abuse material (BUILD 5.8): a pending photo stays out of sight until its check is in.
+  const required = hashMatchingRequired();
+  const shown = (review: string, known: KnownScreen | null) => visibleToModerators(review, known, required);
+  const out = mine.flatMap(
+    ({ c, handle, pinAuthor: author, account, photo, photoReview, screen, known, update }): QueueCase[] => {
+      const item = itemOf.get(c.itemId);
+      if (!item) return [];
+      const target = targetOf(c);
+      if (target === "photo" && photoReview && !shown(photoReview, known)) return [];
+      const itemPhotosHere = photos.filter((p) => p.itemId === c.itemId);
+      // A held pin is judged with its photos: it waits until every one of them can be seen.
+      if (target === "item" && heldItem(c) && itemPhotosHere.some((p) => !shown(p.review, p.known))) return [];
+      const mineReports = reports.filter((r) => r.caseId === c.id);
+      const refused = account ? (refusedBy.get(account) ?? 0) : 0;
+      const base: CaseBase = {
+        id: c.id,
+        reason: c.reason,
+        // Whoever posted the pin keeps the pin's handle; someone who added to it gets one for this case only.
+        handle: account && account === author ? (handle ?? "—") : c.id.slice(0, 8),
+        priorRefusals: Math.max(0, refused - (c.status === "rejected" || c.status === "republish" ? 1 : 0)),
+        item,
+        reports: mineReports.length
+          ? {
+              reasons: mineReports.flatMap((r) => (isReason(r.reason) ? [{ reason: r.reason, n: r.n }] : [])),
+              notes: mineReports.flatMap((r) => r.notes.flatMap((n) => (n ? [n] : []))),
+            }
           : null,
-      decided: c.status === "open" ? null : { status: c.status, note: c.note },
-      decidedByYou: c.decidedBy === user.id,
-    };
-    if (target === "photo" && photo)
-      return [{ ...base, target, photo: { ...photo, takenAt: iso(photo.takenAt), screen } }];
-    if (target === "update" && update) return [{ ...base, target, update: { ...update, at: iso(update.at) } }];
-    if (target !== "item") return [];
-    return [
-      {
-        ...base,
-        target,
-        flags: c.flags.filter(isFlag),
-        photos: photos
-          .filter((p) => p.itemId === c.itemId)
-          .map(({ id, src, by, takenAt, screen: seen }) => ({ id, src, by, takenAt: iso(takenAt), screen: seen })),
-      },
-    ];
-  });
+        contest:
+          c.contestStatus === "open" && c.contestText && c.contestedAt
+            ? { text: c.contestText, at: iso(c.contestedAt) }
+            : null,
+        decided: c.status === "open" ? null : { status: c.status, note: c.note },
+        decidedByYou: c.decidedBy === user.id,
+      };
+      if (target === "photo" && photo)
+        return [{ ...base, target, photo: { ...photo, takenAt: iso(photo.takenAt), screen } }];
+      if (target === "update" && update) return [{ ...base, target, update: { ...update, at: iso(update.at) } }];
+      if (target !== "item") return [];
+      return [
+        {
+          ...base,
+          target,
+          flags: c.flags.filter(isFlag),
+          photos: itemPhotosHere
+            .filter((p) => shown(p.review, p.known))
+            .map(({ id, src, by, takenAt, screen: seen }) => ({ id, src, by, takenAt: iso(takenAt), screen: seen })),
+        },
+      ];
+    },
+  );
   // Nudity and children first; then whoever has waited longest.
   return out.toSorted((a, b) => Number(urgent(b)) - Number(urgent(a)));
+});
+
+/**
+ * New photos still out of sight, waiting for the known-material check (BUILD 5.8): how many and for
+ * how long, so moderators know they exist and someone notices if the check stalls. Null for anyone
+ * who doesn't moderate, or when the check isn't required.
+ */
+export const getAwaitingCheck = createServerFn({ method: "GET" }).handler(async () => {
+  const user = (await getSession())?.user;
+  if (!user || !(await isModerator(user.id)) || !hashMatchingRequired()) return null;
+  return awaitingCheck(db, new Date());
 });
 
 const Weight = z.enum(["none", "strike", "grave"]);
@@ -272,6 +303,11 @@ export const decideCase = createServerFn({ method: "POST" })
       if (!c || c.status !== "open") return { ok: false, error: "Esse caso já foi decidido." };
       if ((await targetAccount(tx, c)) === user.id)
         return { ok: false, error: "Outra pessoa da moderação precisa decidir." };
+      if (data.decision !== "reject" && !(await caseCleared(tx, c)))
+        return {
+          ok: false,
+          error: "Uma foto deste caso ainda está na verificação automática. Tente de novo em alguns minutos.",
+        };
       if (data.decision === "republish" && targetOf(c) !== "item")
         return { ok: false, error: "Só um registro inteiro pode ser republicado." };
       const note = data.decision === "publish" ? null : data.note;
