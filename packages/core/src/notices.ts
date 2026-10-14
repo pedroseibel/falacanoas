@@ -41,3 +41,22 @@ export function newItemNotice(it: Item, labels: { where: string; category: strin
     tag: `o-${it.id}`,
   };
 }
+
+/**
+ * Moderation is falling behind (BUILD 5.x, moderation capacity): cases have waited longer than
+ * `hours` in the moderator's bairros. Names the bairros, busiest first, so the moderator knows where.
+ */
+export function moderationWaitingNotice(waiting: { bairro: string; count: number }[], hours: number): Notice {
+  const total = waiting.reduce((n, w) => n + w.count, 0);
+  const places = waiting
+    .toSorted((a, b) => b.count - a.count || a.bairro.localeCompare(b.bairro, "pt-BR"))
+    .map((w) => w.bairro);
+  const where =
+    places.length <= 2 ? places.join(" e ") : `${places.slice(0, 2).join(", ")} e mais ${places.length - 2}`;
+  return {
+    title: `Moderação: ${total === 1 ? "1 caso espera" : `${total} casos esperam`} há mais de ${hours} horas`,
+    body: `Em ${where}. Abra a fila quando puder.`,
+    url: "/moderar",
+    tag: "moderacao",
+  };
+}

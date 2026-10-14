@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { textLink } from "@/features/landing/bits";
 import { ItemCard } from "@/features/map/item-card";
+import { VolunteerCard } from "./volunteer-card";
 import { followingQuery, isModeratorQuery } from "@/lib/city";
 import { SanctionNotices } from "./sanction-notice";
 import { useNow } from "@/lib/use-now";
@@ -161,6 +162,9 @@ export function VocePage({
                 Entrar com o celular
               </Button>
             </section>
+          )}
+          {account && !account.guest && account.phoneVerified && account.nick && !moderator && (
+            <VolunteerCard muni={muni} home={account.neighborhood ?? null} />
           )}
           {moderator && (
             <section

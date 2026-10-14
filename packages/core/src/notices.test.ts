@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { itemNotice, newItemNotice } from "./notices";
+import { itemNotice, moderationWaitingNotice, newItemNotice } from "./notices";
 import type { Item } from "./types";
 
 const it: Item = {
@@ -50,4 +50,27 @@ test("newItemNotice names the followed place and the category", () => {
   expect(n.url).toBe("/o/7K3QF");
   const bare = newItemNotice({ ...it, title: "Buraco na rua" }, { where: "Casa", category: "Buraco na rua" });
   expect(bare.body).toBe("Buraco na rua");
+});
+
+describe("moderationWaitingNotice", () => {
+  test("one bairro, one case", () => {
+    expect(moderationWaitingNotice([{ bairro: "Niterói", count: 1 }], 3)).toEqual({
+      title: "Moderação: 1 caso espera há mais de 3 horas",
+      body: "Em Niterói. Abra a fila quando puder.",
+      url: "/moderar",
+      tag: "moderacao",
+    });
+  });
+  test("busiest bairros first; past two, a count", () => {
+    const n = moderationWaitingNotice(
+      [
+        { bairro: "Centro", count: 1 },
+        { bairro: "Niterói", count: 4 },
+        { bairro: "Fátima", count: 2 },
+      ],
+      3,
+    );
+    expect(n.title).toBe("Moderação: 7 casos esperam há mais de 3 horas");
+    expect(n.body).toBe("Em Niterói, Fátima e mais 1. Abra a fila quando puder.");
+  });
 });

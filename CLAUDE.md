@@ -26,6 +26,7 @@ bun run db:seed        # replace the demo items (demo = true) with the fixtures;
 bun run vault:keys     # development: the vault's keys, and the app's copy of its public key, into .dev.vars
 bun run push:keys      # development: the VAPID key pair web push signs with, into apps/web/.dev.vars
 bun --filter @fala/web moderator:add <apelido> [bairro…]   # who moderates (all bairros, or some); moderator:remove
+bun --filter @fala/web moderator applications              # members who asked to moderate (from Você): approve <apelido> [bairro…], decline <apelido> <nota>; volunteers counts waitlist offers
 bun --filter @fala/web requests                             # open data-subject requests; `requests answered <protocolo> [nota]`
 bun --filter @fala/web sanction list                        # the controller's sanctions: list, mute|suspend <alvo> <dias|permanente> <motivo>, lift <código>
 bun --filter @fala/web escalation list                      # child abuse escalations: list, reported <código> <canal> <protocolo>, received, validated, purge, contest; matches and conferir for known-material matches

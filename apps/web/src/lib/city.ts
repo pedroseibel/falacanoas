@@ -8,6 +8,7 @@ import { getAwaitingCheck, getIsModerator, getModerationQueue } from "@/server/m
 import { getQueue } from "@/server/queue";
 import { getMySanctions, getSanctionQueue } from "@/server/sanctions";
 import { getTransparency } from "@/server/transparency";
+import { getModerationStanding } from "@/server/volunteers";
 
 /** Server state lives in TanStack Query. Loaders prefetch, components read. */
 export const cityQuery = queryOptions({
@@ -81,6 +82,13 @@ export const isModeratorQuery = queryOptions({
   queryKey: ["moderator"],
   queryFn: () => getIsModerator(),
   staleTime: 60_000,
+});
+
+/** Whether the person moderates (and accepted the current guide), or their request to; null when they can't ask. */
+export const moderationStandingQuery = queryOptions({
+  queryKey: ["moderation", "standing"],
+  queryFn: () => getModerationStanding(),
+  staleTime: 30_000,
 });
 
 /** A pin's conversation, or null if nobody has started it. */

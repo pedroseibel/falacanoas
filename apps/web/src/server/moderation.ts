@@ -38,6 +38,7 @@ import {
 } from "./moderation-store";
 import { notifyFollowers, notifyPlaces } from "./push-send";
 import { recheck, strike } from "./sanctions-store";
+import { MODERATION_GUIDE_VERSION } from "@/features/moderation/guide-version";
 import type { PhotoScreen } from "./screening";
 import {
   awaitingCheck,
@@ -296,7 +297,10 @@ export const decideCase = createServerFn({ method: "POST" })
   .validator(DecisionSchema)
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const user = (await getSession())?.user;
-    if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
+    const mod = user ? await moderatorOf(user.id) : null;
+    if (!user || !mod) return { ok: false, error: "Só moderadores decidem." };
+    if (mod.guideVersion !== MODERATION_GUIDE_VERSION)
+      return { ok: false, error: "Leia e aceite o guia da moderação antes de decidir." };
     const now = new Date();
     const result = await db.transaction(async (tx): Promise<Failure | { ok: true; c: CaseRow }> => {
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
@@ -337,7 +341,10 @@ export const resolveContest = createServerFn({ method: "POST" })
   .validator(z.object({ caseId: z.uuid(), overturn: z.boolean(), note: z.string().trim().min(3).max(280) }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
     const user = (await getSession())?.user;
-    if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
+    const mod = user ? await moderatorOf(user.id) : null;
+    if (!user || !mod) return { ok: false, error: "Só moderadores decidem." };
+    if (mod.guideVersion !== MODERATION_GUIDE_VERSION)
+      return { ok: false, error: "Leia e aceite o guia da moderação antes de decidir." };
     const now = new Date();
     const result = await db.transaction(async (tx): Promise<Failure | { ok: true; c: CaseRow }> => {
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");

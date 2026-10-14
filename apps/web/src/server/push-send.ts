@@ -11,7 +11,7 @@ import {
 import { canoas } from "@fala/instance-canoas";
 import { and, eq, inArray, ne } from "drizzle-orm";
 import { inBackground } from "./background";
-import { db } from "./db/client";
+import { db, type Db } from "./db/client";
 import { follows, itemFollows, pushSubscriptions } from "./db/schema";
 import { sendPush, type Vapid } from "./web-push";
 
@@ -28,16 +28,21 @@ function vapid(): Vapid | null {
     : null;
 }
 
-/** Sends to every browser of these accounts, and drops the subscriptions that are gone. */
-async function deliver(accountIds: string[], notice: Notice): Promise<void> {
+/**
+ * Sends to every browser of these accounts, and drops the subscriptions that are gone. `q` is the
+ * connection: the request's (`db`), or the scheduled job's own.
+ */
+export async function deliverTo(q: Db, accountIds: string[], notice: Notice): Promise<void> {
   const keys = vapid();
   if (!keys || !accountIds.length) return;
-  const subs = await db.select().from(pushSubscriptions).where(inArray(pushSubscriptions.accountId, accountIds));
+  const subs = await q.select().from(pushSubscriptions).where(inArray(pushSubscriptions.accountId, accountIds));
   // The tag doubles as the push "topic": a newer notice about the pin replaces an undelivered one.
   const outcomes = await Promise.all(subs.map((s) => sendPush(s, notice, keys, { topic: notice.tag })));
   const gone = subs.filter((_, i) => outcomes[i] === "gone").map((s) => s.id);
-  if (gone.length) await db.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, gone));
+  if (gone.length) await q.delete(pushSubscriptions).where(inArray(pushSubscriptions.id, gone));
 }
+
+const deliver = (accountIds: string[], notice: Notice) => deliverTo(db, accountIds, notice);
 
 /** Something happened to a pin: everyone following it hears, except whoever did it. */
 export function notifyFollowers(it: Item, actorId: string, change: ItemChange): void {

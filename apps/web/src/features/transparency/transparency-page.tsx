@@ -63,6 +63,13 @@ export function TransparencyPage({ back, data }: { back: BackLink; data: Transpa
           <li>Qualquer pessoa pode denunciar um registro, uma foto ou uma atualização.</li>
           <li>Toda remoção fica no histórico do registro, com o motivo, e quem publicou pode contestar.</li>
           <li>Abuso sexual infantil é removido na hora, preservado e denunciado às autoridades.</li>
+          <li>
+            As regras que quem modera segue estão no{" "}
+            <a href="/moderacao" className={textLink}>
+              guia da moderação
+            </a>
+            , público.
+          </li>
         </ul>
       </section>
 

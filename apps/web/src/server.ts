@@ -6,6 +6,7 @@ import { openDb } from "./server/db/client";
 import { rateLimits } from "./server/db/schema";
 import { closeQuietItems } from "./server/items";
 import { recheckPending } from "./server/known-material";
+import { alertWaiting } from "./server/moderation-alerts";
 import { purgeRemovedPhotos } from "./server/retention";
 
 /**
@@ -14,7 +15,8 @@ import { purgeRemovedPhotos } from "./server/retention";
  * rate-limit rows, which Better Auth keys by IP and never deletes, go once a day old (the longest
  * window is 15 minutes); and removed photos lose their bytes six months after removal (round 20).
  * Every ten minutes, photos still waiting for the known-material check are screened again, and any
- * match is escalated (BUILD 5.8): a photo nobody may see yet shouldn't wait on a single attempt.
+ * match is escalated (BUILD 5.8): a photo nobody may see yet shouldn't wait on a single attempt. The
+ * same job tells moderators when cases in their bairros have waited more than three hours.
  */
 const handler = createStartHandler(defaultStreamHandler);
 
@@ -42,6 +44,8 @@ async function everyTenMinutes(now: Date): Promise<void> {
     const { checked, escalated } = await recheckPending(db, now);
     if (checked || escalated)
       console.info(`verificação: ${checked} fotos verificadas de novo; ${escalated} encaminhadas`);
+    const alerted = await alertWaiting(db, now);
+    if (alerted) console.info(`moderação: ${alerted} moderadores avisados de casos esperando`);
   } finally {
     await close();
   }

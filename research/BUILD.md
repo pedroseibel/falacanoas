@@ -185,6 +185,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - A `csam` match is escalated with no one having seen it (`source = hash_match`, the class and match type kept for the report); other matches wait for the controller (`escalation matches`, `escalation conferir`).
   - The escalation's purge now waits for the authority's validation (`escalation validated`), per Portaria MJSP 1.312/2026. The privacy notice says what leaves Brazil.
   - ⛔ Needs C3P's written answers and the registration (credentials into the service's environment), and counsel's confirmation.
+- [x] **5.9 Moderation capacity.** Done 2026-10-13, verified in the browser from the request to the first look at the queue.
+  - A public guide at `/moderacao` ("Como moderamos"): what to keep, what to remove asking for another photo, the weight of a removal, the note the person reads, child abuse material (never open again, copy or forward), intimate images, neutrality, privacy, and caring for oneself. Linked from the transparency report.
+  - A moderator accepts the current guide on their first visit to `/moderar`, and again when it changes (`MODERATION_GUIDE_VERSION`). Deciding and judging contests are refused until then; escalating child abuse never is.
+  - Members ask to moderate from Você (bairros and an optional note); the operator decides: `moderator applications`, `approve <apelido> [bairro…]`, `decline <apelido> <nota>`. `moderator volunteers` counts the confirmed waitlist sign-ups that offered to moderate, per bairro.
+  - The ten-minute job pushes to a bairro's moderators when cases there have waited more than three hours, at most every six hours each. Photos still waiting for the known-material check don't count.
 - [x] **5.9 Escalation of child abuse material** (round 20). Done 2026-10-13, verified end to end with test accounts.
   - one step from the queue or "Remover agora": removed, unviewable even to moderators, preserved, account suspended;
   - the controller's `bun --filter @fala/web escalation` covers list, reported, received, purge and contest.

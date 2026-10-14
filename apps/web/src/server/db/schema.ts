@@ -426,7 +426,44 @@ export const moderators = fala
     addedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
     /** Who added them and why: governance belongs to the associação. */
     addedBy: text().notNull(),
+    /** The moderation guide's version they accepted (features/moderation/guide-version.ts), and when. */
+    guideVersion: text(),
+    guideAcceptedAt: timestamp({ withTimezone: true }),
+    /** The last push about cases waiting too long, so it comes at most every few hours. */
+    alertedAt: timestamp({ withTimezone: true }),
   })
+  .enableRLS();
+
+export const applicationStatus = fala.enum("application_status", ["pending", "approved", "declined"]);
+
+/**
+ * A member asking to moderate (from Você). The operator decides (`moderator applications`, `approve`,
+ * `decline`): who moderates stays an operator's decision, as with `moderator:add`.
+ */
+export const moderatorApplications = fala
+  .table(
+    "moderator_applications",
+    {
+      id: uuid().primaryKey().defaultRandom(),
+      accountId: uuid()
+        .notNull()
+        .references(() => users.id, { onDelete: "cascade" }),
+      /** The bairros they offer to moderate. */
+      neighborhoods: text().array().notNull(),
+      /** Why they want to help, in their words (optional, up to 280 characters). */
+      note: text(),
+      status: applicationStatus().notNull().default("pending"),
+      createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+      decidedAt: timestamp({ withTimezone: true }),
+      decidedBy: text(),
+      decisionNote: text(),
+    },
+    (t) => [
+      uniqueIndex()
+        .on(t.accountId)
+        .where(sql`${t.status} = 'pending'`),
+    ],
+  )
   .enableRLS();
 
 /**

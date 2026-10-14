@@ -17,6 +17,7 @@
     "db:roles": "bun src/server/db/roles.ts",
     "moderator:add": "bun src/server/db/moderators.ts add",
     "moderator:remove": "bun src/server/db/moderators.ts remove",
+    "moderator": "bun src/server/db/moderators.ts",
     "requests": "bun src/server/db/requests.ts",
     "sanction": "bun src/server/db/sanction-cli.ts",
     "escalation": "bun src/server/db/escalation-cli.ts"
