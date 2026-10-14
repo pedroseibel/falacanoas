@@ -192,7 +192,7 @@ export function Relief({ deadline, className }: { deadline: number; className?: 
           dangerouslySetInnerHTML={{ __html: ART.svg }}
         />
         <div className="pointer-events-none absolute inset-x-4.5 bottom-4 z-1 flex items-center justify-between gap-3 font-mono text-micro text-muted-foreground">
-          <span aria-hidden="true" className="shrink-0 pointer-coarse:hidden">
+          <span aria-hidden="true" className="shrink-0 pointer-coarse:hidden max-compact:hidden">
             passe o mouse · ← →
           </span>
           <span ref={out} aria-hidden="true" className="ml-auto truncate text-ink-2 tabular-nums">

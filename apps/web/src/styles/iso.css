@@ -215,6 +215,31 @@
   --anatomy-mid: #8a8c92;
   --anatomy-faint: #45464c;
 }
+/* Text the object carries: engraved, in the measurement face. */
+.iso-face-text {
+  fill: var(--anatomy-mid);
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+.iso-face-text.rf-engraved {
+  letter-spacing: 0.22em;
+  font-weight: 500;
+}
+
+/* The bairros as panels of the model: a whisper of ink apart (of paper, in dark). */
+.rf-panel {
+  fill: var(--ink);
+  fill-opacity: 0;
+}
+.rf-panel[data-tone="1"] {
+  fill-opacity: 0.018;
+}
+.rf-panel[data-tone="2"] {
+  fill-opacity: 0.034;
+}
+.rf-panel[data-tone="3"] {
+  fill-opacity: 0.05;
+}
 .rf-home {
   fill: var(--signal-wash);
 }
