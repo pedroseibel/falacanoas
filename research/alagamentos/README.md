@@ -57,6 +57,15 @@ These are too few for a defensible threshold.
 - Bairro comparisons: 30 or more reports across several storms, normalised.
 - A model: hundreds of events.
 
+## Built (2026-10-26, BUILD section 6)
+
+- The emergency numbers, as instance config (6.0).
+- The rain archive: Cemaden's five gauges every 10 minutes into `fala.rain_readings` (6.1).
+- The three questions on "rua que alaga": the cause seen, rain at the time, how long the water stayed (6.2).
+- The day's rain at the nearest gauge on each flooding record and in the resumo (6.3): method 1's join, for one record at a time.
+
+Next on method 1: the per-street summary (distinct rain days with reports, first and last dates), once there are reports to summarise.
+
 ## Rules for publishing
 
 - **Observed and modelled never share a layer** or a colour scale. Modelled is labelled "estimativa, não é mapa de risco oficial".

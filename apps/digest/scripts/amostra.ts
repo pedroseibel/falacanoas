@@ -34,8 +34,22 @@ const PLACEHOLDER = "https://exemplo.invalid/foto/";
 const lend = [1, 0, 2, 0, 4, 0, 0, 3, 1, 0, 2];
 // Some residents give a ponto de referência; how one reads in a record.
 const references = ["em frente à parada de ônibus", "", "ao lado da praça", "", ""];
+// A street that floods, as one reads with the resident's answers and the day's rain. Fictional, like
+// every figure in the sample.
+const SAMPLE_RAIN = {
+  gauge: 7325,
+  name: "Mathias Velho",
+  agency: "Cemaden",
+  page: "https://resources.cemaden.gov.br/graficos/interativo/grafico_CEMADEN.php?idpcd=7325&uf=RS",
+  meters: 1240,
+  mm: 42.6,
+  until: new Date(sentAt.getTime() - 2 * 3600_000).toISOString(),
+};
 const day = picked.map((it, i): DigestItem => ({
   ...it,
+  ...(it.category === "alaga"
+    ? { flooding: it.flooding ?? { cause: "bueiro", raining: true, duration: "1_3h" }, rain: SAMPLE_RAIN }
+    : {}),
   ...(references[i % references.length] ? { reference: references[i % references.length] } : {}),
   demo: false,
   createdAt: new Date(sentAt.getTime() - (count - i) * 23 * 60_000 - 3600_000).toISOString(),

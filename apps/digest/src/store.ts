@@ -1,4 +1,12 @@
-import type { DigestItem, MonthlyReport, MonthlyRow } from "@fala/core";
+import {
+  itemRain,
+  rainWindow,
+  type DigestItem,
+  type FloodNotes,
+  type Municipality,
+  type MonthlyReport,
+  type MonthlyRow,
+} from "@fala/core";
 import { Client } from "pg";
 import type { ReplyStore, StoredReading } from "./replies";
 import type { DigestStore } from "./run";
@@ -20,6 +28,7 @@ interface PendingRow {
   text: string;
   reference: string | null;
   address: string | null;
+  flooding: FloodNotes | null;
   neighborhood: string | null;
   scope: DigestItem["scope"];
   confirmations: number;
@@ -31,6 +40,8 @@ export function pgStore(
   connectionString: string,
   actor: string,
   timezone: string,
+  /** For the day's rain on flooding records (BUILD 6.3); without it, none. */
+  muni?: Pick<Municipality, "categories" | "timezone" | "rain">,
 ): DigestStore & { close(): Promise<void> } {
   const client = new Client({ connectionString });
   const connected = client.connect();
@@ -38,12 +49,30 @@ export function pgStore(
     await connected;
     return (await client.query<T>(sql, params)).rows;
   };
+  /** The day's rain on the flooding records, from one read of the archive over their days. */
+  async function withRain(found: DigestItem[], m: NonNullable<typeof muni>): Promise<DigestItem[]> {
+    const windows = found.map((it) => rainWindow(m, it)).filter((w) => w !== null);
+    if (!windows.length) return found;
+    const from = new Date(Math.min(...windows.map((w) => w.from.getTime())));
+    const to = new Date(Math.max(...windows.map((w) => w.to.getTime())));
+    const readings = (
+      await q<{ gauge: number; observed_at: Date; acc24: number }>(
+        `select gauge, observed_at, acc24h::float8 as acc24 from fala.rain_readings where observed_at >= $1 and observed_at < $2`,
+        [from, to],
+      )
+    ).map((r) => ({ gauge: r.gauge, observedAt: r.observed_at, acc24: r.acc24 }));
+    return found.map((it) => {
+      const rain = itemRain(m, it, readings);
+      return rain ? { ...it, rain } : it;
+    });
+  }
+
   return {
     async pending() {
       const rows = await q<PendingRow>(
         // A report waits until moderation has looked at its photos: the Ouvidoria gets, in the Fala's
         // name, only what anyone can already see. Removed photos never go.
-        `select i.id, i.kind, i.category, i.title, i.text, i.reference, i.address, i.neighborhood, i.scope, i.confirmations, i.created_at,
+        `select i.id, i.kind, i.category, i.title, i.text, i.reference, i.address, i.flooding, i.neighborhood, i.scope, i.confirmations, i.created_at,
                 coalesce(array_agg(p.src order by p.position) filter (where p.review = 'approved'), '{}') as photos
            from fala.items i left join fala.item_photos p on p.item_id = i.id
           where i.sent_at is null and i.moderation = 'published' and not i.demo and i.kind = 'occurrence'
@@ -51,7 +80,7 @@ export function pgStore(
          having count(*) filter (where p.review = 'pending') = 0
           order by i.created_at`,
       );
-      return rows.map((r) => ({
+      const found: DigestItem[] = rows.map((r) => ({
         id: r.id,
         kind: r.kind,
         category: r.category,
@@ -72,7 +101,9 @@ export function pgStore(
         community: "reported",
         official: null,
         createdAt: r.created_at.toISOString(),
+        ...(r.flooding ? { flooding: r.flooding } : {}),
       }));
+      return muni ? withRain(found, muni) : found;
     },
     async nextNumber(year) {
       // The year by the instance's clock: a resumo sent at 18h on 31 December is that year's last.

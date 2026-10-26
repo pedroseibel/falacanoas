@@ -1,5 +1,13 @@
 import { describe, expect, test } from "bun:test";
-import { gaugePage, parseCemadenTime, readCemadenFeed, type RainSource } from "./rain";
+import {
+  dayRain,
+  gaugePage,
+  localDayBounds,
+  parseCemadenTime,
+  rainLine,
+  readCemadenFeed,
+  type RainSource,
+} from "./rain";
 
 // Entries as Cemaden's feed sent them on 2026-10-26 (trimmed to the fields read and one stranger).
 const feed = [
@@ -109,4 +117,70 @@ test("gaugePage names the station's own chart", () => {
     gauges: [],
   };
   expect(gaugePage(source, 7326)).toBe("https://x/grafico.php?idpcd=7326&uf=RS");
+});
+
+const r = (gauge: number, at: string, acc24: number) => ({ gauge, observedAt: new Date(at), acc24 });
+
+describe("the day's rain beside a flooding record", () => {
+  const source: RainSource = {
+    agency: "Cemaden",
+    feed: "f",
+    page: "https://cemaden.invalid/{id}",
+    gauges: [
+      { id: 7325, name: "Mathias Velho", place: "", at: [-51.19705, -29.89738] },
+      { id: 7324, name: "Rio Branco", place: "", at: [-51.19082, -29.9663] },
+    ],
+  };
+  // About 1 km from Mathias Velho, 7 km from Rio Branco.
+  const near: [number, number] = [-51.1873, -29.8943];
+
+  test("the nearest gauge's largest 24 h total that day", () => {
+    const day = dayRain(source, near, [
+      r(7325, "2026-06-17T18:00:00Z", 12.4),
+      r(7325, "2026-06-17T23:00:00Z", 69),
+      r(7325, "2026-06-18T02:00:00Z", 55.2),
+      r(7324, "2026-06-17T23:00:00Z", 90),
+    ]);
+    expect(day).toMatchObject({ gauge: 7325, name: "Mathias Velho", mm: 69, until: "2026-06-17T23:00:00.000Z" });
+    expect(day?.page).toBe("https://cemaden.invalid/7325");
+    expect(day?.meters).toBeGreaterThan(900);
+    expect(day?.meters).toBeLessThan(1100);
+  });
+
+  test("a silent gauge is passed over for the next nearest; none near, or none measured, is nothing", () => {
+    expect(dayRain(source, near, [r(7324, "2026-06-17T23:00:00Z", 30)])?.gauge).toBe(7324);
+    expect(dayRain(source, near, [])).toBeNull();
+    expect(dayRain(source, [-51.5, -29.9], [r(7325, "2026-06-17T23:00:00Z", 30)])).toBeNull();
+  });
+
+  test("a dry day is still a reading", () => {
+    expect(dayRain(source, near, [r(7325, "2026-06-17T23:00:00Z", 0)])?.mm).toBe(0);
+  });
+
+  test("the local day, as instants", () => {
+    const { from, to } = localDayBounds(new Date("2026-06-18T01:30:00Z"), "America/Sao_Paulo");
+    expect(from.toISOString()).toBe("2026-06-17T03:00:00.000Z");
+    expect(to.toISOString()).toBe("2026-06-18T03:00:00.000Z");
+  });
+
+  test("reads as observed, with its source and time", () => {
+    const base = {
+      gauge: 7325,
+      name: "Mathias Velho",
+      agency: "Cemaden",
+      page: "p",
+      meters: 1234,
+      until: "2026-06-17T23:10:00Z",
+    };
+    expect(rainLine({ ...base, mm: 69.2 }, "America/Sao_Paulo")).toEqual({
+      line: "Nesse dia, 69,2 mm em 24 h no pluviômetro Mathias Velho, a 1,2 km.",
+      source: "Cemaden, pluviômetro automático: o maior acumulado de 24 h medido nesse dia, às 20:10.",
+    });
+    expect(rainLine({ ...base, mm: 3, meters: 640 }, "America/Sao_Paulo").line).toBe(
+      "Nesse dia, 3 mm em 24 h no pluviômetro Mathias Velho, a 640 m.",
+    );
+    expect(rainLine({ ...base, mm: 0 }, "America/Sao_Paulo").line).toBe(
+      "Nesse dia, nenhuma chuva em 24 h no pluviômetro Mathias Velho, a 1,2 km.",
+    );
+  });
 });

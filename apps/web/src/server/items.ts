@@ -19,6 +19,7 @@ import { db, type Db } from "./db/client";
 import { itemAuthors, itemConfirmations, itemEvents, itemFollows, itemPhotos, items, itemVotes } from "./db/schema";
 import { itemFromRows, newPhotoRows, rowsForNewItem, type PhotoRow } from "./items-model";
 import { openPhotoCases } from "./moderation-store";
+import { rainForItem } from "./rain-day";
 
 /**
  * Items in Postgres (fala.items and its history tables). The account behind each item stays in
@@ -82,7 +83,9 @@ async function readItem(
       .orderBy(asc(itemEvents.at), asc(itemEvents.seq)),
     q.select(photoColumns).from(itemPhotos).where(eq(itemPhotos.itemId, id)).orderBy(asc(itemPhotos.position)),
   ]);
-  return itemFromRows(row, { events, photos: photos satisfies PhotoRow[] }, now, tz);
+  const item = itemFromRows(row, { events, photos: photos satisfies PhotoRow[] }, now, tz);
+  const rain = await rainForItem(q, item);
+  return rain ? { ...item, rain } : item;
 }
 
 /** One item with its whole history. Server-side callers that already decided access use this. */

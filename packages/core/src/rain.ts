@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { distance, localTime, zonedDate } from "./format";
+import { haversine } from "./geo";
 import type { LngLat } from "./types";
 
 /**
@@ -127,3 +129,88 @@ export function readCemadenFeed(
 
 /** A station's own page at the source, where anyone can check a reading. */
 export const gaugePage = (source: RainSource, gauge: number) => source.page.replace("{id}", String(gauge));
+
+/**
+ * The day's rain beside a flooding record (BUILD 6.3): from the nearest gauge that measured anything
+ * on the record's local day, the largest 24-hour accumulation it reported that day. Observed and
+ * sourced (the gauge, its distance, the time of the reading), never a cause or a forecast.
+ */
+export const RainDaySchema = z.object({
+  gauge: z.number().int(),
+  /** The gauge's name in its network: "Mathias Velho". */
+  name: z.string(),
+  /** Who measures it: "Cemaden". */
+  agency: z.string(),
+  /** The station's own page, where the reading can be checked. */
+  page: z.string(),
+  /** From the record's point to the gauge. */
+  meters: z.number().nonnegative(),
+  /** mm over the 24 hours up to `until`. */
+  mm: z.number().nonnegative(),
+  /** When the gauge measured it (ISO). */
+  until: z.string(),
+});
+export type RainDay = z.infer<typeof RainDaySchema>;
+
+/** Gauges farther than this say nothing about a street. */
+export const RAIN_MAX_METERS = 10_000;
+
+export interface DayReading {
+  gauge: number;
+  observedAt: Date;
+  acc24: number;
+}
+
+/** The day's rain for a point, from that day's readings (all gauges); null when none is near or none measured. */
+export function dayRain(source: RainSource, at: LngLat, readings: readonly DayReading[]): RainDay | null {
+  const gauges = source.gauges
+    .map((g) => ({ g, meters: haversine(at, g.at) }))
+    .filter((x) => x.meters <= RAIN_MAX_METERS)
+    .toSorted((a, b) => a.meters - b.meters);
+  for (const { g, meters } of gauges) {
+    const own = readings.filter((r) => r.gauge === g.id);
+    if (!own.length) continue;
+    // The largest total; on a tie, the latest reading.
+    const top = own.reduce((best, r) =>
+      r.acc24 > best.acc24 || (r.acc24 === best.acc24 && r.observedAt > best.observedAt) ? r : best,
+    );
+    return {
+      gauge: g.id,
+      name: g.name,
+      agency: source.agency,
+      page: gaugePage(source, g.id),
+      meters,
+      mm: top.acc24,
+      until: top.observedAt.toISOString(),
+    };
+  }
+  return null;
+}
+
+/** The record's local day, as instants: readings in [from, to) belong to it. */
+export function localDayBounds(at: Date, timezone: string): { from: Date; to: Date } {
+  const t = localTime(at, timezone);
+  const from = zonedDate({ year: t.year, month: t.month, day: t.day, hour: 0, minute: 0 }, timezone);
+  const next = new Date(Date.UTC(t.year, t.month - 1, t.day + 1));
+  const to = zonedDate(
+    { year: next.getUTCFullYear(), month: next.getUTCMonth() + 1, day: next.getUTCDate(), hour: 0, minute: 0 },
+    timezone,
+  );
+  return { from, to };
+}
+
+const mmText = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mm`;
+
+/**
+ * "Nesse dia, 42,6 mm em 24 h no pluviômetro Mathias Velho, a 1,2 km." and its source line, as the
+ * record and the resumo print them.
+ */
+export function rainLine(r: RainDay, timezone: string): { line: string; source: string } {
+  const where = `no pluviômetro ${r.name}, a ${distance(r.meters)}`;
+  const t = localTime(new Date(r.until), timezone);
+  const hh = `${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`;
+  return {
+    line: r.mm > 0 ? `Nesse dia, ${mmText(r.mm)} em 24 h ${where}.` : `Nesse dia, nenhuma chuva em 24 h ${where}.`,
+    source: `${r.agency}, pluviômetro automático: o maior acumulado de 24 h medido nesse dia, às ${hh}.`,
+  };
+}

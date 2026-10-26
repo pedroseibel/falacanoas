@@ -231,7 +231,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - Three optional questions on the types the instance marks `asks: "flooding"` (Canoas: "Rua que alaga toda chuva"): what the person saw (bueiro entupido, valeta cheia, casa de bombas parada, rio alto, não sei), whether it's raining now, and how long the water stayed (under 1 h, 1–3 h, over 3 h, still there). Core's `flooding.ts`.
   - The form asks them as choice chips under "Sobre a água"; tapping an answer again clears it. WhatsApp asks them after the ponto de referência, one at a time, each skipped with PULAR (there, "não" answers the rain question), and reads them back before publishing.
   - Stored in `items.flooding` (jsonb), only when something was answered; the record shows them under "Sobre a água, segundo quem registrou". Drafts queued on a phone before this change still go through. Not in the open data (the `dados` views name their columns).
-- [ ] **6.3 The day's rain on each flooding record**, from the nearest gauge, also in the resumo.
+- [x] **6.3 The day's rain on each flooding record.** Done 2026-10-26, verified on a record against the live archive and in the resumo's sample (veraPDF: PDF/UA-1 and PDF/A-2a pass).
+  - "Nesse dia, X mm em 24 h no pluviômetro Y, a Z km.", with its source under it: Cemaden, automatic gauge, the largest 24 h total measured that day and at what time, linking to the station's page. A dry day reads "nenhuma chuva em 24 h".
+  - The gauge is the nearest (within 10 km) that measured anything on the record's local day; one that was silent is passed over for the next. Read with the record (`rain-day.ts`), never stored, so it follows the archive.
+  - The resumo's record carries the resident's answers ("Segundo quem registrou: …") and this line, in the e-mail and the PDF. Records from before the archive (2026-10-26) have none.
 
 ## Founder inputs that unblock items
 

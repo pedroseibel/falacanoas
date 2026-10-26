@@ -1,4 +1,6 @@
+import { floodLines } from "./flooding";
 import { localTime, MONTHS_FULL_PT } from "./format";
+import { rainLine } from "./rain";
 import type { Item, Municipality } from "./types";
 
 /**
@@ -34,6 +36,10 @@ export interface DigestEntry {
   address: string | null;
   /** The resident's ponto de referência ("em frente à escola"). */
   reference: string | null;
+  /** On a street that floods, what the resident saw (core flooding.ts), one line each. */
+  water: { term: string; value: string }[];
+  /** On a street that floods, the day's rain at the nearest gauge, with its source (core rain.ts). */
+  rain: { line: string; source: string } | null;
   point: { lat: number; lng: number } | null;
   /** "12/10 às 14:20", local time. */
   registered: string | null;
@@ -150,6 +156,8 @@ export function digestDocument(
           place: it.scope.type === "place" ? it.scope.label : null,
           address: it.address ?? null,
           reference: it.reference ?? null,
+          water: it.flooding ? floodLines(it.flooding) : [],
+          rain: it.rain ? rainLine(it.rain, muni.timezone) : null,
           point: pointOf(it),
           registered: it.createdAt ? when(it.createdAt, muni.timezone) : null,
           confirmations: it.confirmations,
@@ -209,6 +217,10 @@ export function digestText(doc: DigestDocument, { attachment }: { attachment: bo
         ...(e.place ? [`   Lugar: ${e.place}`] : []),
         ...(e.address ? [`   Endereço aproximado: ${e.address}`] : []),
         ...(e.reference ? [`   Ponto de referência: ${e.reference}`] : []),
+        ...(e.water.length
+          ? [`   Segundo quem registrou: ${e.water.map((w) => `${w.term.toLowerCase()}: ${w.value}`).join("; ")}.`]
+          : []),
+        ...(e.rain ? [`   Chuva: ${e.rain.line} Fonte: ${e.rain.source}`] : []),
         ...(e.point ? [`   Local: ${e.point.lat.toFixed(5)}, ${e.point.lng.toFixed(5)} · ${osmLink(e.point)}`] : []),
         ...e.photos.map((src, i) => `   Foto ${i + 1}: ${src}`),
         `   ${[

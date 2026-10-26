@@ -325,7 +325,7 @@ export function ItemDetail({
 
         <p className="text-sm leading-relaxed text-ink-2 wrap-anywhere">{it.text}</p>
 
-        <FloodNotesSection notes={it.flooding} />
+        <FloodNotesSection notes={it.flooding} rain={it.rain} timezone={muni.timezone} />
 
         <section aria-labelledby="hist">
           <h3 id="hist" className="flex items-baseline justify-between text-sm font-semibold">

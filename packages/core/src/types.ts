@@ -11,7 +11,7 @@
  */
 import { z } from "zod";
 import { FloodNotesSchema } from "./flooding";
-import type { RainSource } from "./rain";
+import { RainDaySchema, type RainSource } from "./rain";
 
 export const LngLatSchema = z.tuple([z.number(), z.number()]);
 export type LngLat = z.infer<typeof LngLatSchema>;
@@ -104,6 +104,8 @@ export const ItemSchema = z.object({
   reference: z.string().optional(),
   /** What the reporter saw, on a type that asks it (core flooding.ts): cause, rain, how long. */
   flooding: FloodNotesSchema.optional(),
+  /** On a flooding record, the day's rain at the nearest gauge (core rain.ts), read with the record. */
+  rain: RainDaySchema.nullable().optional(),
   /**
    * Street and number near the point, looked up once when it was registered (OpenStreetMap's
    * Nominatim). Approximate: the point on the map is the truth.

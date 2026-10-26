@@ -24,3 +24,4 @@ export * from "./open-data";
 export * from "./sanctions";
 export * from "./rain";
 export * from "./flooding";
+export * from "./flood-rain";

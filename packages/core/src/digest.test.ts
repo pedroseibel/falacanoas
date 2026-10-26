@@ -156,6 +156,26 @@ describe("the e-mail text", () => {
     expect(text).toContain("   Endereço aproximado: Rua Tiradentes, 123\n   Ponto de referência: em frente à escola");
     expect(buildDigest([item("BBBBB")], muni, sentAt).text).not.toContain("Endereço");
   });
+  test("a street that floods carries what the resident saw and the day's rain, with its source", () => {
+    const flooded = item("CCCCC", {
+      flooding: { cause: "bombas", raining: true },
+      rain: {
+        gauge: 7325,
+        name: "Mathias Velho",
+        agency: "Cemaden",
+        page: "https://cemaden.invalid/7325",
+        meters: 1234,
+        mm: 69.2,
+        until: "2026-06-17T23:10:00Z",
+      },
+    });
+    const { text } = buildDigest([flooded], muni, sentAt);
+    expect(text).toContain("   Segundo quem registrou: o que viu: casa de bombas parada; na hora: estava chovendo.");
+    expect(text).toContain(
+      "   Chuva: Nesse dia, 69,2 mm em 24 h no pluviômetro Mathias Velho, a 1,2 km. Fonte: Cemaden, pluviômetro automático: o maior acumulado de 24 h medido nesse dia, às 20:10.",
+    );
+    expect(buildDigest([item("DDDDD")], muni, sentAt).text).not.toContain("Chuva:");
+  });
   test("mentions the PDF only when it's attached", () => {
     expect(buildDigest(items, muni, sentAt, { attachment: true }).text).toContain("Em anexo, o mesmo resumo em PDF");
     expect(buildDigest(items, muni, sentAt).text).not.toContain("Em anexo");

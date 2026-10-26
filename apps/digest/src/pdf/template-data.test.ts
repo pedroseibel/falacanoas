@@ -60,6 +60,32 @@ describe("templateData", () => {
     expect(meta.clock).toContain("13/10/2026 às 18:00");
   });
 
+  test("a street that floods: the resident's account in one sentence, and the gauge's reading with its source", () => {
+    const flooded = item("CCCCC", {
+      category: "alaga",
+      flooding: { cause: "valeta", duration: "ainda" },
+      rain: {
+        gauge: 7328,
+        name: "Marechal Rondon",
+        agency: "Cemaden",
+        page: "https://cemaden.invalid/7328",
+        meters: 820,
+        mm: 18.4,
+        until: "2026-10-13T19:10:00Z",
+      },
+    });
+    const doc = digestDocument([flooded, item("DDDDD")], canoas, sentAt, 1);
+    const entries = templateData(doc, assets(), { addressee, sample: false }).sections.flatMap((s) => s.entries);
+    const [water, plain] = [entries.find((e) => e.id === "CCCCC"), entries.find((e) => e.id === "DDDDD")];
+    expect(water?.water).toBe("o que viu: valeta cheia; a água: ainda não tinha baixado.");
+    expect(water?.rain).toEqual({
+      line: "Nesse dia, 18,4 mm em 24 h no pluviômetro Marechal Rondon, a 820 m.",
+      source: "Cemaden, pluviômetro automático: o maior acumulado de 24 h medido nesse dia, às 16:10.",
+    });
+    expect(plain?.water).toBeNull();
+    expect(plain?.rain).toBeNull();
+  });
+
   test("an entry's facts: street with distance, confirmations in words, photos only when something's missing", () => {
     const doc = digestDocument(
       [item("AAAAA", { confirmations: 3, photos: [{ src: "/api/fotos/a.webp", takenAt: "", by: "" }] }), item("BBBBB")],
