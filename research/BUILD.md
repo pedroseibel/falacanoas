@@ -240,7 +240,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - "Neste trecho, até 150 m: alagamento registrado em N dias diferentes, de D1 a D2.", with "Contam os registros e as fotos de alagamento publicados no Fala. Sem relatos não é sem alagamento." Core's `flood-history.ts`.
   - A day counts when a published flooding record was registered, or a photo approved on one, within 150 m; a confirmation without a photo doesn't. Real records with real, examples with examples. Shown from two days.
   - Read with the record (`flood-history.ts` in the app) and with the resumo's records (`store.ts`), never stored.
-- [ ] **6.6 "Chuva agora": the gauges, live on the map** (round 23). Each gauge's last hour and the time of the reading, refreshed every 10 minutes; tapped, its last 24 hours.
+- [x] **6.6 "Chuva agora": the gauges, live on the map** (round 23). Done 2026-10-26, verified in the browser (desktop and phone) against the live archive.
+  - With "Água" on, each gauge is a pill on the map with its last hour ("0 mm", ink when it's raining, dashed when it hasn't reported for 3 hours), a button that opens it.
+  - A panel lists them heaviest first (on a phone, a "Chuva agora · até X mm" pill opens it): the time of each reading, and, opened, the last 24 hours hour by hour, the 24 h total, the place and a link to the station at Cemaden. It says "Sem relatos não é sem alagamento" and carries the emergency line.
+  - `getRainNow` reads the archive (core's `rain-now.ts`); the browser polls it every 10 minutes and never reaches Cemaden itself.
 - [ ] **6.7 Known spots under a downpour** (round 23). Flooding records within about 2 km of a gauge past the heavy-rain mark stand out, with the rain and the stretch's days.
 - [ ] **6.8 Fresh reports that expire** (round 23). A flooding record or photo from the last 3 hours reads "relatado há …"; after 6 hours, an ordinary pin.
 

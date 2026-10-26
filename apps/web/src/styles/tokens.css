@@ -187,6 +187,51 @@
   border: 4px solid var(--ink);
   box-shadow: 0 0 0 7px color-mix(in srgb, var(--ink) 10%, transparent);
 }
+/* "Chuva agora" (DECISIONS round 23): a rain gauge with its last hour. Dry is a paper pill, raining
+   inverts to ink, a gauge without a recent reading is dashed. Never the signal colour: that is the
+   selected place's, and a gauge is a source, not a place. */
+.fc-gauge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px 5px 6px;
+  border: 1px solid var(--line-3);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--ink-2);
+  font: 600 0.75rem/1 var(--font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition:
+    box-shadow 160ms var(--ease-fluid),
+    background-color 160ms var(--ease-fluid);
+}
+.fc-gauge svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+.fc-gauge[data-rain="1"] {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+.fc-gauge[data-stale="1"] {
+  border-style: dashed;
+  color: var(--ink-3);
+  box-shadow: none;
+}
+.fc-gauge[aria-pressed="true"] {
+  box-shadow:
+    0 0 0 2px var(--panel),
+    0 0 0 4px var(--ink);
+}
+.fc-gauge:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
 
 /* An inverted band inside a light page (the landing's Placar): the dark scale scoped to one section.
    In dark mode it lifts a step instead, so the band still reads as its own surface. */

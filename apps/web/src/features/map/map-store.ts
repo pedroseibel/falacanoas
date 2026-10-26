@@ -1,4 +1,4 @@
-import type { Item } from "@fala/core";
+import type { GaugeNow, Item } from "@fala/core";
 import { createStore } from "@tanstack/react-store";
 
 export type PinMode = "pontos" | "dias" | "bairros";
@@ -13,6 +13,10 @@ export interface MapState {
   hoveredId: string | null;
   pinMode: PinMode;
   dark: boolean;
+  /** "Chuva agora" (round 23): the gauges while the map shows "Água"; empty otherwise. */
+  gauges: GaugeNow[];
+  /** The gauge opened in the "Chuva agora" panel. */
+  selectedGauge: number | null;
 }
 
 /**
@@ -27,6 +31,8 @@ export const mapStore = createStore<MapState>({
   hoveredId: null,
   pinMode: "pontos",
   dark: false,
+  gauges: [],
+  selectedGauge: null,
 });
 
 export const setMapState = (patch: Partial<MapState>) => {

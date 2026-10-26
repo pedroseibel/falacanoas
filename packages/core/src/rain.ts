@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { distance, localTime, zonedDate } from "./format";
 import { haversine } from "./geo";
+import { mmLabel } from "./rain-now";
 import type { LngLat } from "./types";
 
 /**
@@ -199,8 +200,6 @@ export function localDayBounds(at: Date, timezone: string): { from: Date; to: Da
   return { from, to };
 }
 
-const mmText = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mm`;
-
 /**
  * "Nesse dia, 42,6 mm em 24 h no pluviômetro Mathias Velho, a 1,2 km." and its source line, as the
  * record and the resumo print them.
@@ -210,7 +209,7 @@ export function rainLine(r: RainDay, timezone: string): { line: string; source: 
   const t = localTime(new Date(r.until), timezone);
   const hh = `${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`;
   return {
-    line: r.mm > 0 ? `Nesse dia, ${mmText(r.mm)} em 24 h ${where}.` : `Nesse dia, nenhuma chuva em 24 h ${where}.`,
+    line: r.mm > 0 ? `Nesse dia, ${mmLabel(r.mm)} em 24 h ${where}.` : `Nesse dia, nenhuma chuva em 24 h ${where}.`,
     source: `${r.agency}, pluviômetro automático: o maior acumulado de 24 h medido nesse dia, às ${hh}.`,
   };
 }

@@ -1,4 +1,4 @@
-import { itemLngLat, isOpen, type Item, type Municipality, type Viewer } from "@fala/core";
+import { itemLngLat, isOpen, mmLabel, type GaugeNow, type Item, type Municipality, type Viewer } from "@fala/core";
 import type {
   ExpressionSpecification,
   GeoJSONSource,
@@ -94,6 +94,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
 
   let selMarker: Marker | null = null;
   let hovMarker: Marker | null = null;
+  let gaugeMarkers: Marker[] = [];
 
   const itemsSource = (): GeoJSONSource | null => {
     const s = map.getSource("items");
@@ -285,6 +286,29 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     if (p) hovMarker = marker("fc-hovpin", "", p, "center");
   }
 
+  /**
+   * "Chuva agora" (round 23): each gauge as a pill with its last hour, a button that opens it in the
+   * panel. HTML markers sit above the canvas, so they survive a style switch.
+   */
+  function applyGauges(s: MapState) {
+    for (const m of gaugeMarkers) m.remove();
+    gaugeMarkers = s.gauges.map((g) => {
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "fc-gauge";
+      el.dataset.rain = !g.stale && (g.lastHour ?? 0) > 0 ? "1" : "0";
+      el.dataset.stale = g.stale ? "1" : "0";
+      el.setAttribute("aria-pressed", String(s.selectedGauge === g.id));
+      el.setAttribute("aria-label", gaugeLabel(g));
+      el.innerHTML = `${RAIN_GLYPH}<span>${g.stale || g.lastHour === null ? "—" : mmLabel(g.lastHour)}</span>`;
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setGauge(mapStore.state.selectedGauge === g.id ? null : g.id);
+      });
+      return new ml.Marker({ element: el, anchor: "center" }).setLngLat(g.at).addTo(map);
+    });
+  }
+
   map.on("style.load", addLayers);
   map.on("click", "clusters", (e) => {
     const f = e.features?.[0];
@@ -332,7 +356,9 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     if (next.selectedId !== prev.selectedId || next.focusId !== prev.focusId) applySelection(next, true);
     else if (next.visible !== prev.visible) applySelection(next, false);
     if (next.hoveredId !== prev.hoveredId) applyHover(next);
+    if (next.gauges !== prev.gauges || next.selectedGauge !== prev.selectedGauge) applyGauges(next);
   });
+  applyGauges(state);
 
   const api: MapControls = {
     zoomBy: (d: number) => map.zoomTo(map.getZoom() + d, { duration: 300 }),
@@ -350,6 +376,18 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     map.remove();
   };
 }
+
+/** lucide's cloud-rain, at the marker's size. */
+const RAIN_GLYPH =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>';
+
+/** What a screen reader hears on a gauge: its name, its last hour and when, or that it's silent. */
+export function gaugeLabel(g: GaugeNow): string {
+  if (g.stale || g.lastHour === null) return `Pluviômetro ${g.name}: sem leitura recente`;
+  return `Pluviômetro ${g.name}: ${mmLabel(g.lastHour)} na última hora`;
+}
+
+const setGauge = (id: number | null) => mapStore.setState((prev) => ({ ...prev, selectedGauge: id }));
 
 export interface MapControls {
   zoomBy: (d: number) => void;

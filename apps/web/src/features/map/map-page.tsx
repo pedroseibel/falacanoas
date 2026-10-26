@@ -15,6 +15,7 @@ import { mapControls } from "./map-engine";
 import { mapStore, setMapState, type PinMode } from "./map-store";
 import type { PinIntent } from "./pin-intent";
 import { MapView } from "./map-view";
+import { RainPanel, RainPill } from "./rain-panel";
 import { ListRail, SwipeRail } from "./rail";
 import type { MapSearch, Sort } from "./selectors";
 
@@ -307,6 +308,11 @@ export function MapPage({
               </InputGroupAddon>
             </InputGroup>
             <FilterChips muni={muni} value={filter} onChange={setFilter} />
+            {filter === "agua" && (
+              <div className="justify-self-start">
+                <RainPill muni={muni} />
+              </div>
+            )}
           </div>
         ) : (
           <div className="absolute top-3.5 left-3.5 z-10">
@@ -314,7 +320,7 @@ export function MapPage({
           </div>
         )}
         <MapControls />
-        <Legend />
+        {filter === "agua" && !phone ? <RainPanel muni={muni} /> : <Legend />}
       </div>
 
       {phone && (
