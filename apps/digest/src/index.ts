@@ -3,7 +3,8 @@ import { canoas } from "@fala/instance-canoas";
 import { Elysia } from "elysia";
 import { loadConfig } from "./config";
 import type { RunResult } from "./run";
-import { digestNow, monthlyNow, replyNow, type MonthlyOutcome } from "./service";
+import type { RainResult } from "./rain";
+import { digestNow, monthlyNow, rainNow, replyNow, type MonthlyOutcome } from "./service";
 
 /**
  * The daily digest to the Ouvidoria (DECISIONS round 5; BUILD 3.1): every day at the instance's
@@ -41,6 +42,17 @@ async function runMonthly(trigger: string, month?: string) {
 
 const scheduled = config.mode === "production";
 
+/** The rain archive (BUILD 6.1): Cemaden's gauges every 10 minutes, a little after they report. */
+const rainPattern = "2-59/10 * * * *";
+let lastRain: { at: string; result: RainResult } | null = null;
+
+async function runRain() {
+  const at = new Date();
+  const result = await rainNow(config, at).catch((e): RainResult => ({ ok: false, error: "fetch", detail: String(e) }));
+  lastRain = { at: at.toISOString(), result };
+  if (!result.ok || result.missing.length) console.log(JSON.stringify({ chuva: "cron", at: lastRain.at, ...result }));
+}
+
 new Elysia()
   .use(cron({ name: "resumo", pattern, timezone: canoas.timezone, paused: !scheduled, run: () => run("cron") }))
   .use(
@@ -52,12 +64,14 @@ new Elysia()
       run: () => void runMonthly("cron"),
     }),
   )
+  .use(cron({ name: "chuva", pattern: rainPattern, timezone: canoas.timezone, paused: !config.rain, run: runRain }))
   .get("/saude", ({ store }) => ({
     mode: config.mode,
     schedule: scheduled ? `${pattern} (${canoas.timezone})` : null,
     next: scheduled ? (store.cron.resumo.nextRun()?.toISOString() ?? null) : null,
     monthly: scheduled ? (store.cron.mensal.nextRun()?.toISOString() ?? null) : null,
     last,
+    rain: config.rain ? { next: store.cron.chuva.nextRun()?.toISOString() ?? null, last: lastRain } : null,
   }))
   .post("/resumo", async ({ headers, status }) => {
     if (!config.token || headers.authorization !== `Bearer ${config.token}`) return status(401, "Não autorizado.");

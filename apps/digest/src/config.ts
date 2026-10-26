@@ -56,6 +56,11 @@ export interface Config {
    * for Cloudflare Email Routing). Without it, no reply arriving by HTTP is applied on its own.
    */
   authserv: string | null;
+  /**
+   * Whether the rain archive runs every 10 minutes (BUILD 6.1). Always in production; in development
+   * only with DIGEST_RAIN=1, since the archive is the same table either way.
+   */
+  rain: boolean;
 }
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
@@ -74,6 +79,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     cacheDir: env.DIGEST_CACHE || fileURLToPath(new URL("../cache", import.meta.url)),
     repliesToken: env.DIGEST_REPLIES_TOKEN ?? "",
     authserv: env.DIGEST_AUTHSERV || null,
+    rain: !dev || env.DIGEST_RAIN === "1",
   };
   const missing = [
     !config.databaseUrl && "DIGEST_DATABASE_URL",

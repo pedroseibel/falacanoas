@@ -7,6 +7,7 @@ import { renderMonthly } from "./pdf/monthly";
 import { sitePhotos } from "./pdf/photos";
 import { renderPdf } from "./pdf/render";
 import { openFreeMap } from "./pdf/tiles";
+import { archiveRain, pgRainStore, type RainResult } from "./rain";
 import { readMail, takeReply, type ReplyOutcome, type Senders } from "./replies";
 import { runDigest, type RunResult } from "./run";
 import { pgMonthlyStore, pgReplyStore, pgStore } from "./store";
@@ -70,6 +71,17 @@ export async function monthlyNow(config: Config, now = new Date(), month?: strin
     if (!(await store.keep({ report, generatedAt: now, pdf, sha256 })))
       return { ok: false, month: key, error: "built" };
     return { ok: true, month: key, bodies: report.bodies.length, bytes: pdf.byteLength, pdf };
+  } finally {
+    await store.close();
+  }
+}
+
+/** One read of the rain gauges' live feed into the archive. */
+export async function rainNow(config: Config, now = new Date()): Promise<RainResult> {
+  if (!canoas.rain) return { ok: false, error: "feed", detail: "a instância não tem pluviômetros" };
+  const store = pgRainStore(config.databaseUrl);
+  try {
+    return await archiveRain(canoas.rain, { fetch, store }, now);
   } finally {
     await store.close();
   }

@@ -222,7 +222,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 ## 6. Rain flooding (research/alagamentos)
 
 - [x] **6.0 Emergency numbers.** Done 2026-10-26. The report form, the FAQ and the landing footer read `emergency` from the instance: Defesa Civil de Canoas 24 h, (51) 98255-0805 (phone and WhatsApp), Bombeiros 193, and alerts by SMS to 40199 with the CEP. "Defesa Civil 199" is gone: the Prefeitura's page lists 199 as the Polícia Civil. A test keeps it out until the SDCRC confirms it.
-- [ ] **6.1 Rain gauge archive.** The five Cemaden gauges in Canoas, every 10 minutes, from the live feed.
+- [x] **6.1 Rain gauge archive.** Done 2026-10-26, verified against the live feed (five readings kept, none twice).
+  - The instance's `rain`: Cemaden's five gauges in Canoas (7324–7328), named as in Cemaden's feed, placed from GeoCanoas's `Pluviometro` layer, with the feed and each station's page.
+  - Core's `rain.ts` reads the feed: the last 10-minute value and the 1–96 h accumulations, times in UTC. Cemaden writes "-" for a window with no rain (never a numeric 0), read as 0 mm.
+  - apps/digest reads it every 10 minutes (`2-59/10`) into `fala.rain_readings`, one row per gauge per time it measured, so a silent gauge adds nothing and a repeated run nothing twice. `/saude` shows the last run. Development schedules it only with `DIGEST_RAIN=1`; `bun --filter @fala/digest chuva` reads once.
+  - ⛔ The archive only grows while the service runs: until apps/digest is deployed, run it somewhere with `DIGEST_RAIN=1`. Within 96 h a gap still has its totals; older is lost.
 - [ ] **6.2 Questions on "rua que alaga".** The cause seen, whether it's raining, how long the water stayed.
 - [ ] **6.3 The day's rain on each flooding record**, from the nearest gauge, also in the resumo.
 

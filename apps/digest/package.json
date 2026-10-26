@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit -p .",
     "respostas": "bun src/respostas.ts",
     "amostra-mensal": "bun scripts/amostra-mensal.ts",
-    "mensal": "bun src/mensal.ts"
+    "mensal": "bun src/mensal.ts",
+    "chuva": "bun src/chuva.ts"
   },
   "dependencies": {
     "@elysiajs/cron": "1.4.2",

@@ -85,6 +85,20 @@ export const canoas = defineMunicipality({
     fire: { display: "193", tel: "193" },
     alertsSms: { number: "40199", how: "envie o seu CEP" },
   },
+  // research/alagamentos: Cemaden's five automatic gauges in Canoas. Names as in Cemaden's feed;
+  // places and points from GeoCanoas's Defesa_Civil/Pluviometro layer (2026-10-26).
+  rain: {
+    agency: "Cemaden",
+    feed: "https://resources.cemaden.gov.br/graficos/interativo/getJson2.php?uf=RS",
+    page: "https://resources.cemaden.gov.br/graficos/interativo/grafico_CEMADEN.php?idpcd={id}&uf=RS",
+    gauges: [
+      { id: 7324, name: "Rio Branco", place: "Hermes da Fonseca, 1420", at: [-51.19082, -29.9663] },
+      { id: 7325, name: "Mathias Velho", place: "Curitiba, 1551", at: [-51.19705, -29.89738] },
+      { id: 7326, name: "Estância Velha", place: "Flores da Cunha, 58", at: [-51.13578, -29.92661] },
+      { id: 7327, name: "São Luís", place: "Ozanam, 3600 (usina de asfalto)", at: [-51.14271, -29.8778] },
+      { id: 7328, name: "Marechal Rondon", place: "Corpo de Bombeiros, N. S. das Graças", at: [-51.16989, -29.92496] },
+    ],
+  },
 });
 
 export default canoas;

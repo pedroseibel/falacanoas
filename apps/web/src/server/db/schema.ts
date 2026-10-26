@@ -9,6 +9,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgSchema,
   primaryKey,
   text,
@@ -931,5 +932,39 @@ export const nickReservations = fala
       releasedAt: at(),
     },
     (t) => [index().on(t.ownerId)],
+  )
+  .enableRLS();
+
+/** mm of rain, to the tenth the gauges measure (0.2 mm tips). */
+const mm = () => numeric({ precision: 6, scale: 1, mode: "number" });
+
+/**
+ * The municipality's automatic rain gauges, archived from Cemaden's live feed every 10 minutes by
+ * apps/digest (research/alagamentos; core rain.ts): one row per gauge per time it measured, so a
+ * gauge that stops transmitting adds nothing. Cemaden keeps no public history; this is the city's.
+ * Public measurements, not residents' data.
+ */
+export const rainReadings = fala
+  .table(
+    "rain_readings",
+    {
+      /** Cemaden's station id (instance config `rain.gauges`). */
+      gauge: integer().notNull(),
+      /** When the gauge measured it. */
+      observedAt: timestamp({ withTimezone: true }).notNull(),
+      /** The last 10-minute value. */
+      last: mm(),
+      acc1h: mm().notNull(),
+      acc3h: mm().notNull(),
+      acc6h: mm().notNull(),
+      acc12h: mm().notNull(),
+      acc24h: mm().notNull(),
+      acc48h: mm().notNull(),
+      acc72h: mm().notNull(),
+      acc96h: mm().notNull(),
+      /** When the archive read it from the feed. */
+      fetchedAt: timestamp({ withTimezone: true }).notNull(),
+    },
+    (t) => [primaryKey({ columns: [t.gauge, t.observedAt] })],
   )
   .enableRLS();

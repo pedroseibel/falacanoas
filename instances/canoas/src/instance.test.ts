@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { itemLngLat, neighborhoodAt } from "@fala/core";
+import { itemLngLat, neighborhoodAt, pointInGeometry } from "@fala/core";
 import { canoas } from "./index";
 import { fixtures } from "./fixtures";
 
@@ -50,4 +50,14 @@ describe("demo fixtures", () => {
     expect(civilDefense.tel).not.toBe("199");
     expect(alertsSms?.number).toBe("40199");
   });
+});
+
+test("the rain gauges are Cemaden's five in Canoas, each inside the municipality", () => {
+  const rain = canoas.rain;
+  expect(rain?.gauges.map((g) => g.id)).toEqual([7324, 7325, 7326, 7327, 7328]);
+  for (const g of rain?.gauges ?? []) {
+    expect(g.name.length).toBeGreaterThan(0);
+    expect(canoas.geo.boundary.features.some((f) => pointInGeometry(g.at, f.geometry))).toBe(true);
+  }
+  expect(rain?.page).toContain("{id}");
 });

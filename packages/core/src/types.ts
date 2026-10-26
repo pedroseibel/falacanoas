@@ -10,6 +10,7 @@
  * (JSON, fixtures, API rows) is parsed with these schemas, never cast.
  */
 import { z } from "zod";
+import type { RainSource } from "./rain";
 
 export const LngLatSchema = z.tuple([z.number(), z.number()]);
 export type LngLat = z.infer<typeof LngLatSchema>;
@@ -282,6 +283,11 @@ export interface Municipality {
     /** Official alerts by SMS (the national 40199 service: send the CEP). */
     alertsSms?: { number: string; how: string };
   };
+  /**
+   * The automatic rain gauges in the municipality and where their live feed is (research/alagamentos).
+   * The digest service archives it every 10 minutes; flooding records cite the nearest gauge.
+   */
+  rain?: RainSource;
 }
 
 export interface EmergencyLine {
