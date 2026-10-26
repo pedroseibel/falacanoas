@@ -27,7 +27,8 @@ export function readReportFormData(fd: FormData): unknown {
   } catch {
     return null;
   }
-  return typeof fields === "object" && fields !== null ? { ...fields, photos: fd.getAll("photo") } : null;
+  // A draft queued on a phone before the flooding questions existed comes without them.
+  return typeof fields === "object" && fields !== null ? { flooding: {}, ...fields, photos: fd.getAll("photo") } : null;
 }
 
 /** "Confirmar e adicionar sua foto": the existing item, how to sign, and the photos already picked. */

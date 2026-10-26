@@ -41,6 +41,7 @@ import { textLink } from "@/features/landing/bits";
 import { Input } from "@/components/ui/input";
 import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
+import { FloodNotesSection } from "./flood-notes";
 import { PhotoViewer } from "./photo-viewer";
 import { whereOf } from "@/features/map/item-card";
 import { openContentReport } from "@/features/moderation/content-report-store";
@@ -323,6 +324,8 @@ export function ItemDetail({
         {member && <RemovalNotices it={it} />}
 
         <p className="text-sm leading-relaxed text-ink-2 wrap-anywhere">{it.text}</p>
+
+        <FloodNotesSection notes={it.flooding} />
 
         <section aria-labelledby="hist">
           <h3 id="hist" className="flex items-baseline justify-between text-sm font-semibold">

@@ -10,6 +10,7 @@
  * (JSON, fixtures, API rows) is parsed with these schemas, never cast.
  */
 import { z } from "zod";
+import { FloodNotesSchema } from "./flooding";
 import type { RainSource } from "./rain";
 
 export const LngLatSchema = z.tuple([z.number(), z.number()]);
@@ -101,6 +102,8 @@ export const ItemSchema = z.object({
   scope: ScopeSchema,
   /** The resident's ponto de referência ("em frente à escola"), when they gave one. */
   reference: z.string().optional(),
+  /** What the reporter saw, on a type that asks it (core flooding.ts): cause, rain, how long. */
+  flooding: FloodNotesSchema.optional(),
   /**
    * Street and number near the point, looked up once when it was registered (OpenStreetMap's
    * Nominatim). Approximate: the point on the map is the truth.
@@ -227,6 +230,8 @@ export interface Category {
   /** Public body responsible, as far as the instance knows. */
   agency: string | null;
   kind: ItemKind;
+  /** Extra questions this type asks (core flooding.ts for "flooding"). */
+  asks?: "flooding";
 }
 
 export interface FilterGroup {

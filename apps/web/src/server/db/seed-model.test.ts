@@ -12,6 +12,7 @@ function stored(row: ReturnType<typeof seedRows>["row"]): ItemRow {
   return {
     text: "",
     reference: null,
+    flooding: null,
     address: null,
     neighborhood: null,
     lng: null,
@@ -144,6 +145,18 @@ describe("rowsForNewItem", () => {
     expect(back.sentAt).toBeNull();
     expect(back.events?.[0]?.at).toBe("hoje · 15:00");
     expect(back.photos[0]?.takenAt).toBe("hoje · 15:00");
+  });
+
+  test("the water answers are stored and read back; a report without them stores null", () => {
+    const base = fixtures.items.find((it) => it.flooding);
+    if (!base) throw new Error("sem exemplo com respostas sobre a água");
+    const rows = rowsForNewItem(base, now);
+    expect(rows.row.flooding).toEqual(base.flooding ?? null);
+    expect(itemFromRows(stored(rows.row), { photos: [] }, now, tz).flooding).toEqual(base.flooding);
+    const plain = rowsForNewItem({ ...base, flooding: undefined }, now);
+    expect(plain.row.flooding).toBeNull();
+    expect(itemFromRows(stored(plain.row), { photos: [] }, now, tz)).not.toHaveProperty("flooding");
+    expect(seedRows(base, now, canoas).row.flooding).toEqual(base.flooding ?? null);
   });
 });
 

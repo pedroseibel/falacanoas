@@ -197,6 +197,13 @@
       "when": 1793040028227,
       "tag": "0027_rain_readings",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1793040414123,
+      "tag": "0028_item_flooding",
+      "breakpoints": true
     }
   ]
 }

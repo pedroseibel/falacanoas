@@ -1,4 +1,4 @@
-import { ReportReasonSchema, type FollowPlace, type Scope } from "@fala/core";
+import { ReportReasonSchema, type FloodNotes, type FollowPlace, type Scope } from "@fala/core";
 import { sql } from "drizzle-orm";
 import {
   bigint,
@@ -114,6 +114,8 @@ export const items = fala
        * again, never in a job). Null when there's no point, or the lookup found nothing.
        */
       address: text(),
+      /** On a type that asks it, what the reporter saw: cause, rain, how long (core flooding.ts). */
+      flooding: jsonb().$type<FloodNotes>(),
       neighborhood: text(),
       /** Point, place, bairro or city (core's ScopeSchema). */
       scope: jsonb().$type<Scope>().notNull(),

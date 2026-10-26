@@ -1,3 +1,4 @@
+import { FLOOD_CAUSES, FLOOD_DURATIONS, asksFlooding, floodLines, type FloodNotes } from "./flooding";
 import { neighborhoodAt } from "./geo";
 import { REPORT } from "./report";
 import type { LngLat, Municipality } from "./types";
@@ -15,7 +16,17 @@ export type WaMessage =
   | { kind: "image"; mediaId: string; caption?: string }
   | { kind: "location"; lat: number; lng: number };
 
-export type ReportStep = "photos" | "location" | "category" | "text" | "reference" | "duplicate" | "confirm";
+export type ReportStep =
+  | "photos"
+  | "location"
+  | "category"
+  | "text"
+  | "reference"
+  | "flood_cause"
+  | "flood_rain"
+  | "flood_time"
+  | "duplicate"
+  | "confirm";
 
 export interface ReportDraft {
   /** The provider's media ids, in the order sent. */
@@ -25,6 +36,8 @@ export interface ReportDraft {
   text: string;
   /** The ponto de referência ("em frente à escola"), optional. */
   reference: string;
+  /** On a type that asks them (a street that floods), what the person saw; all optional. */
+  flooding: FloodNotes;
   /** A nearby open problem of the same type, offered before publishing. */
   duplicate: { id: string; meters: number } | null;
 }
@@ -70,6 +83,8 @@ const isSkip = (t: string) => /^(pular|pula|nao|sem texto)$/.test(norm(t));
 const isDone = (t: string) => /^(pronto|so isso|ok|seguir|proximo)$/.test(norm(t));
 const isYes = (t: string) => /^(sim|s|publicar|confirmar)$/.test(norm(t));
 const isAnonymous = (t: string) => /^(anonimo|anonima|sem nome)$/.test(norm(t));
+const isNo = (t: string) => /^(nao|n|nao esta|nao chove)$/.test(norm(t));
+const isSkipOnly = (t: string) => /^(pular|pula)$/.test(norm(t));
 
 /** The types a resident can register here: problems, not questões públicas (those need the app). */
 export const whatsappCategories = (muni: Municipality) => muni.categories.filter((c) => c.kind === "occurrence");
@@ -85,7 +100,7 @@ const ASK_LOCATION = `Agora o lugar: ${HOW_LOCATION}`;
 
 const fresh = (now: number): ReportSession => ({
   step: "photos",
-  draft: { photos: [], location: null, category: null, text: "", reference: "", duplicate: null },
+  draft: { photos: [], location: null, category: null, text: "", reference: "", flooding: {}, duplicate: null },
   updatedAt: now,
 });
 
@@ -95,14 +110,28 @@ const at = (session: ReportSession, now: number, patch: Partial<ReportSession>):
   updatedAt: now,
 });
 
+const numbered = (options: { label: string }[]) => options.map((o, i) => `${i + 1}. ${o.label}`).join("\n");
+const ASK_CAUSE = `O que você viu? Responda com o número:\n${numbered(FLOOD_CAUSES)}\n\nOu PULAR.`;
+const ASK_RAIN = "Está chovendo agora? Responda SIM ou NÃO, ou PULAR.";
+const ASK_TIME = `Quanto tempo a água ficou? Responda com o número:\n${numbered(FLOOD_DURATIONS)}\n\nOu PULAR.`;
+
+/** The option a numbered answer picks, if any. */
+const pick = <T>(options: T[], msg: WaMessage): T | undefined => {
+  const n = msg.kind === "text" ? Number(norm(msg.text)) : Number.NaN;
+  return Number.isInteger(n) ? options[n - 1] : undefined;
+};
+
 /** The draft, read back before publishing. */
 export function summary(draft: ReportDraft, muni: Municipality): string {
   const category = muni.categories.find((c) => c.key === draft.category)?.label ?? "—";
   const bairro = draft.location
     ? muni.neighborhoods.find((n) => n.slug === neighborhoodAt(draft.location ?? [0, 0], muni.geo.neighborhoods))?.name
     : null;
+  const water = floodLines(draft.flooding)
+    .map((l) => `${l.term.toLowerCase()}: ${l.value}`)
+    .join("; ");
   return [
-    `Confira: ${category}${bairro ? ` em ${bairro}` : ""}${draft.reference ? ` (${draft.reference})` : ""}, ${draft.photos.length === 1 ? "1 foto" : `${draft.photos.length} fotos`}${draft.text ? `, “${draft.text}”` : ""}.`,
+    `Confira: ${category}${bairro ? ` em ${bairro}` : ""}${draft.reference ? ` (${draft.reference})` : ""}, ${draft.photos.length === 1 ? "1 foto" : `${draft.photos.length} fotos`}${draft.text ? `, “${draft.text}”` : ""}.${water ? ` Sobre a água, ${water}.` : ""}`,
     "Responda SIM para publicar com o seu apelido, ou ANÔNIMO para aparecer como Anônimo (a sua conta continua ligada ao registro, para evitar abuso). CANCELAR desiste.",
   ].join("\n\n");
 }
@@ -189,8 +218,34 @@ export function reportTurn(session: ReportSession | null, msg: WaMessage, muni: 
       const reference = isSkip(msg.text) ? "" : msg.text.trim();
       if (reference.length > REPORT.maxReference)
         return { session: s, reply: `Use no máximo ${REPORT.maxReference} caracteres (foram ${reference.length}).` };
-      // The app looks for a similar open problem nearby before anything is published.
-      return { session: at(s, now, { draft: { ...s.draft, reference } }), reply: null, need: { kind: "check" } };
+      if (asksFlooding(muni, s.draft.category ?? ""))
+        return {
+          session: at(s, now, { step: "flood_cause", draft: { ...s.draft, reference } }),
+          reply: `Três perguntas rápidas sobre a água, todas opcionais. Elas ajudam a entender por que a rua alaga.\n\n${ASK_CAUSE}`,
+        };
+      return check(at(s, now, { draft: { ...s.draft, reference } }));
+    }
+    case "flood_cause": {
+      const skip = msg.kind === "text" && isSkipOnly(msg.text);
+      const chosen = pick(FLOOD_CAUSES, msg);
+      if (!skip && !chosen) return { session: s, reply: ASK_CAUSE };
+      const flooding = { ...s.draft.flooding, ...(chosen ? { cause: chosen.key } : {}) };
+      return { session: at(s, now, { step: "flood_rain", draft: { ...s.draft, flooding } }), reply: ASK_RAIN };
+    }
+    case "flood_rain": {
+      const text = msg.kind === "text" ? msg.text : "";
+      // "Não" answers the question here; only PULAR skips it.
+      const raining = isYes(text) ? true : isNo(text) ? false : undefined;
+      if (raining === undefined && !isSkipOnly(text)) return { session: s, reply: ASK_RAIN };
+      const flooding = { ...s.draft.flooding, ...(raining === undefined ? {} : { raining }) };
+      return { session: at(s, now, { step: "flood_time", draft: { ...s.draft, flooding } }), reply: ASK_TIME };
+    }
+    case "flood_time": {
+      const skip = msg.kind === "text" && isSkipOnly(msg.text);
+      const chosen = pick(FLOOD_DURATIONS, msg);
+      if (!skip && !chosen) return { session: s, reply: ASK_TIME };
+      const flooding = { ...s.draft.flooding, ...(chosen ? { duration: chosen.key } : {}) };
+      return check(at(s, now, { draft: { ...s.draft, flooding } }));
     }
     case "duplicate": {
       const choice = msg.kind === "text" ? norm(msg.text) : "";
@@ -222,6 +277,9 @@ export function reportTurn(session: ReportSession | null, msg: WaMessage, muni: 
     }
   }
 }
+
+/** The app looks for a similar open problem nearby before anything is published. */
+const check = (session: ReportSession): ReportTurn => ({ session, reply: null, need: { kind: "check" } });
 
 const joinPrompt = () =>
   "Responda SIM para somar a sua foto com o seu apelido, ou ANÔNIMO para somar como Anônimo. CANCELAR desiste.";

@@ -39,6 +39,7 @@ const muni: Municipality = {
   categories: [
     { key: "buraco", label: "Buraco na rua", group: "ruas", agency: "Obras", kind: "occurrence" },
     { key: "poste", label: "Poste apagado", group: "luz", agency: "Iluminação", kind: "occurrence" },
+    { key: "alaga", label: "Rua que alaga", group: "agua", agency: "Obras", kind: "occurrence", asks: "flooding" },
     { key: "questao", label: "Questão pública", group: "questoes", agency: null, kind: "public_issue" },
   ],
   filterGroups: [],
@@ -115,8 +116,54 @@ describe("a whole report", () => {
       category: "buraco",
       text: "Buraco fundo na esquina",
       reference: "em frente à escola",
+      flooding: {},
       duplicate: null,
     });
+  });
+
+  test("a street that floods asks three optional questions about the water, then reads them back", () => {
+    const turns = run([img("m1"), inside, t("3"), t("pular"), t("pular"), t("1"), t("não"), t("4")]);
+    expect(turns[4]?.reply).toContain("Três perguntas rápidas sobre a água");
+    expect(turns[4]?.reply).toContain(
+      "1. Bueiro entupido\n2. Valeta cheia\n3. Casa de bombas parada\n4. Rio alto\n5. Não sei",
+    );
+    expect(turns[5]?.reply).toContain("Está chovendo agora?");
+    expect(turns[6]?.reply).toContain("Quanto tempo a água ficou?");
+    const last = turns[7];
+    expect(last?.need).toEqual({ kind: "check" });
+    // "Não" answers the rain question: it isn't read as PULAR here.
+    expect(last?.session?.draft.flooding).toEqual({ cause: "bueiro", raining: false, duration: "ainda" });
+    const session = last?.session;
+    if (!session) throw new Error("sem sessão");
+    expect(afterCheck(session, null, muni, 2_000_000).reply).toContain(
+      "Sobre a água, o que viu: bueiro entupido; na hora: não estava chovendo; a água: ainda não tinha baixado.",
+    );
+  });
+
+  test("each water question can be skipped, and a wrong answer asks again", () => {
+    const turns = run([
+      img("m1"),
+      inside,
+      t("3"),
+      t("pular"),
+      t("pular"),
+      t("9"),
+      t("pular"),
+      t("talvez"),
+      t("sim"),
+      t("pular"),
+    ]);
+    expect(turns[5]?.reply).toContain("O que você viu?");
+    expect(turns[7]?.reply).toContain("Está chovendo agora?");
+    const last = turns.at(-1);
+    expect(last?.need).toEqual({ kind: "check" });
+    expect(last?.session?.draft.flooding).toEqual({ raining: true });
+  });
+
+  test("other types skip the water questions", () => {
+    const turns = run([img("m1"), inside, t("1"), t("pular"), t("pular")]);
+    expect(turns.at(-1)?.need).toEqual({ kind: "check" });
+    expect(turns.at(-1)?.session?.draft.flooding).toEqual({});
   });
 
   test("no duplicate: the draft is read back, then SIM publishes with the apelido, ANÔNIMO without", () => {

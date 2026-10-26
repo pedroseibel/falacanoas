@@ -227,7 +227,10 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - Core's `rain.ts` reads the feed: the last 10-minute value and the 1–96 h accumulations, times in UTC. Cemaden writes "-" for a window with no rain (never a numeric 0), read as 0 mm.
   - apps/digest reads it every 10 minutes (`2-59/10`) into `fala.rain_readings`, one row per gauge per time it measured, so a silent gauge adds nothing and a repeated run nothing twice. `/saude` shows the last run. Development schedules it only with `DIGEST_RAIN=1`; `bun --filter @fala/digest chuva` reads once.
   - ⛔ The archive only grows while the service runs: until apps/digest is deployed, run it somewhere with `DIGEST_RAIN=1`. Within 96 h a gap still has its totals; older is lost.
-- [ ] **6.2 Questions on "rua que alaga".** The cause seen, whether it's raining, how long the water stayed.
+- [x] **6.2 Questions on "rua que alaga".** Done 2026-10-26, verified in the browser (desktop dialog and phone drawer) and on the record.
+  - Three optional questions on the types the instance marks `asks: "flooding"` (Canoas: "Rua que alaga toda chuva"): what the person saw (bueiro entupido, valeta cheia, casa de bombas parada, rio alto, não sei), whether it's raining now, and how long the water stayed (under 1 h, 1–3 h, over 3 h, still there). Core's `flooding.ts`.
+  - The form asks them as choice chips under "Sobre a água"; tapping an answer again clears it. WhatsApp asks them after the ponto de referência, one at a time, each skipped with PULAR (there, "não" answers the rain question), and reads them back before publishing.
+  - Stored in `items.flooding` (jsonb), only when something was answered; the record shows them under "Sobre a água, segundo quem registrou". Drafts queued on a phone before this change still go through. Not in the open data (the `dados` views name their columns).
 - [ ] **6.3 The day's rain on each flooding record**, from the nearest gauge, also in the resumo.
 
 ## Founder inputs that unblock items

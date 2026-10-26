@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { FloodNotesSchema, floodNotesFor } from "./flooding";
 import { localHour, localStamp } from "./format";
 import { haversine, neighborhoodAt } from "./geo";
 import { categoryOf, deriveEvents, isOpen, itemLngLat } from "./logic";
@@ -60,6 +61,8 @@ export const ReportFieldsSchema = z.object({
   neighborhood: z.string(),
   /** A problem's ponto de referência, to find the spot; optional. Ignored for a questão pública. */
   reference: z.string().max(REPORT.maxReference, `Use no máximo ${REPORT.maxReference} caracteres.`),
+  /** On a type that asks them (a street that floods), what the person saw; all optional. */
+  flooding: FloodNotesSchema,
   /** The map crosshair. Null until the person places it. */
   location: LngLatSchema.nullable(),
   text: z.string().max(REPORT.maxText, `Use no máximo ${REPORT.maxText} caracteres.`),
@@ -208,6 +211,7 @@ export function itemFromReport(v: ReportFields, muni: Municipality, ctx: ReportC
   const category = issue ? (muni.categories.find((c) => c.kind === "public_issue")?.key ?? "questao") : v.category;
   const text = v.text.trim();
   const reference = issue ? "" : v.reference.trim();
+  const flooding = issue ? undefined : floodNotesFor(muni, category, v.flooding);
   const n = ctx.photos.length;
   return {
     id: ctx.id,
@@ -216,6 +220,7 @@ export function itemFromReport(v: ReportFields, muni: Municipality, ctx: ReportC
     title: issue ? v.title.trim() : reportTitle(text, categoryOf(muni, category).label),
     text,
     ...(reference ? { reference } : {}),
+    ...(flooding ? { flooding } : {}),
     neighborhood:
       scope.type === "neighborhood" ? scope.neighborhood : at ? neighborhoodAt(at, muni.geo.neighborhoods) : null,
     scope,

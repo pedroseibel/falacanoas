@@ -1,4 +1,4 @@
-import { ReportFieldsSchema } from "@fala/core";
+import { FloodNotesSchema, ReportFieldsSchema } from "@fala/core";
 import { z } from "zod";
 
 /**
@@ -10,7 +10,8 @@ import { z } from "zod";
 
 export const DraftSchema = z.object({
   key: z.uuid(),
-  fields: ReportFieldsSchema.omit({ photos: true }),
+  // Drafts kept before the flooding questions existed have none.
+  fields: ReportFieldsSchema.omit({ photos: true }).extend({ flooding: FloodNotesSchema.default({}) }),
   /** The photos as prepared on the phone (already re-encoded, without metadata). */
   photos: z.array(z.instanceof(Blob)),
   createdAt: z.number(),

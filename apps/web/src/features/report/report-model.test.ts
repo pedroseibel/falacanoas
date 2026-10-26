@@ -25,6 +25,7 @@ const fields = (patch: Partial<ReportFields> = {}): ReportFields => ({
   reach: "place",
   place: "",
   reference: "",
+  flooding: {},
   neighborhood: "",
   location: niteroi?.center ?? null,
   text: "Buraco fundo",

@@ -4,6 +4,7 @@ import {
   REPORT,
   ReachSchema,
   VisibilitySchema,
+  asksFlooding,
   communityLine,
   digestDay,
   findDuplicate,
@@ -40,6 +41,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { mapControls } from "@/features/map/map-engine";
 import { cn } from "@/lib/utils";
 import { createReport, joinReport, type JoinResult, type ReportResult } from "@/server/report";
+import { FloodQuestions } from "./flood-questions";
 import { LocationPicker } from "./location-picker";
 import { draftAnswered, draftFailed, keepDraft, sendDraft } from "./outbox";
 import { SEND_TIMEOUT_MS, type Draft } from "./outbox-model";
@@ -170,6 +172,7 @@ export function ReportForm({
     place: "",
     neighborhood: author.neighborhood ?? "",
     reference: "",
+    flooding: {},
     location: null,
     text: "",
     visibility: "pseudonymous",
@@ -579,6 +582,16 @@ export function ReportForm({
               </Button>
             </div>
           </Alert>
+        )}
+
+        {kind === "occurrence" && asksFlooding(muni, category) && (
+          <form.Field name="flooding">
+            {(field) => (
+              <Part id="r-agua" title="Sobre a água" meta="opcional">
+                <FloodQuestions value={field.state.value} onChange={field.handleChange} />
+              </Part>
+            )}
+          </form.Field>
         )}
 
         <form.Field name="text">

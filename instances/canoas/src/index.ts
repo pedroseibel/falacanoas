@@ -29,7 +29,14 @@ export const canoas = defineMunicipality({
   digestHour: 18,
   categories: [
     { key: "buraco", label: "Buraco na rua", group: "ruas", agency: OBRAS, kind: "occurrence" },
-    { key: "alaga", label: "Rua que alaga toda chuva", group: "agua", agency: OBRAS, kind: "occurrence" },
+    {
+      key: "alaga",
+      label: "Rua que alaga toda chuva",
+      group: "agua",
+      agency: OBRAS,
+      kind: "occurrence",
+      asks: "flooding",
+    },
     { key: "bocalobo", label: "Boca de lobo entupida", group: "agua", agency: OBRAS, kind: "occurrence" },
     { key: "lixo", label: "Lixo e descarte irregular", group: "lixo", agency: ZELADORIA, kind: "occurrence" },
     { key: "entulho", label: "Entulho", group: "lixo", agency: ZELADORIA, kind: "occurrence" },

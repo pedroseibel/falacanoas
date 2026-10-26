@@ -1,4 +1,5 @@
 import {
+  FloodNotesSchema,
   findDuplicate,
   REPORT,
   reportSchema,
@@ -34,6 +35,19 @@ const IntakeSchema = z.discriminatedUnion("acao", [
     categoria: z.string().max(40),
     texto: z.string().max(REPORT.maxText).default(""),
     referencia: z.string().max(REPORT.maxReference).default(""),
+    /** The flooding answers, as JSON (form fields are strings). */
+    alagamento: z
+      .string()
+      .default("{}")
+      .transform((s, ctx) => {
+        try {
+          return JSON.parse(s);
+        } catch {
+          ctx.addIssue({ code: "custom", message: "alagamento" });
+          return z.NEVER;
+        }
+      })
+      .pipe(FloodNotesSchema),
     visibilidade: VisibilitySchema,
     ...Point,
   }),
@@ -94,6 +108,7 @@ export async function whatsappIntake(request: Request): Promise<Response> {
         place: "",
         neighborhood: "",
         reference: v.referencia.trim(),
+        flooding: v.alagamento,
         location: [v.lng, v.lat],
         text: v.texto.trim(),
         visibility: v.visibilidade,

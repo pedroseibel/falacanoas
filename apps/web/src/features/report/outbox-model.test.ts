@@ -11,6 +11,7 @@ const draft = (over: Partial<Draft> = {}): Draft => ({
     place: "",
     neighborhood: "",
     reference: "",
+    flooding: {},
     location: [-51.18, -29.91],
     text: "",
     visibility: "pseudonymous",

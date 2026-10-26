@@ -23,3 +23,4 @@ export * from "./whatsapp-report";
 export * from "./open-data";
 export * from "./sanctions";
 export * from "./rain";
+export * from "./flooding";

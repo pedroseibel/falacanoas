@@ -1,0 +1,1 @@
+ALTER TABLE "fala"."items" ADD COLUMN "flooding" jsonb;

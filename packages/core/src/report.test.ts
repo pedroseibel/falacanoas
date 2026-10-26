@@ -41,6 +41,7 @@ const muni: Municipality = {
   categories: [
     { key: "buraco", label: "Buraco na rua", group: "ruas", agency: "Obras", kind: "occurrence" },
     { key: "poste", label: "Poste apagado", group: "luz", agency: "Iluminação", kind: "occurrence" },
+    { key: "alaga", label: "Rua que alaga", group: "agua", agency: "Obras", kind: "occurrence", asks: "flooding" },
     { key: "questao", label: "Questão pública", group: "questoes", agency: null, kind: "public_issue" },
   ],
   filterGroups: [],
@@ -71,6 +72,7 @@ const fields = (patch: Partial<ReportFields> = {}): ReportFields => ({
   reach: "place",
   place: "",
   reference: "",
+  flooding: {},
   neighborhood: "",
   location: [-51.15, -29.95],
   text: "",
@@ -196,6 +198,12 @@ describe("itemFromReport", () => {
       { at: "12 out · 14:20", actor: "garça-do-sinos", kind: "created", text: "Registrou com foto." },
     ]);
     expect(awaitingDigest(it)).toBeTrue();
+  });
+  test("the water answers stay on a street that floods, and nowhere else", () => {
+    const flooding = { cause: "valeta" as const, raining: true };
+    expect(itemFromReport(fields({ category: "alaga", flooding }), muni, ctx).flooding).toEqual(flooding);
+    expect(itemFromReport(fields({ category: "buraco", flooding }), muni, ctx).flooding).toBeUndefined();
+    expect(itemFromReport(fields({ category: "alaga" }), muni, ctx)).not.toHaveProperty("flooding");
   });
   test("Anônimo keeps the apelido off the item, its photos and its history", () => {
     const it = itemFromReport(fields({ visibility: "anonymous" }), muni, ctx);

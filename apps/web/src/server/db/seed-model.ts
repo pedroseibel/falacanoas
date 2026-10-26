@@ -95,6 +95,7 @@ export function seedRows(
       category: item.category,
       title: item.title,
       text: item.text,
+      flooding: item.flooding ?? null,
       neighborhood: item.neighborhood,
       scope: item.scope,
       lng: point?.lng ?? null,
