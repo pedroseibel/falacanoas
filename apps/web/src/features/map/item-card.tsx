@@ -64,7 +64,7 @@ export function ItemCard({
         {photo ? (
           <img src={photo.src} alt="" loading="lazy" decoding="async" className="size-full object-cover" />
         ) : (
-          <Icon name={categoryIcon(it.category)} size={28} />
+          <Icon name={categoryIcon(it.category)} size={32} />
         )}
         {/* On the thumbnail, so the label never costs the category line its bairro and distance. */}
         {it.demo && (

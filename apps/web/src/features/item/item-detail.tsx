@@ -207,7 +207,7 @@ export function ItemDetail({
             </>
           ) : (
             <>
-              <Icon name={categoryIcon(it.category)} size={36} />
+              <Icon name={categoryIcon(it.category)} size={48} />
               Sem foto ainda.
             </>
           )}

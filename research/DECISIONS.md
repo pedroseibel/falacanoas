@@ -417,6 +417,19 @@ The founder delegated these ("you decide the best course"). They were settled af
   - The resumo's sample uses placeholders that say "foto do morador · exemplo".
   - No credit or licence is left to manage. Residents' real photos replace the examples once the map opens.
 
+## Round 22: the pictograms, redrawn (2026-10-26)
+
+- **The founder found the first set unpolished.** Two research passes followed (research/pictograms): exemplars (AIGA/DOT, ISO 22727, CONTRAN, Material, Phosphor, civic apps) and small-icon craft (keylines, pixel fitting, even weight).
+- **Redrawn to measured rules.**
+  - Bars sit on a 1.5-unit lattice, crisp at 16, 24, 32 and 48 px, and the app now uses only those sizes.
+  - The weight spread across the set went from 2.2× to 1.34×.
+  - Buraco becomes a wheel down in a hole in the road.
+  - Alaga becomes a car seen from the front in water.
+  - Calçada becomes a heaved slab, without the walker.
+  - Esgoto becomes a pipe pouring into a pool.
+  - Questão trades its "!" for a "?", so nothing reads as an alarm.
+- **Still to do:** a small comprehension test with Canoas residents at 14 px (ISO 9186-1).
+
 ## Research findings that constrain design (2026-10-12)
 
 - **Maps:** the landing page uses an inline SVG of the 18 bairros (`maps/data/web/canoas-bairros.svg`, about 4 KB gzipped) and a `<select>`, with no map library. For the eventual app: MapLibre (v6 is about 439 KB gzipped, ESM-only, and fails from `file://`; v5.24 UMD works). CARTO has required an API key since 2026-09-29; it is free up to 5M tiles/month non-commercial, and access is revocable. OpenFreeMap needs no key. Flood-extent layer: UFRGS, CC BY, 48.3% of the municipality.

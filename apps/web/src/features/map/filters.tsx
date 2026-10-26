@@ -27,7 +27,7 @@ export function FilterChips({
       >
         {muni.filterGroups.map((g) => (
           <ToggleGroupItem key={g.key} value={g.key} aria-label={g.label}>
-            {g.icon && isIconName(g.icon) && <Icon name={g.icon} size={14} />}
+            {g.icon && isIconName(g.icon) && <Icon name={g.icon} size={16} className="size-4 shrink-0" />}
             {g.label}
           </ToggleGroupItem>
         ))}

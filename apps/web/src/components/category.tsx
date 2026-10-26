@@ -25,7 +25,7 @@ export function CategoryLine({
     <span className={cn("flex min-w-0 gap-1.5 text-xs text-muted-foreground", wrap ? "items-start" : "items-center")}>
       {/* A line-high box keeps the pictogram on the first line when the text wraps. */}
       <span className="grid h-4 shrink-0 place-items-center">
-        <Icon name={categoryIcon(category)} size={13} />
+        <Icon name={categoryIcon(category)} size={16} />
       </span>
       <span className={wrap ? "line-clamp-2" : "truncate"}>
         {/* A no-break space before each dot: a wrapped line starts with "· 190 m", never ends on a dot. */}

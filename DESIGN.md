@@ -429,7 +429,15 @@ Reporting is quiet until needed. A Slate flag button sits beside each update and
 
 ### Pictograms
 
-One pictogram per category, drawn to the public-information norm: ISO 7001's construction in the public-domain AIGA/DOT drawing style. Where a Brazilian traffic sign (CONTRAN) already shows the subject, the pictogram takes that subject (the traffic light, the pedestrian, the road surface), but never the sign's yellow diamond or red ring: nothing may read as an alert. Each is a solid single-ink silhouette on a 24-unit grid, inside 2 to 22. Limbs and bars are 2.5 units, and gaps and cut-outs are at least 2, so the set still reads at 13px. It shows the object, not a mood: a tire in the hole, a tied bag, a pipe pouring out, a car up to its doors in water. They take the text colour around them: Slate in tiles and meta lines, ink in filter chips. They live in `src/components/Icons.tsx` behind `<Icon name>`; all other interface icons are lucide strokes.
+One pictogram per category, drawn to the public-information norm: ISO 7001's construction in the public-domain AIGA/DOT drawing style. Where a Brazilian traffic sign (CONTRAN) already shows the subject, the pictogram takes that subject (the road dip, the traffic light), but never the sign's yellow diamond or red ring: nothing may read as an alert, so there is no exclamation mark, ring or slash either.
+
+- **Drawing:** a solid single-ink silhouette, front or side view or a section, never perspective. One subject and at most one qualifier: a wheel down in the hole, a car up to its doors in water, two tied bags left out, a pipe pouring into a pool.
+- **Grid:** 24 units, live area 1.5 to 22.5, every edge on a 1.5-unit lattice. Bars are 3 units (1.5 only as a hairline between masses), gaps and cut-outs at least 1.5 and usually 3, angles 0°, 45° and 90°, at most three islands.
+- **Weight:** every glyph's ink within the set's band, max/min 1.4 or less, measured with `research/pictograms/tools/icon-lab.ts`.
+- **Sizes:** 16, 24, 32 and 48 px only, where the lattice lands on whole pixels; `<Icon size>` accepts nothing else. Meta lines, chips and the command palette use 16, form tiles 24, list thumbnails and empty tiles 32, the empty photo area 48.
+- **Colour:** they take the text colour around them: Slate in tiles and meta lines, ink in filter chips.
+
+They live in `src/components/Icons.tsx` behind `<Icon name>` (the digest's PDF keeps a tested copy); all other interface icons are lucide strokes. Research and the before/after sheet: `research/pictograms/`.
 
 ## Do's and Don'ts
 

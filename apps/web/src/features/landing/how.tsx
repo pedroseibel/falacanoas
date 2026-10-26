@@ -25,7 +25,7 @@ function PhotoSlot({ category, className }: { category: string; className?: stri
         className,
       )}
     >
-      <Icon name={categoryIcon(category)} size={28} />
+      <Icon name={categoryIcon(category)} size={32} />
     </span>
   );
 }
@@ -151,7 +151,7 @@ function CountCard({ muni }: { muni: Municipality }) {
       <div className="grid content-start gap-4 p-5">
         <div>
           <p className="flex items-center gap-1.75 text-xs text-muted-foreground">
-            <Icon name={categoryIcon("alaga")} size={14} />
+            <Icon name={categoryIcon("alaga")} size={16} />
             Rua que alaga toda chuva · Niterói
           </p>
           <p className="text-base leading-snug font-semibold tracking-tight">Parada de ônibus vira poça a cada chuva</p>

@@ -153,7 +153,7 @@ export function BairroPage({
                     questions.map((it) => <ItemCard key={it.id} it={it} muni={muni} selected={false} onOpen={onOpen} />)
                   ) : (
                     <p className="grid justify-items-center gap-2 p-8 text-center text-sm text-muted-foreground">
-                      <Icon name={categoryIcon("questao")} size={28} />
+                      <Icon name={categoryIcon("questao")} size={32} />
                       Nenhuma questão pública neste bairro ainda.
                     </p>
                   )}

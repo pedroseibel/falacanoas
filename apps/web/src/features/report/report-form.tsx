@@ -458,7 +458,7 @@ export function ReportForm({
                   >
                     {occurrences.map((c) => (
                       <RadioGroupTile key={c.key} value={c.key} aria-invalid={errors.length > 0}>
-                        <Icon name={categoryIcon(c.key)} size={18} />
+                        <Icon name={categoryIcon(c.key)} size={24} />
                         {c.label}
                       </RadioGroupTile>
                     ))}
