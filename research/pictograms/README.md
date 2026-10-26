@@ -11,6 +11,7 @@ Measured with `tools/icon-lab.ts` (ink as a share of the 24-unit canvas):
   - Buraco: a ring in a tray, read as a donut.
   - Calçada: a walker drawn in strokes.
   - Esgoto: read as an arrow.
+- **Founder review (2026-10-26):** the front-view car and the elbow pipe were "jangled". Side views fixed both: a car is read by its profile and wheels, a pipe by its couplings, and water by drops rather than a jet.
   - Questão: an exclamation bubble, read as an alarm, against DESIGN.md's own No-Alarm Rule.
 - **Sizes:** the app drew them at 13, 14, 18, 28 and 36 px, none crisp.
 
@@ -58,14 +59,14 @@ Sources: Material's keylines, GitHub Primer, Lucide, Tabler, Volue and Fluent; s
 | Pictogram | Drawing | Ink |
 |---|---|---|
 | buraco | a wheel down in a hole in the road, in section (after CONTRAN A-19) | 26.7% |
-| alaga | a car seen from the front, water up to its doors | 31.8% |
+| alaga | a car side on, water up to its wheels (the front view read as a boat or a bus stop) | 34.1% |
 | bocalobo | a drain grate from above, water standing over it | 25.9% |
 | lixo | two tied bags, a big and a small one, left out | 27.6% |
 | entulho | a pile of bricks, three, two, one | 27.6% |
 | poste | a street light, side on: pole, arm, lamp head | 26.7% |
 | arvore | one canopy on a trunk that forks up into it, as a cut-out | 33.1% |
 | calcada | the pavement in section, one slab heaved out of line | 25.8% |
-| esgoto | a pipe bending down to its mouth, pouring into a pool | 28.6% |
+| esgoto | a pipe with its couplings, dripping into a pool (a pouring stream always read as an arrow) | 31.7% |
 | sinal | a traffic light with its visors | 30.4% |
 | questao | a speech bubble with a question mark | 34.6% |
 

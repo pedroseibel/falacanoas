@@ -431,7 +431,7 @@ Reporting is quiet until needed. A Slate flag button sits beside each update and
 
 One pictogram per category, drawn to the public-information norm: ISO 7001's construction in the public-domain AIGA/DOT drawing style. Where a Brazilian traffic sign (CONTRAN) already shows the subject, the pictogram takes that subject (the road dip, the traffic light), but never the sign's yellow diamond or red ring: nothing may read as an alert, so there is no exclamation mark, ring or slash either.
 
-- **Drawing:** a solid single-ink silhouette, front or side view or a section, never perspective. One subject and at most one qualifier: a wheel down in the hole, a car up to its doors in water, two tied bags left out, a pipe pouring into a pool.
+- **Drawing:** a solid single-ink silhouette, front or side view or a section, never perspective. One subject and at most one qualifier: a wheel down in the hole, a car side on up to its wheels in water, two tied bags left out, a pipe dripping into a pool.
 - **Grid:** 24 units, live area 1.5 to 22.5, every edge on a 1.5-unit lattice. Bars are 3 units (1.5 only as a hairline between masses), gaps and cut-outs at least 1.5 and usually 3, angles 0°, 45° and 90°, at most three islands.
 - **Weight:** every glyph's ink within the set's band, max/min 1.4 or less, measured with `research/pictograms/tools/icon-lab.ts`.
 - **Sizes:** 16, 24, 32 and 48 px only, where the lattice lands on whole pixels; `<Icon size>` accepts nothing else. Meta lines, chips and the command palette use 16, form tiles 24, list thumbnails and empty tiles 32, the empty photo area 48.

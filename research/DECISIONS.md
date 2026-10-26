@@ -424,9 +424,9 @@ The founder delegated these ("you decide the best course"). They were settled af
   - Bars sit on a 1.5-unit lattice, crisp at 16, 24, 32 and 48 px, and the app now uses only those sizes.
   - The weight spread across the set went from 2.2× to 1.34×.
   - Buraco becomes a wheel down in a hole in the road.
-  - Alaga becomes a car seen from the front in water.
+  - Alaga becomes a car side on, water up to its wheels. A front view, tried first, read as a boat, and the founder rejected it.
   - Calçada becomes a heaved slab, without the walker.
-  - Esgoto becomes a pipe pouring into a pool.
+  - Esgoto becomes a pipe with its couplings, dripping into a pool. A pouring stream always read as an arrow, and the founder rejected it.
   - Questão trades its "!" for a "?", so nothing reads as an alarm.
 - **Still to do:** a small comprehension test with Canoas residents at 14 px (ISO 9186-1).
 
