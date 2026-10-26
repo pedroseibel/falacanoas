@@ -12,6 +12,7 @@ const muni: Pick<Municipality, "categories" | "timezone" | "rain"> = {
     agency: "Cemaden",
     feed: "f",
     page: "p/{id}",
+    heavyMmPerHour: 10,
     gauges: [{ id: 7325, name: "Mathias Velho", place: "", at: [-51.19705, -29.89738] }],
   },
 };

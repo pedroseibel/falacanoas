@@ -31,6 +31,12 @@ export interface RainSource {
   /** A station's own page, `{id}` replaced by its id: where a reading can be checked. */
   page: string;
   gauges: RainGauge[];
+  /**
+   * mm in an hour from which "Chuva agora" calls it a downpour and points out the flooding records
+   * near the gauge (round 23). A convention to tune with the city's own record, not a threshold
+   * for flooding.
+   */
+  heavyMmPerHour: number;
 }
 
 /** The windows Cemaden accumulates over, in hours. */

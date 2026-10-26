@@ -1,10 +1,19 @@
-import { localTime, mmLabel, type GaugeNow, type Municipality } from "@fala/core";
+import {
+  asksFlooding,
+  downpourNow,
+  itemLngLat,
+  mmLabel,
+  plural,
+  rainNear,
+  type GaugeNow,
+  type Municipality,
+} from "@fala/core";
 import { barY, defineChart } from "@tanstack/charts";
 import { Chart } from "@tanstack/charts/react";
 import { scaleBand } from "@tanstack/charts/scales/band";
 import { scaleLinear } from "@tanstack/charts/scales/linear";
 import { tooltip } from "@tanstack/charts/tooltip";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "@tanstack/react-store";
 import { CloudRain } from "lucide-react";
 import { useCallback, useMemo } from "react";
@@ -12,28 +21,16 @@ import { EmergencyLines } from "@/components/emergency";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { textLink } from "@/features/landing/bits";
+import { listPt } from "@/features/report/report-model";
 import { cn } from "@/lib/utils";
-import { getRainNow } from "@/server/rain-now";
 import { mapStore, setMapState } from "./map-store";
+import { clock, rainNowQuery } from "./rain-query";
 
 /**
  * "Chuva agora" (DECISIONS round 23; BUILD 6.6): while the map shows "Água", the gauges' last hour
  * from the archive, refreshed every 10 minutes, on the map and in this panel. Measured rain, with its
  * source and time; never "alagado agora", and the emergency line always beside it.
  */
-export const rainNowQuery = queryOptions({
-  queryKey: ["chuva-agora"],
-  queryFn: () => getRainNow(),
-  refetchInterval: 10 * 60_000,
-  staleTime: 5 * 60_000,
-});
-
-/** "15:10" on the municipality's clock. */
-function clock(iso: string, timezone: string) {
-  const t = localTime(new Date(iso), timezone);
-  return `${String(t.hour).padStart(2, "0")}:${String(t.minute).padStart(2, "0")}`;
-}
-
 /**
  * Hands the readings to the map (the store) once mounted, and takes them back when the panel goes.
  * Keyed by fetch, so each new set of readings mounts it again; the ref is stable, so a re-render
@@ -157,6 +154,31 @@ function GaugeRow({ gauge, open, timezone, page }: { gauge: GaugeNow; open: bool
   );
 }
 
+/**
+ * When a gauge is past the downpour mark: where, and how many flooding records on the map are within
+ * reach of it (ringed there). Rain measured near spots that flood; it says nothing of the streets.
+ */
+function Downpour({ muni, gauges }: { muni: Municipality; gauges: GaugeNow[] }) {
+  const visible = useSelector(mapStore, (s) => s.visible);
+  const heavy = muni.rain?.heavyMmPerHour;
+  if (heavy === undefined) return null;
+  const pouring = gauges.filter((g) => downpourNow(g, heavy));
+  if (!pouring.length) return null;
+  const spots = visible.filter((it) => {
+    const p = itemLngLat(it);
+    return p && asksFlooding(muni, it.category) && rainNear(p, gauges, { onlyHeavy: heavy });
+  }).length;
+  return (
+    <p className="mx-1 rounded-lg bg-muted px-2.5 py-2 text-sm text-foreground" role="status">
+      <b className="font-semibold">Chuva forte agora</b> ({heavy} mm ou mais na última hora) em{" "}
+      {listPt(pouring.map((g) => g.name))}.{" "}
+      {spots
+        ? `${spots} ${plural(spots, "registro", "registros")} de alagamento a até 2 km, com anel no mapa.`
+        : "Nenhum registro de alagamento a até 2 km."}
+    </p>
+  );
+}
+
 function Body({ muni }: { muni: Municipality }) {
   const { query, selected } = useRainNow();
   const data = query.data;
@@ -170,6 +192,7 @@ function Body({ muni }: { muni: Municipality }) {
         </h2>
         <span className="text-xs text-muted-foreground">mm na última hora</span>
       </div>
+      {data && <Downpour muni={muni} gauges={data.gauges} />}
       {query.isPending ? (
         <p className="px-2 py-3 text-sm text-muted-foreground" role="status">
           Lendo os pluviômetros…

@@ -114,6 +114,7 @@ test("gaugePage names the station's own chart", () => {
     agency: "Cemaden",
     feed: "f",
     page: "https://x/grafico.php?idpcd={id}&uf=RS",
+    heavyMmPerHour: 10,
     gauges: [],
   };
   expect(gaugePage(source, 7326)).toBe("https://x/grafico.php?idpcd=7326&uf=RS");
@@ -126,6 +127,7 @@ describe("the day's rain beside a flooding record", () => {
     agency: "Cemaden",
     feed: "f",
     page: "https://cemaden.invalid/{id}",
+    heavyMmPerHour: 10,
     gauges: [
       { id: 7325, name: "Mathias Velho", place: "", at: [-51.19705, -29.89738] },
       { id: 7324, name: "Rio Branco", place: "", at: [-51.19082, -29.9663] },
@@ -169,6 +171,7 @@ describe("the day's rain beside a flooding record", () => {
       name: "Mathias Velho",
       agency: "Cemaden",
       page: "p",
+      heavyMmPerHour: 10,
       meters: 1234,
       until: "2026-06-17T23:10:00Z",
     };

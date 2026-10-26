@@ -6,6 +6,7 @@ const source: RainSource = {
   agency: "Cemaden",
   feed: "https://cemaden.invalid/feed?uf=RS",
   page: "https://cemaden.invalid/{id}",
+  heavyMmPerHour: 10,
   gauges: [
     { id: 7324, name: "Rio Branco", place: "", at: [-51.19, -29.97] },
     { id: 7325, name: "Mathias Velho", place: "", at: [-51.2, -29.9] },

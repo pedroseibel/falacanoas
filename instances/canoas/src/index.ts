@@ -100,6 +100,9 @@ export const canoas = defineMunicipality({
     agency: "Cemaden",
     feed: "https://resources.cemaden.gov.br/graficos/interativo/getJson2.php?uf=RS",
     page: "https://resources.cemaden.gov.br/graficos/interativo/grafico_CEMADEN.php?idpcd={id}&uf=RS",
+    // The usual intensity scale calls 10 mm/h or more "chuva forte". Tune it with the archive and the
+    // stretches' history (research/alagamentos: 69 mm in about 4 h flooded the west side in 2025).
+    heavyMmPerHour: 10,
     gauges: [
       { id: 7324, name: "Rio Branco", place: "Hermes da Fonseca, 1420", at: [-51.19082, -29.9663] },
       { id: 7325, name: "Mathias Velho", place: "Curitiba, 1551", at: [-51.19705, -29.89738] },

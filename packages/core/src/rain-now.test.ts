@@ -1,11 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { gaugesNow, hourlyBars, mmLabel } from "./rain-now";
+import { downpourNow, gaugesNow, hourlyBars, mmLabel, rainNear, type GaugeNow } from "./rain-now";
 import type { RainSource } from "./rain";
 
 const source: RainSource = {
   agency: "Cemaden",
   feed: "f",
   page: "p/{id}",
+  heavyMmPerHour: 10,
   gauges: [
     { id: 7325, name: "Mathias Velho", place: "Curitiba, 1551", at: [-51.19705, -29.89738] },
     { id: 7328, name: "Marechal Rondon", place: "Corpo de Bombeiros", at: [-51.16989, -29.92496] },
@@ -51,5 +52,43 @@ describe("Chuva agora", () => {
     expect(mmLabel(2.4)).toBe("2,4 mm");
     expect(mmLabel(0)).toBe("0 mm");
     expect(mmLabel(12)).toBe("12 mm");
+  });
+});
+
+const gauge = (id: number, at: [number, number], lastHour: number | null, stale = false): GaugeNow => ({
+  id,
+  name: String(id),
+  place: "",
+  at,
+  observedAt: "2026-10-26T18:10:00Z",
+  lastHour,
+  day: lastHour,
+  stale,
+  hours: [],
+});
+
+describe("rain near a flooding record", () => {
+  const here: [number, number] = [-51.1742, -29.9253]; // Rua Santa Maria
+  const rondon = gauge(7328, [-51.16989, -29.92496], 18);
+  const mathias = gauge(7325, [-51.19705, -29.89738], 4);
+
+  test("the nearest gauge raining now, within 2 km", () => {
+    const near = rainNear(here, [mathias, rondon]);
+    expect(near?.gauge.id).toBe(7328);
+    expect(near?.meters).toBeGreaterThan(350);
+    expect(near?.meters).toBeLessThan(450);
+  });
+
+  test("dry, silent or far gauges say nothing", () => {
+    expect(rainNear(here, [gauge(7328, rondon.at, 0)])).toBeNull();
+    expect(rainNear(here, [gauge(7328, rondon.at, 18, true)])).toBeNull();
+    expect(rainNear(here, [mathias])).toBeNull(); // about 4 km
+  });
+
+  test("a downpour is the instance's mark or more", () => {
+    expect(downpourNow(rondon, 10)).toBeTrue();
+    expect(downpourNow(gauge(1, here, 9.8), 10)).toBeFalse();
+    expect(rainNear(here, [gauge(7328, rondon.at, 6)], { onlyHeavy: 10 })).toBeNull();
+    expect(rainNear(here, [rondon], { onlyHeavy: 10 })?.gauge.id).toBe(7328);
   });
 });

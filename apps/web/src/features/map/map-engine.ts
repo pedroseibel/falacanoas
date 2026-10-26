@@ -1,4 +1,14 @@
-import { itemLngLat, isOpen, mmLabel, type GaugeNow, type Item, type Municipality, type Viewer } from "@fala/core";
+import {
+  asksFlooding,
+  itemLngLat,
+  isOpen,
+  mmLabel,
+  rainNear,
+  type GaugeNow,
+  type Item,
+  type Municipality,
+  type Viewer,
+} from "@fala/core";
 import type {
   ExpressionSpecification,
   GeoJSONSource,
@@ -36,17 +46,36 @@ export function quietBasemap(map: MapLibreMap) {
   }
 }
 
-function featureCollection(items: Item[]) {
+/**
+ * The pins. `downpour` marks a flooding record within reach of a gauge past the instance's downpour
+ * mark right now ("Chuva agora", round 23): rain measured near a spot that floods, not "alagado".
+ */
+function featureCollection(items: Item[], muni: Municipality, gauges: readonly GaugeNow[]) {
+  const heavy = muni.rain?.heavyMmPerHour;
   return {
     type: "FeatureCollection" as const,
     features: items.flatMap((it) => {
       const p = itemLngLat(it);
+      const downpour =
+        p &&
+        heavy !== undefined &&
+        gauges.length &&
+        asksFlooding(muni, it.category) &&
+        rainNear(p, gauges, { onlyHeavy: heavy })
+          ? 1
+          : 0;
       return p
         ? [
             {
               type: "Feature" as const,
               geometry: { type: "Point" as const, coordinates: p },
-              properties: { id: it.id, days: it.days, open: isOpen(it) ? 1 : 0, q: it.kind === "public_issue" ? 1 : 0 },
+              properties: {
+                id: it.id,
+                days: it.days,
+                open: isOpen(it) ? 1 : 0,
+                q: it.kind === "public_issue" ? 1 : 0,
+                downpour,
+              },
             },
           ]
         : [];
@@ -112,10 +141,12 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     map.addSource("limite", { type: "geojson", data: muni.geo.boundary });
     map.addSource("items", {
       type: "geojson",
-      data: featureCollection(state.visible),
+      data: featureCollection(state.visible, muni, state.gauges),
       cluster: true,
       clusterMaxZoom: 13.4,
       clusterRadius: 48,
+      // A cluster holding a flooding record under a downpour is ringed too: at the city's zoom most are.
+      clusterProperties: { downpour: ["+", ["get", "downpour"]] },
     });
     const sel: ExpressionSpecification = ["boolean", ["feature-state", "sel"], false];
     map.addLayer({
@@ -143,6 +174,30 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
       type: "line",
       source: "limite",
       paint: { "line-color": ink, "line-opacity": 0.55, "line-width": 1.4 },
+    });
+    // "Chuva agora" (round 23): a soft ink ring under the pins and clusters near a downpour.
+    map.addLayer({
+      id: "downpour",
+      type: "circle",
+      source: "items",
+      filter: [">", ["get", "downpour"], 0],
+      paint: {
+        "circle-color": ink,
+        "circle-opacity": 0.1,
+        "circle-stroke-color": ink,
+        "circle-stroke-opacity": 0.45,
+        "circle-stroke-width": 1.5,
+        // "zoom" only at the top of an interpolate (as bairro-line): the cluster case goes inside it.
+        "circle-radius": [
+          "interpolate",
+          ["linear"],
+          ["zoom"],
+          11,
+          ["case", ["has", "point_count"], ["step", ["get", "point_count"], 21, 8, 24, 25, 28, 60, 32], 10],
+          16,
+          ["case", ["has", "point_count"], ["step", ["get", "point_count"], 21, 8, 24, 25, 28, 60, 32], 18],
+        ],
+      },
     });
     map.addLayer({
       id: "clusters",
@@ -229,7 +284,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
   function applyPins(s: MapState) {
     if (!ready) return;
     const byBairro = s.pinMode === "bairros";
-    for (const l of ["clusters", "cluster-count", "points", "questions"])
+    for (const l of ["downpour", "clusters", "cluster-count", "points", "questions"])
       if (map.getLayer(l)) map.setLayoutProperty(l, "visibility", byBairro ? "none" : "visible");
     if (map.getLayer("days")) map.setLayoutProperty("days", "visibility", s.pinMode === "dias" ? "visible" : "none");
     const counts = new Map<string, number>();
@@ -351,7 +406,8 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
       map.setStyle(styleUrl(next.dark));
       return;
     }
-    if (next.visible !== prev.visible && ready) itemsSource()?.setData(featureCollection(next.visible));
+    if ((next.visible !== prev.visible || next.gauges !== prev.gauges) && ready)
+      itemsSource()?.setData(featureCollection(next.visible, muni, next.gauges));
     if (next.pinMode !== prev.pinMode || next.visible !== prev.visible) applyPins(next);
     if (next.selectedId !== prev.selectedId || next.focusId !== prev.focusId) applySelection(next, true);
     else if (next.visible !== prev.visible) applySelection(next, false);

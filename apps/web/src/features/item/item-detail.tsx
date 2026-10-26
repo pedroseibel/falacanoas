@@ -1,5 +1,7 @@
 import {
   plural,
+  asksFlooding,
+  itemLngLat,
   awaitingDigest,
   communityLine,
   dateAgo,
@@ -325,7 +327,13 @@ export function ItemDetail({
 
         <p className="text-sm leading-relaxed text-ink-2 wrap-anywhere">{it.text}</p>
 
-        <FloodNotesSection notes={it.flooding} rain={it.rain} history={it.floodHistory} timezone={muni.timezone} />
+        <FloodNotesSection
+          notes={it.flooding}
+          rain={it.rain}
+          history={it.floodHistory}
+          live={asksFlooding(muni, it.category) ? itemLngLat(it) : null}
+          timezone={muni.timezone}
+        />
 
         <section aria-labelledby="hist">
           <h3 id="hist" className="flex items-baseline justify-between text-sm font-semibold">
