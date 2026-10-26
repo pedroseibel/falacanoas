@@ -107,6 +107,6 @@ new Elysia()
     },
     { parse: "none" },
   )
-  .listen(config.port);
+  .listen({ port: config.port, ...(config.hostname ? { hostname: config.hostname } : {}) });
 
 console.log(`resumo diário (${config.mode}) em :${config.port}`);

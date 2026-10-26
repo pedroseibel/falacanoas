@@ -9,6 +9,16 @@ test("production needs its addresses and database; development falls back to pla
   expect(dev.token).toBe("");
 });
 
+test("the rain archive schedules itself in development only when asked; the host is optional", () => {
+  expect(loadConfig({ DIGEST_DATABASE_URL: "postgres://x" })).toMatchObject({ rain: false, hostname: undefined });
+  expect(loadConfig({ DIGEST_DATABASE_URL: "postgres://x", DIGEST_RAIN: "1", DIGEST_HOST: "127.0.0.1" })).toMatchObject(
+    {
+      rain: true,
+      hostname: "127.0.0.1",
+    },
+  );
+});
+
 test("addresses are comma-separated lists", () => {
   const c = loadConfig({
     DIGEST_MODE: "production",

@@ -44,6 +44,8 @@ export interface Config {
   /** Bearer token for POST /resumo; without one, the route is closed. */
   token: string;
   port: number;
+  /** The interface to listen on (DIGEST_HOST, e.g. 127.0.0.1 on a workstation); every one by default. */
+  hostname: string | undefined;
   outboxDir: string;
   /** Where the photos in the resumo are fetched from (their addresses name the public site). */
   photoBase: string;
@@ -74,6 +76,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     cc: list(env.DIGEST_CC).length ? list(env.DIGEST_CC) : dev ? ["cac@prefeitura.invalid"] : [],
     token: env.DIGEST_TOKEN ?? "",
     port: Number(env.PORT) || 3200,
+    hostname: env.DIGEST_HOST || undefined,
     outboxDir: env.DIGEST_OUTBOX || fileURLToPath(new URL("../outbox", import.meta.url)),
     photoBase: env.DIGEST_PHOTO_BASE || (dev ? "http://127.0.0.1:3100" : `https://${canoas.branding.domain}`),
     cacheDir: env.DIGEST_CACHE || fileURLToPath(new URL("../cache", import.meta.url)),

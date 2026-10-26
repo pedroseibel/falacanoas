@@ -1,0 +1,26 @@
+# The rain archive on a workstation, until apps/digest runs in production (BUILD 6.1, 6.4): the digest
+# service in development mode, with only its rain job scheduled. The resumo never sends from here
+# (development writes to outbox/ and doesn't schedule itself), and its routes stay closed without tokens.
+#
+#   cp apps/digest/deploy/fala-chuva.service ~/.config/systemd/user/
+#   systemctl --user daemon-reload && systemctl --user enable --now fala-chuva.service
+#   curl -s 127.0.0.1:3200/saude
+#
+# The database comes from apps/web/.dev.vars (the app's own role), as in development.
+[Unit]
+Description=Fala, Canoas: arquivo de chuva (pluviômetros do Cemaden a cada 10 min)
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+WorkingDirectory=%h/git/falacanoas/apps/digest
+Environment=PATH=%h/.bun/bin:/usr/local/bin:/usr/bin:/bin
+Environment=DIGEST_RAIN=1
+Environment=DIGEST_HOST=127.0.0.1
+ExecStart=%h/.bun/bin/bun src/index.ts
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=default.target
