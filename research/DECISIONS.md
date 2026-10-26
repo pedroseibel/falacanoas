@@ -195,14 +195,14 @@ Settled in a `/grill-me` session (questions Q1-Q32, plus Q13b and Q26). **The pr
 
 **Civil identity (nível 2), when it comes**
 - **Purpose:** uniqueness and anti-manipulation only, after proof of ownership. Accountability rests on the phone and the access logs.
-- **Proof path A, first, as a pilot:**
+- **Proof path A, first, as a pilot** (*dropped in round 24: friction*):
   - The Fala generates a declaration (`userId`, a one-time nonce, an expiry, the declared CPF), and the citizen signs it with gov.br (prata/ouro).
   - The pilot validates the PAdES signature, the gov.br chain (its own PKI, not ICP-Brasil), revocation, the integrity of the signed revision, the `userId`, the nonce and the expiry.
   - A goes on to automation only if the certificate carries the full CPF and it matches the declared CPF. Third-party code reads it from SubjectAltName OID 2.16.76.1.3.1; this is [não verificado] until tested on a real signed PDF. Otherwise A is dropped for uniqueness.
   - A visual check on VALIDAR, which masks the CPF, never substitutes for this proof.
   - Legal basis for accepting the signature: MP 2.200-2, art. 10 §2, with acceptance in the terms of use.
   - Reading the birth date from the certificate for age assurance stays a research hypothesis.
-- **Path B:** a KYC vendor (document and selfie; biometrics). Only a contingency, after the RIPD.
+- **Path B:** a KYC vendor (document and selfie; biometrics). Only a contingency, after the RIPD. *Since round 24, the only path.*
 - **Path C:** Serpro Consulta CPF or Datavalid. Out as standalone proof; it may come back later as an auxiliary tool.
 - **Storage:**
   - The raw CPF is never persisted as account data.
@@ -332,7 +332,7 @@ Settled in a `/grill-me` session (questions Q1-Q32, plus Q13b and Q26). **The pr
 4. The privacy notice reviewed.
 5. The vault in place.
 
-Before any nível 2: the RIPD, the path A pilot on a real signed PDF, and the documented key-rotation procedure.
+Before any nível 2: the RIPD, the path A pilot on a real signed PDF, and the documented key-rotation procedure. *Round 24 drops the path A pilot; the RIPD and the key-rotation procedure stand.*
 
 ## Round 19: abuse safeguards (2026-10-13)
 
@@ -440,6 +440,13 @@ The founder delegated these ("you decide the best course"). They were settled af
 - **What doesn't change:** not an emergency channel. No alert styling and no alerts sent (a false evacuation alert went out in Mathias Velho on 2024-05-26). The emergency line stays visible in the view, and "Sem relatos não é sem alagamento" is printed on it. Nothing is pushed to anyone because of rain.
 - **Later, if the founder agrees:** an "Alagou hoje?" check-in to the followers of nearby flooding records after heavy rain, so each stretch also learns the times it rained and didn't flood. With 5 to 10 such events on 3 or more rain days, a record could say how often it flooded when it rained that hard.
 - **A live flood map proper** (where it is flooded now) stays out, as a joint proposal to the Defesa Civil once there are real reports.
+
+## Round 24: no gov.br for identity (2026-10-26)
+
+- **gov.br is out, entirely.** The founder dropped path A (a declaration signed in the Portal de Assinaturas gov.br and uploaded to the Fala) for its friction: an account at prata or ouro, a PDF to sign elsewhere and bring back, all for an optional tier. Login Único was already closed to private projects (research/identity).
+- **Nível 2 keeps every other rule of round 18.** Still optional, never a gate, not in the MVP, and only once there is a RIPD, the associação and a concrete case of abuse.
+- **When it comes, path B is the route:** a KYC vendor (document, liveness, face match; Didit was the candidate, free up to 500 full checks a month). It needs an art. 11 basis for the biometrics, a data processing agreement with the vendor, and where the faces are kept settled before signing. The Fala keeps only `cpf_hmac` and the vendor's reference, and asks the vendor to delete the rest.
+- **Still out:** Serpro's Consulta CPF and Datavalid as proof on their own, and the Pix R$ 0,01 trick.
 
 ## Research findings that constrain design (2026-10-12)
 
