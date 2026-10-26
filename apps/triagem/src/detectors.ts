@@ -10,11 +10,23 @@ import { MODELS } from "./models";
  */
 
 const dir = fileURLToPath(new URL("../models/", import.meta.url));
+
+/**
+ * CPU threads per model and for sharp (TRIAGEM_THREADS): a container's vCPU count. Unset, ONNX opens a
+ * thread per core it sees on the host, and under a CPU quota smaller than the host that throttles
+ * hard (research/infra/containers: 40 s a photo at ½ vCPU).
+ */
+const requested = Number(process.env.TRIAGEM_THREADS);
+const THREADS = Number.isInteger(requested) && requested > 0 ? requested : undefined;
+if (THREADS) sharp.concurrency(THREADS);
 const sessions = new Map<string, Promise<ort.InferenceSession>>();
 const session = (file: string) => {
   let s = sessions.get(file);
   if (!s) {
-    s = ort.InferenceSession.create(`${dir}${file}`, { logSeverityLevel: 3 });
+    s = ort.InferenceSession.create(`${dir}${file}`, {
+      logSeverityLevel: 3,
+      ...(THREADS ? { intraOpNumThreads: THREADS, interOpNumThreads: 1 } : {}),
+    });
     sessions.set(file, s);
   }
   return s;
