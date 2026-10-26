@@ -1,7 +1,9 @@
+import type { Municipality } from "@fala/core";
 import { ChevronDown } from "lucide-react";
+import { AlertsSms, EmergencyLines } from "@/components/emergency";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Num, Wrap, textLink } from "./bits";
+import { Wrap, textLink } from "./bits";
 
 function Disclosure({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
@@ -18,7 +20,7 @@ function Disclosure({ id, title, children }: { id?: string; title: string; child
   );
 }
 
-export function LandingFooter() {
+export function LandingFooter({ muni }: { muni: Municipality }) {
   return (
     <footer className="border-t border-hairline pt-section-sm pb-10 text-sm text-muted-foreground">
       <Wrap>
@@ -32,12 +34,11 @@ export function LandingFooter() {
               um canal da Prefeitura.
             </p>
             <p className="mt-7 flex flex-wrap gap-x-4.5 gap-y-1.5 text-ink-2">
-              Em emergência:{" "}
               <span>
-                Defesa Civil <Num className="text-foreground">199</Num>
+                Em emergência: <EmergencyLines muni={muni} />.
               </span>
               <span>
-                Bombeiros <Num className="text-foreground">193</Num>
+                <AlertsSms muni={muni} />
               </span>
             </p>
           </div>

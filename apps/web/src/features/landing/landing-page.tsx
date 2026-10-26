@@ -114,10 +114,10 @@ export function LandingPage({
         <HowItWorks muni={muni} />
         <Scoreboard muni={muni} confirmed={confirmed} />
         <About />
-        <Faq />
+        <Faq muni={muni} />
         <Join muni={muni} confirmed={confirmed} queue={queue} join={join} onPick={pick} onChannel={setChannel} />
       </main>
-      <LandingFooter />
+      <LandingFooter muni={muni} />
     </div>
   );
 }

@@ -27,6 +27,7 @@ const muni: Municipality = {
     boundary: { type: "FeatureCollection", features: [] },
   },
   branding: { name: "Fala, Teste", domain: "fala.test" },
+  emergency: { civilDefense: { display: "(51) 98255-0805", tel: "51982550805" }, fire: { display: "193", tel: "193" } },
 };
 
 describe("readIntent", () => {

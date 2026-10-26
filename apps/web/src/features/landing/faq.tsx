@@ -1,9 +1,12 @@
+import type { Municipality } from "@fala/core";
 import { Plus } from "lucide-react";
+import { EmergencyLines } from "@/components/emergency";
 import type { ReactNode } from "react";
 import { Fn, Num, Section, textLink } from "./bits";
 import { cn } from "@/lib/utils";
 
-const QUESTIONS: { q: string; a: ReactNode }[] = [
+/** The answers name the instance's own emergency lines, so the list is built for a municipality. */
+const questions = (muni: Municipality): { q: string; a: ReactNode }[] => [
   {
     q: "É um canal da Prefeitura?",
     a: (
@@ -34,8 +37,7 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
         <li>Reclamação contra uma pessoa: o mapa aponta serviços e órgãos, nunca alguém pelo nome.</li>
         <li>Briga entre vizinhos: barulho, obra do lado, cachorro do vizinho não são serviço público.</li>
         <li>
-          Emergência: Defesa Civil <Num>199</Num>, Bombeiros <Num>193</Num>. Alagamento que volta toda chuva, sim,
-          entra.
+          Emergência: <EmergencyLines muni={muni} />. Alagamento que volta toda chuva, sim, entra.
         </li>
       </ul>
     ),
@@ -75,7 +77,7 @@ const QUESTIONS: { q: string; a: ReactNode }[] = [
   },
 ];
 
-export function Faq() {
+export function Faq({ muni }: { muni: Municipality }) {
   return (
     <Section id="perguntas" divided>
       <div className="grid grid-cols-pair items-start gap-split max-split:grid-cols-1">
@@ -88,7 +90,7 @@ export function Faq() {
           </p>
         </div>
         <div>
-          {QUESTIONS.map(({ q, a }) => (
+          {questions(muni).map(({ q, a }) => (
             <details key={q} className="group border-t border-hairline last:border-b">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 text-heading font-semibold text-balance">
                 {q}

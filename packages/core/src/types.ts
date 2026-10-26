@@ -270,4 +270,25 @@ export interface Municipality {
    * moderation (round 18, Q31).
    */
   electionPeriods?: { from: string; to: string }[];
+  /**
+   * Where to turn in an emergency, as the municipality publishes it (the Fala is never an emergency
+   * channel, round 11). Shown in the report form, the FAQ and the landing's footer.
+   */
+  emergency: {
+    /** The civil defence's 24-hour line. */
+    civilDefense: EmergencyLine;
+    /** The fire brigade. */
+    fire: EmergencyLine;
+    /** Official alerts by SMS (the national 40199 service: send the CEP). */
+    alertsSms?: { number: string; how: string };
+  };
+}
+
+export interface EmergencyLine {
+  /** As printed: "(51) 98255-0805". */
+  display: string;
+  /** For tel: and wa.me links, digits only (with the area code). */
+  tel: string;
+  /** The same number also answers on WhatsApp. */
+  whatsapp?: boolean;
 }

@@ -77,6 +77,14 @@ export const canoas = defineMunicipality({
   // 2026: propaganda allowed after 15 Aug (Lei 9.504, art. 36); 1st round 4 Oct and runoff 25 Oct
   // (CF, art. 77: first and last Sundays of October).
   electionPeriods: [{ from: "2026-08-16", to: "2026-10-25" }],
+  // research/alagamentos: the Prefeitura's emergency page lists the Defesa Civil's 24-hour line as
+  // this number (phone or WhatsApp), and 199 as the Polícia Civil, so 199 is not printed until the
+  // Secretaria de Defesa Civil e Resiliência Climática confirms it. Alerts: the national SMS 40199.
+  emergency: {
+    civilDefense: { display: "(51) 98255-0805", tel: "51982550805", whatsapp: true },
+    fire: { display: "193", tel: "193" },
+    alertsSms: { number: "40199", how: "envie o seu CEP" },
+  },
 });
 
 export default canoas;

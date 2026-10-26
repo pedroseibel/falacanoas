@@ -103,7 +103,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - the app describes the card (`/api/cartao/o/$id`, `/api/cartao/bairro/$slug`) and caches each PNG under its versioned link, so a card is drawn once per state; pins in moderation get none;
   - full Open Graph and Twitter tags with absolute links on both pages, the description saying "Exemplo, dados fictícios" for demo data;
   - ⛔ production: drawing takes about a second of CPU, beyond the free plan's 10 ms per request, so it needs Workers Paid (founder decision). Until then the link falls back to the pin's photo, or og.png.
-- [x] **2.10 Emergency notice in the app** (round 11): "Em emergência: Defesa Civil 199 / Bombeiros 193". It now sits at the foot of the report form, with tappable numbers.
+- [x] **2.10 Emergency notice in the app** (round 11): at the foot of the report form, with tappable numbers. Since 2026-10-26 the numbers are instance config (`emergency`) and follow what the Prefeitura publishes (6.0).
 - [ ] **2.11 Faces and plates blurred** (round 6). The original stays private, and the public copy is blurred. ⛔ Needs a choice of detection service.
 - [ ] **2.12 Optional video, up to 30 s** (round 1). Not built on purpose: a clip catches far more bystanders than a photo, and round 6 requires faces and plates blurred in public, so video waits for 2.11's service to handle frames too. It also needs server-side remuxing to strip the container's metadata (MP4 can carry the recording's GPS position) and a size and length check before storage. ⛔ After 2.11.
 - [x] **2.13 Ponto de referência and the address** (research/digest-pdf, founder input). Done 2026-10-13, verified in the browser from the form to the pin page.
@@ -219,6 +219,13 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - [x] **5.10 Retention** (round 20). Done 2026-10-13: the daily job deletes removed photos' bytes six months after removal, never under an open contest or an escalation.
 - [x] **5.11 Transparency report** (round 20; the STF tese on art. 19). Done 2026-10-13: `/transparencia`, counted live by month for the last 12 months on Canoas's calendar. It covers photos looked at and removed, the median time to a first look, reports, removals, contests and those won, sanctions, escalations to the authorities, and data-subject requests. Only counts, never people or content. The privacy notice links to it and now covers the screening, sanctions and retention (version 2026-10-13).
 
+## 6. Rain flooding (research/alagamentos)
+
+- [x] **6.0 Emergency numbers.** Done 2026-10-26. The report form, the FAQ and the landing footer read `emergency` from the instance: Defesa Civil de Canoas 24 h, (51) 98255-0805 (phone and WhatsApp), Bombeiros 193, and alerts by SMS to 40199 with the CEP. "Defesa Civil 199" is gone: the Prefeitura's page lists 199 as the Polícia Civil. A test keeps it out until the SDCRC confirms it.
+- [ ] **6.1 Rain gauge archive.** The five Cemaden gauges in Canoas, every 10 minutes, from the live feed.
+- [ ] **6.2 Questions on "rua que alaga".** The cause seen, whether it's raining, how long the water stayed.
+- [ ] **6.3 The day's rain on each flooding record**, from the nearest gauge, also in the resumo.
+
 ## Founder inputs that unblock items
 
 - **E-mail sender and Ouvidoria address:** 3.1.
@@ -232,3 +239,4 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).
 - **Domains and Turnstile keys:** 4.5.
 - **Legal:** associação, privacy notice review, ECA Digital opinion. These gate the public launch, not the build.
+- **Defesa Civil:** confirm with the SDCRC whether 199 reaches them (6.0).
