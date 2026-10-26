@@ -19,6 +19,7 @@ import { db, type Db } from "./db/client";
 import { itemAuthors, itemConfirmations, itemEvents, itemFollows, itemPhotos, items, itemVotes } from "./db/schema";
 import { itemFromRows, newPhotoRows, rowsForNewItem, type PhotoRow } from "./items-model";
 import { openPhotoCases } from "./moderation-store";
+import { floodHistoryForItem } from "./flood-history";
 import { rainForItem } from "./rain-day";
 
 /**
@@ -84,8 +85,8 @@ async function readItem(
     q.select(photoColumns).from(itemPhotos).where(eq(itemPhotos.itemId, id)).orderBy(asc(itemPhotos.position)),
   ]);
   const item = itemFromRows(row, { events, photos: photos satisfies PhotoRow[] }, now, tz);
-  const rain = await rainForItem(q, item);
-  return rain ? { ...item, rain } : item;
+  const [rain, floodHistory] = await Promise.all([rainForItem(q, item), floodHistoryForItem(q, item)]);
+  return { ...item, ...(rain ? { rain } : {}), ...(floodHistory ? { floodHistory } : {}) };
 }
 
 /** One item with its whole history. Server-side callers that already decided access use this. */

@@ -1,4 +1,6 @@
 import {
+  FLOOD_NEARBY_METERS,
+  floodHistory,
   itemRain,
   rainWindow,
   type DigestItem,
@@ -67,6 +69,40 @@ export function pgStore(
     });
   }
 
+  /**
+   * The stretch's days on the flooding records (BUILD 6.5), from one read of the city's published
+   * flooding records and their approved photos (real ones only, as the resumo is).
+   */
+  async function withHistory(found: DigestItem[], m: NonNullable<typeof muni>): Promise<DigestItem[]> {
+    const types = m.categories.filter((c) => c.asks === "flooding").map((c) => c.key);
+    if (!types.length || !found.some((it) => types.includes(it.category))) return found;
+    const sightings = (
+      await q<{ lng: number; lat: number; at: Date }>(
+        `select i.lng, i.lat, i.created_at as at from fala.items i
+          where i.category = any($1) and i.moderation = 'published' and not i.demo and i.lng is not null and i.lat is not null
+         union all
+         select i.lng, i.lat, p.taken_at as at from fala.item_photos p join fala.items i on i.id = p.item_id
+          where i.category = any($1) and i.moderation = 'published' and not i.demo and p.review = 'approved'
+            and i.lng is not null and i.lat is not null`,
+        [types],
+      )
+    ).map((r) => ({ at: [r.lng, r.lat] satisfies [number, number], when: r.at }));
+    return found.map((it) => {
+      const s = it.scope;
+      if (
+        !types.includes(it.category) ||
+        (s.type !== "point" && s.type !== "place") ||
+        s.lng === undefined ||
+        s.lat === undefined
+      )
+        return it;
+      // The record itself counts (it's published; the read above has it too, and the day dedupes).
+      const own = { at: [s.lng, s.lat] satisfies [number, number], when: new Date(it.createdAt ?? 0) };
+      const h = floodHistory([s.lng, s.lat], [own, ...sightings], m.timezone, FLOOD_NEARBY_METERS);
+      return h ? { ...it, floodHistory: h } : it;
+    });
+  }
+
   return {
     async pending() {
       const rows = await q<PendingRow>(
@@ -103,7 +139,7 @@ export function pgStore(
         createdAt: r.created_at.toISOString(),
         ...(r.flooding ? { flooding: r.flooding } : {}),
       }));
-      return muni ? withRain(found, muni) : found;
+      return muni ? withHistory(await withRain(found, muni), muni) : found;
     },
     async nextNumber(year) {
       // The year by the instance's clock: a resumo sent at 18h on 31 December is that year's last.

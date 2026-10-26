@@ -275,12 +275,13 @@
       if e.text != none { v(2mm); text(size: 9.3pt, fill: ink2)[“#e.text”] }
       // A street that floods: the resident's account, then what the nearest gauge measured, each
       // said as what it is.
-      if e.water != none or e.rain != none {
+      if e.water != none or e.rain != none or e.history != none {
         v(3mm)
         block(width: C, inset: (left: 3mm, y: 0.6mm), stroke: (left: 1.2pt + hair), stack(spacing: 2.2mm,
           ..(
             if e.water != none { text(size: 8.6pt, fill: ink2)[#text(fill: ink3)[Segundo quem registrou:] #e.water] },
             if e.rain != none { stack(spacing: 1.3mm, text(size: 8.6pt, fill: ink2, e.rain.line), text(size: 6.8pt, fill: ink3, e.rain.source)) },
+            if e.history != none { stack(spacing: 1.3mm, text(size: 8.6pt, fill: ink2, e.history.line), text(size: 6.8pt, fill: ink3, e.history.note)) },
           ).filter(x => x != none)))
       }
       v(4mm)

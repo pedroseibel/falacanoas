@@ -10,6 +10,7 @@
  * (JSON, fixtures, API rows) is parsed with these schemas, never cast.
  */
 import { z } from "zod";
+import { FloodHistorySchema } from "./flood-history";
 import { FloodNotesSchema } from "./flooding";
 import { RainDaySchema, type RainSource } from "./rain";
 
@@ -106,6 +107,8 @@ export const ItemSchema = z.object({
   flooding: FloodNotesSchema.optional(),
   /** On a flooding record, the day's rain at the nearest gauge (core rain.ts), read with the record. */
   rain: RainDaySchema.nullable().optional(),
+  /** On a flooding record, the days flooding was registered near it (core flood-history.ts), read with it. */
+  floodHistory: FloodHistorySchema.nullable().optional(),
   /**
    * Street and number near the point, looked up once when it was registered (OpenStreetMap's
    * Nominatim). Approximate: the point on the map is the truth.

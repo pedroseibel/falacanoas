@@ -48,7 +48,11 @@ const SAMPLE_RAIN = {
 const day = picked.map((it, i): DigestItem => ({
   ...it,
   ...(it.category === "alaga"
-    ? { flooding: it.flooding ?? { cause: "bueiro", raining: true, duration: "1_3h" }, rain: SAMPLE_RAIN }
+    ? {
+        flooding: it.flooding ?? { cause: "bueiro", raining: true, duration: "1_3h" },
+        rain: SAMPLE_RAIN,
+        floodHistory: { days: 4, first: "2026-06-17T21:00:00Z", last: sentAt.toISOString(), meters: 150 },
+      }
     : {}),
   ...(references[i % references.length] ? { reference: references[i % references.length] } : {}),
   demo: false,

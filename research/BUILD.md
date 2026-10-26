@@ -235,6 +235,11 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - "Nesse dia, X mm em 24 h no pluviômetro Y, a Z km.", with its source under it: Cemaden, automatic gauge, the largest 24 h total measured that day and at what time, linking to the station's page. A dry day reads "nenhuma chuva em 24 h".
   - The gauge is the nearest (within 10 km) that measured anything on the record's local day; one that was silent is passed over for the next. Read with the record (`rain-day.ts`), never stored, so it follows the archive.
   - The resumo's record carries the resident's answers ("Segundo quem registrou: …") and this line, in the e-mail and the PDF. Records from before the archive (2026-10-26) have none.
+- [x] **6.4 The archive keeps running.** Done 2026-10-26: `apps/digest/deploy/fala-chuva.service`, a user unit beside the dev server's, runs the digest service in development with only the rain job (`DIGEST_RAIN=1`), on 127.0.0.1:3200. Installed on the workstation, lingering on; `/saude` shows the last read. Development still never sends a resumo. Until apps/digest runs in production, this is the archive.
+- [x] **6.5 A flooding record's stretch over time.** Done 2026-10-26, verified on a record and in the resumo's sample.
+  - "Neste trecho, até 150 m: alagamento registrado em N dias diferentes, de D1 a D2.", with "Contam os registros e as fotos de alagamento publicados no Fala. Sem relatos não é sem alagamento." Core's `flood-history.ts`.
+  - A day counts when a published flooding record was registered, or a photo approved on one, within 150 m; a confirmation without a photo doesn't. Real records with real, examples with examples. Shown from two days.
+  - Read with the record (`flood-history.ts` in the app) and with the resumo's records (`store.ts`), never stored.
 
 ## Founder inputs that unblock items
 

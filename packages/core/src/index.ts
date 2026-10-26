@@ -25,3 +25,4 @@ export * from "./sanctions";
 export * from "./rain";
 export * from "./flooding";
 export * from "./flood-rain";
+export * from "./flood-history";

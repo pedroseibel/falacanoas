@@ -1,25 +1,29 @@
-import { floodLines, rainLine, type FloodNotes, type RainDay } from "@fala/core";
-import { CloudRain } from "lucide-react";
+import { floodHistoryLine, floodLines, rainLine, type FloodHistory, type FloodNotes, type RainDay } from "@fala/core";
+import { CalendarDays, CloudRain } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { textLink } from "@/features/landing/bits";
 
 /**
  * A flooding record's water (research/alagamentos): what the reporter saw (core flooding.ts), said as
- * theirs and never as the cause, and the day's rain at the nearest gauge (core rain.ts), observed and
- * sourced. Nothing when there's neither.
+ * theirs and never as the cause; the day's rain at the nearest gauge (core rain.ts), observed and
+ * sourced; and the days flooding was registered on this stretch (core flood-history.ts). Nothing when
+ * there's none of them.
  */
 export function FloodNotesSection({
   notes,
   rain,
+  history,
   timezone,
 }: {
   notes: FloodNotes | undefined;
   rain: RainDay | null | undefined;
+  history: FloodHistory | null | undefined;
   timezone: string;
 }) {
   const lines = notes ? floodLines(notes) : [];
-  if (!lines.length && !rain) return null;
+  if (!lines.length && !rain && !history) return null;
   const measured = rain ? rainLine(rain, timezone) : null;
+  const stretch = history ? floodHistoryLine(history, timezone) : null;
   return (
     <section aria-labelledby="agua" className="grid gap-2.5">
       <h3 id="agua" className="text-sm font-semibold">
@@ -51,6 +55,15 @@ export function FloodNotesSection({
             </span>
           </p>
         </div>
+      )}
+      {stretch && (
+        <p className="flex gap-2 px-3">
+          <CalendarDays className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <span className="grid min-w-0 gap-1">
+            <span className="text-sm text-ink-2">{stretch.line}</span>
+            <span className="text-xs text-muted-foreground">{stretch.note}</span>
+          </span>
+        </p>
       )}
     </section>
   );

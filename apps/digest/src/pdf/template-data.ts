@@ -147,6 +147,7 @@ export function templateData(
           // A street that floods: what the resident saw, and the day's rain at the nearest gauge.
           water: e.water.length ? `${e.water.map((w) => `${w.term.toLowerCase()}: ${w.value}`).join("; ")}.` : null,
           rain: e.rain,
+          history: e.history,
           coords: e.point ? `${e.point.lat.toFixed(5)}, ${e.point.lng.toFixed(5)}` : null,
           // The street read from the map data, when no address was looked up.
           street: !e.address && a?.street ? `${a.street.name} (a ${a.street.metres} m)` : null,

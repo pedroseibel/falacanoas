@@ -178,6 +178,12 @@ describe("the e-mail text", () => {
       "   Chuva: Nesse dia, 69,2 mm em 24 h no pluviômetro Mathias Velho, a 1,2 km. Fonte: Cemaden, pluviômetro automático: o maior acumulado de 24 h medido nesse dia, às 20:10.",
     );
     expect(buildDigest([item("DDDDD")], muni, sentAt).text).not.toContain("Chuva:");
+    const seen = item("EEEEE", {
+      floodHistory: { days: 4, first: "2026-06-17T21:00:00Z", last: "2026-10-26T12:00:00Z", meters: 150 },
+    });
+    expect(buildDigest([seen], muni, sentAt).text).toContain(
+      "   Histórico: Neste trecho, até 150 m: alagamento registrado em 4 dias diferentes, de 17 jun 2026 a 26 out 2026.",
+    );
   });
   test("mentions the PDF only when it's attached", () => {
     expect(buildDigest(items, muni, sentAt, { attachment: true }).text).toContain("Em anexo, o mesmo resumo em PDF");
