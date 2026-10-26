@@ -430,6 +430,17 @@ The founder delegated these ("you decide the best course"). They were settled af
   - Questão trades its "!" for a "?", so nothing reads as an alarm.
 - **Still to do:** a small comprehension test with Canoas residents at 14 px (ISO 9186-1).
 
+## Round 23: "Chuva agora" on the map (2026-10-26)
+
+- **The founder asked for something live on the map during rain**, and gave a case: Rua Santa Maria, near the BR-116, floods whenever a downpour is a little stronger.
+- **This narrows the round 1 rule "no live flood pins"; it doesn't drop it.** The map may show, under "Água", a "Chuva agora" view in three layers:
+  1. **The gauges, live.** Each of the instance's rain gauges as a marker with its last hour's rain and the time of the reading, from the archive (BUILD 6.1), refreshed every 10 minutes; tapped, its last 24 hours. Measured, official, sourced. No surface drawn between gauges (five points don't support one, and modelled never shares a layer with observed).
+  2. **Known spots under a downpour.** When a gauge passes a heavy-rain mark in the last hour, flooding records within about 2 km of it stand out, saying the two facts side by side: the rain measured there, and the days flooding was registered on that stretch (BUILD 6.5). Never "alagado agora", never a forecast.
+  3. **Fresh reports that expire.** A flooding record or photo from the last 3 hours reads "relatado há 40 min", with "ainda não baixou" when the resident said so; after 6 hours it is an ordinary pin again.
+- **What doesn't change:** not an emergency channel. No alert styling and no alerts sent (a false evacuation alert went out in Mathias Velho on 2024-05-26). The emergency line stays visible in the view, and "Sem relatos não é sem alagamento" is printed on it. Nothing is pushed to anyone because of rain.
+- **Later, if the founder agrees:** an "Alagou hoje?" check-in to the followers of nearby flooding records after heavy rain, so each stretch also learns the times it rained and didn't flood. With 5 to 10 such events on 3 or more rain days, a record could say how often it flooded when it rained that hard.
+- **A live flood map proper** (where it is flooded now) stays out, as a joint proposal to the Defesa Civil once there are real reports.
+
 ## Research findings that constrain design (2026-10-12)
 
 - **Maps:** the landing page uses an inline SVG of the 18 bairros (`maps/data/web/canoas-bairros.svg`, about 4 KB gzipped) and a `<select>`, with no map library. For the eventual app: MapLibre (v6 is about 439 KB gzipped, ESM-only, and fails from `file://`; v5.24 UMD works). CARTO has required an API key since 2026-09-29; it is free up to 5M tiles/month non-commercial, and access is revocable. OpenFreeMap needs no key. Flood-extent layer: UFRGS, CC BY, 48.3% of the municipality.

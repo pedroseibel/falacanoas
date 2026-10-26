@@ -125,7 +125,7 @@ Success means sign-ups confirmed by WhatsApp or e-mail, spread across all 18 bai
 3. **Residents close the loop.** The Prefeitura may say "resolvido". Neighbours confirm it.
 4. **Protect the reporter.** Pseudonym + bairro in public; metadata stripped; faces and plates blurred.
 5. **Open by default.** AGPL code, open data, published rules, a named person accountable.
-6. **Not an emergency channel.** Chronic drainage, yes; live floods, no. "Em emergência: Defesa Civil 199 / Bombeiros 193."
+6. **Not an emergency channel.** Chronic drainage, yes; a "flooded now" map, no. During rain the map shows the gauges' measured rain, known spots under a downpour, and fresh reports that expire (DECISIONS round 23). "Em emergência: Defesa Civil 199 / Bombeiros 193."
 
 ## Proposed launch categories (to confirm; owners per `research/canoas/`)
 

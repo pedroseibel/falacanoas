@@ -240,6 +240,9 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
   - "Neste trecho, até 150 m: alagamento registrado em N dias diferentes, de D1 a D2.", with "Contam os registros e as fotos de alagamento publicados no Fala. Sem relatos não é sem alagamento." Core's `flood-history.ts`.
   - A day counts when a published flooding record was registered, or a photo approved on one, within 150 m; a confirmation without a photo doesn't. Real records with real, examples with examples. Shown from two days.
   - Read with the record (`flood-history.ts` in the app) and with the resumo's records (`store.ts`), never stored.
+- [ ] **6.6 "Chuva agora": the gauges, live on the map** (round 23). Each gauge's last hour and the time of the reading, refreshed every 10 minutes; tapped, its last 24 hours.
+- [ ] **6.7 Known spots under a downpour** (round 23). Flooding records within about 2 km of a gauge past the heavy-rain mark stand out, with the rain and the stretch's days.
+- [ ] **6.8 Fresh reports that expire** (round 23). A flooding record or photo from the last 3 hours reads "relatado há …"; after 6 hours, an ordinary pin.
 
 ## Founder inputs that unblock items
 
