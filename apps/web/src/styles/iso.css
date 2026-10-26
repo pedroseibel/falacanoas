@@ -2,7 +2,7 @@
  * Isometric figures drawn with the Anatomy kit (figures/kit, MIT): its tones mapped onto DESIGN.md's
  * cool neutral scale, light by default and dark by system or data-theme, like tokens.css. The paper
  * tone is the panel the figure sits on, so fills hide what is behind them without showing as patches.
- * Orange appears once: the clock's 18h mark and the scale past the deadline (the Three Places Rule).
+ * The accent appears once: the clock's 18h mark and the scale past the deadline (the Three Places Rule).
  */
 .iso {
   --anatomy-paper: var(--panel);

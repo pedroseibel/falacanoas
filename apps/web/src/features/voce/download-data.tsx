@@ -29,7 +29,7 @@ export function DownloadData({ timezone }: { timezone: string }) {
         Baixar meus dados
       </Button>
       {download.isError && (
-        <p role="alert" className="text-caption text-signal-text">
+        <p role="alert" className="text-caption text-destructive">
           {download.error.message === "Entre de novo para baixar seus dados."
             ? download.error.message
             : "Não deu para baixar agora. Tente de novo."}

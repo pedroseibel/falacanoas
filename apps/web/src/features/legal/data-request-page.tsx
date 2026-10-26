@@ -253,7 +253,7 @@ export function DataRequestPage({
 
         {!signedIn && turnstileSiteKey && <div ref={mountRobot} className="hidden has-[iframe]:block" />}
         {failure && (
-          <p role="alert" className="text-caption text-signal-text">
+          <p role="alert" className="text-caption text-destructive">
             {failure}
           </p>
         )}

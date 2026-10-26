@@ -1,6 +1,6 @@
 ---
 name: "Fala, Canoas"
-description: "Claim and proof, monochrome: an independent civic map shown as precise product UI in one neutral scale, with one bus-shelter orange for what needs attention."
+description: "Claim and proof, monochrome: an independent civic map shown as precise product UI in one neutral scale, with one esmerald for what needs attention."
 colors:
   paper: "#FAFAFA"
   ground: "#EFEFF1"
@@ -15,11 +15,12 @@ colors:
   line-3: "rgb(14 15 16 / .34)"
   map-line: "rgb(14 15 16 / .30)"
   map-fill: "rgb(14 15 16 / .025)"
-  shelter-orange: "#F05A1A"
-  shelter-orange-hover: "#DE4C0E"
-  shelter-orange-text: "#AE3D0B"
-  shelter-orange-wash: "rgb(240 90 26 / .13)"
-  on-orange: "#0E0F10"
+  esmerald: "#0A6F4C"
+  esmerald-deep: "#075E3F"
+  esmerald-text: "#096B48"
+  esmerald-wash: "rgb(10 111 76 / .10)"
+  on-esmerald: "#FFFFFF"
+  error-text: "#AE3D0B"
   paper-dark: "#0A0A0B"
   ground-dark: "#16161A"
   panel-dark: "#121214"
@@ -33,10 +34,12 @@ colors:
   line-3-dark: "rgb(255 255 255 / .32)"
   map-line-dark: "rgb(255 255 255 / .30)"
   map-fill-dark: "rgb(255 255 255 / .02)"
-  shelter-orange-dark: "#F4652A"
-  shelter-orange-hover-dark: "#FF7840"
-  shelter-orange-text-dark: "#FF8B57"
-  shelter-orange-wash-dark: "rgb(244 101 42 / .17)"
+  esmerald-dark: "#16A975"
+  esmerald-hover-dark: "#19BA81"
+  esmerald-text-dark: "#18B880"
+  esmerald-wash-dark: "rgb(22 169 117 / .17)"
+  on-esmerald-dark: "#0E0F10"
+  error-text-dark: "#FF8B57"
 typography:
   display:
     fontFamily: "Geist, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif"
@@ -138,14 +141,14 @@ spacing:
   wrap: "1240px"
 components:
   button-primary:
-    backgroundColor: "{colors.shelter-orange}"
-    textColor: "{colors.on-orange}"
+    backgroundColor: "{colors.esmerald}"
+    textColor: "{colors.on-esmerald}"
     typography: "{typography.label}"
     rounded: "{rounded.ctl}"
     padding: "0 20px"
     height: "48px"
   button-primary-hover:
-    backgroundColor: "{colors.shelter-orange-hover}"
+    backgroundColor: "{colors.esmerald-deep}"
   button-ghost:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
@@ -227,15 +230,15 @@ components:
     rounded: "{rounded.stage}"
     padding: "clamp(20px, 3.4vw, 44px)"
   days-counter:
-    textColor: "{colors.shelter-orange-text}"
+    textColor: "{colors.esmerald-text}"
     typography: "{typography.counter}"
   bairro-row:
     backgroundColor: "{colors.panel}"
     textColor: "{colors.ink}"
     padding: "11px 18px"
   bairro-row-selected:
-    backgroundColor: "{colors.shelter-orange-wash}"
-    textColor: "{colors.shelter-orange-text}"
+    backgroundColor: "{colors.esmerald-wash}"
+    textColor: "{colors.esmerald-text}"
   tooltip:
     backgroundColor: "{colors.ink}"
     textColor: "{colors.paper}"
@@ -251,13 +254,13 @@ components:
 
 Fala, Canoas looks like a well-made software product describing itself, not like a city portal or a protest flyer. Every sentence of copy sits next to a framed slice of interface that proves it: a pin card with its day counter, a daily digest, a scoreboard with a tick ruler, the real 18-bairro linework. The page is built from one neutral scale running from paper to ink, hairlines at low ink alpha, and framed product panels on soft radial grounds with faint grain. Light and dark are both designed and follow the system setting. Dark is a full inversion of the scale, not a tint.
 
-Colour is information. A single bus-shelter orange marks the act (the primary button), the clock (days open) and the place (the selected bairro). Everything else is ink, graphite and paper. Numbers are set in Geist Mono with tabular figures because here numbers are measurements: days, dates, queue counts, footnotes. Motion is a slow, soft rise as each proof enters, and it settles completely. Under reduced motion the page shows the final state.
+Colour is information. A single esmerald marks the act (the primary button), the clock (days open) and the place (the selected bairro). Everything else is ink, graphite and paper. Numbers are set in Geist Mono with tabular figures because here numbers are measurements: days, dates, queue counts, footnotes. Motion is a slow, soft rise as each proof enters, and it settles completely. Under reduced motion the page shows the final state.
 
 The density is product-marketing calm: generous section padding, tight internal panel rhythm (10–18px), and wide asymmetric claim/proof grids. The world explicitly rejects the look of an official portal (brasão, flag palette, gov blue) and alarm styling (sirens, red alerts).
 
 **Key Characteristics:**
 
-- One neutral scale, light and dark, with orange as the only hue in chrome.
+- One neutral scale, light and dark, with esmerald as the only hue in chrome (errors keep their own warm text tone).
 - Framed product panels (18px) inside larger radial-ground stages (28px), with long soft shadows.
 - 1px hairlines at 8–34% ink alpha do all the structural work.
 - Geist for words, Geist Mono for measurements.
@@ -266,14 +269,15 @@ The density is product-marketing calm: generous section padding, tight internal 
 
 ## Colors
 
-A cool-neutral grey scale with a faint blue cast, plus one saturated orange taken from the credited Canoas bus-shelter photo.
+A cool-neutral grey scale with a faint blue cast, plus one deep esmerald (chosen by the founder on 2026-10-26, replacing the bus-shelter orange). It is dark enough to carry white labels and to read as text on paper.
 
 ### Primary
 
-- **Bus-Shelter Orange** (shelter-orange; dark: shelter-orange-dark): the fill of the primary action, the selected bairro's map stroke and lit queue slots, hot map pins with their halo, the over-deadline segment of the scoreboard ruler, and the comma in the wordmark. It is a fill and a stroke colour only.
-- **Shelter Orange Deep** (shelter-orange-hover): primary button hover in light. In dark the hover goes lighter (shelter-orange-hover-dark).
-- **Shelter Orange Text** (shelter-orange-text; dark: shelter-orange-text-dark): every piece of orange _text_: the "dias em aberto" counters, the selected bairro's queue count, and form error messages and error borders.
-- **Shelter Orange Wash** (shelter-orange-wash; dark: shelter-orange-wash-dark): the tint behind a selected bairro, both its map polygon and its list row, and the highlighted digest row.
+- **Esmerald** (esmerald; dark: esmerald-dark): the fill of the primary action, the selected bairro's map stroke and lit queue slots, hot map pins with their halo, the over-deadline segment of the scoreboard ruler, and the comma in the wordmark. It is a fill and a stroke colour only.
+- **Esmerald Deep** (esmerald-deep): primary button hover in light. In dark the hover goes lighter (esmerald-hover-dark).
+- **Esmerald Text** (esmerald-text; dark: esmerald-text-dark): every piece of accent _text_: the "dias em aberto" counters and the selected bairro's queue count.
+- **Ember Text** (error-text; dark: error-text-dark): form error messages and error borders, and nothing else. It is the old orange's text tone, kept because green would read as success.
+- **Esmerald Wash** (esmerald-wash; dark: esmerald-wash-dark): the tint behind a selected bairro, both its map polygon and its list row, and the highlighted digest row.
 
 ### Neutral
 
@@ -290,13 +294,13 @@ A cool-neutral grey scale with a faint blue cast, plus one saturated orange take
 
 ### Named Rules
 
-**The Three Places Rule.** Orange marks the action, the clock and the selected place, plus the brand comma. Data visualisations may use it for exactly one "needs attention" category (the over-deadline ruler segment, the hot pin, the "em aberto e atrasadas" stack segment). If a new use is none of these, it is ink.
+**The Three Places Rule.** Esmerald marks the action, the clock and the selected place, plus the brand comma. Data visualisations may use it for exactly one "needs attention" category (the over-deadline ruler segment, the hot pin, the "em aberto e atrasadas" stack segment). If a new use is none of these, it is ink.
 
-**The Text-Orange Rule.** Orange text always uses Shelter Orange Text, never the fill orange. The fill fails contrast as text on paper.
+**The Accent-Text Rule.** Esmerald text uses Esmerald Text. In light it is close to the fill, which also passes as text on paper; in dark the fill and the text tones differ, so keep the token.
 
-**The Ink-On-Orange Rule.** The primary button's label is ink (on-orange), in both themes, never white.
+**The Label-On-Esmerald Rule.** The primary button's label is white on the deep esmerald in light, and ink on the lighter esmerald in dark (on-esmerald, on-esmerald-dark).
 
-**The No-Alarm Rule.** Errors are not red. Error copy and error borders use Shelter Orange Text. The system has no red, yellow or green in chrome.
+**The No-Alarm Rule.** Errors are not red, and never the accent. Error copy and error borders use Ember Text. The system has no red or yellow in chrome, and its only green is the esmerald accent.
 
 ## Typography
 
@@ -316,7 +320,7 @@ A cool-neutral grey scale with a faint blue cast, plus one saturated orange take
 - **Body small** (400, 0.9375rem): nav links, definition-list values, the fold fact.
 - **Label** (600, 0.875rem, −0.005em): field labels and legends.
 - **Meta** (400, 0.8125rem, 1.45): hints, captions, panel bar text, table rows inside mock panels.
-- **Counter** (Geist Mono 500, 2.25rem, −0.04em) and **Counter hero** (Geist Mono 500, clamp 3.5–4.75rem, 0.9, −0.05em): "dias em aberto", always in Shelter Orange Text.
+- **Counter** (Geist Mono 500, 2.25rem, −0.04em) and **Counter hero** (Geist Mono 500, clamp 3.5–4.75rem, 0.9, −0.05em): "dias em aberto", always in Esmerald Text.
 - **Data** (Geist Mono 400, 0.75rem, tabular): dates, queue counts, table numbers, footnote markers.
 - **Chip** (Geist Mono 400, 0.6875rem, +0.02em): "exemplo", the "independente" tag, badges.
 
@@ -344,7 +348,7 @@ Hybrid. Structure comes from hairlines and tonal steps (paper, ground, panel, re
 
 - **Panel lift** (light: `0 1px 1px rgb(14 15 16 / .04), 0 10px 24px -8px rgb(14 15 16 / .10), 0 36px 72px -28px rgb(14 15 16 / .22)`; dark: `0 0 0 1px rgb(255 255 255 / .02), 0 2px 6px rgb(0 0 0 / .4), 0 32px 64px -24px rgb(0 0 0 / .8)`): every framed product panel.
 - **Control lift** (light: `0 1px 1px rgb(14 15 16 / .05), 0 6px 16px -8px rgb(14 15 16 / .14)`; dark: `0 2px 6px rgb(0 0 0 / .45), 0 10px 24px -12px rgb(0 0 0 / .7)`): the selected segment in segmented controls.
-- **Primary bevel** (`inset 0 1px 0 rgb(255 255 255 / .22), 0 1px 2px rgb(14 15 16 / .18)`): the orange button only.
+- **Primary bevel** (`inset 0 1px 0 rgb(255 255 255 / .22), 0 1px 2px rgb(14 15 16 / .18)`): the esmerald button only.
 
 ### Named Rules
 
@@ -361,8 +365,8 @@ The corners are soft and concentric. Stages are 28px, the panels inside them 18p
 Quiet, exact, 48px tall.
 
 - **Shape:** gently rounded (11px; small size 38px tall at 9px).
-- **Primary:** Bus-Shelter Orange fill, ink label at 600, 0 20px padding, primary bevel. In the hero it grows to 52px; in the signup form it is full width at 54px; in the sign-in column it is full width at 52px. Carries a leading WhatsApp icon or a trailing arrow. The orange paints out to the border edge, under the transparent 1px border, so a full-width button lines up exactly with the fields above it.
-- **Hover / Focus / Active:** hover moves to Shelter Orange Deep. Active nudges down 1px. Focus is a 2px ink outline at 3px offset. A loading state dims the label and shows a 16px spinner. Disabled sits at 55% opacity.
+- **Primary:** Esmerald fill, white label at 600 (ink in dark), 0 20px padding, primary bevel. In the hero it grows to 52px; in the signup form it is full width at 54px; in the sign-in column it is full width at 52px. Carries a leading WhatsApp icon or a trailing arrow. The esmerald paints out to the border edge, under the transparent 1px border, so a full-width button lines up exactly with the fields above it.
+- **Hover / Focus / Active:** hover moves to Esmerald Deep. Active nudges down 1px. Focus is a 2px ink outline at 3px offset. A loading state dims the label and shows a 16px spinner. Disabled sits at 55% opacity.
 - **Ghost:** transparent with a Hairline Strong border and ink label. On hover it takes Panel Recess with Hairline Firm. It is used for the header CTA and the share actions, with a leading 17px stroke icon.
 - **Ink:** ink fill with a paper label. It appears only inside mock product UI (the composer's "Enviar").
 
@@ -383,7 +387,7 @@ Quiet, exact, 48px tall.
 
 - **Style:** 48px (52px in the hero), 11px radius, Hairline Strong border, panel fill, 1rem Geist, 14px inset. The native select carries a custom chevron at 14px from the right.
 - **Focus:** the border turns ink with a 3px ring of ink at 14%.
-- **Error:** the border and a 13px message turn Shelter Orange Text.
+- **Error:** the border and a 13px message turn Ember Text.
 - **Code entry:** six separate 56px boxes that share the column's full width with 8px gaps, each 11px radius on panel fill with a Hairline Strong border, one Geist Mono digit at 1.5rem with tabular figures. The current box takes an ink border on all four sides and the 3px ring of ink at 14%. Errors turn the borders Shelter Orange Text.
 - **Checkbox:** 20px at 6px radius with a Hairline Firm border. Checked is an ink fill with a paper tick.
 
@@ -393,19 +397,19 @@ A Panel Recess track (4px padding, 13px radius, hairline border) holding two 42p
 
 ### Navigation
 
-A sticky 68px header: the wordmark (Geist 600, orange comma), a mono "independente" pill tag, four 15px graphite links (ink on hover, no underline), and a small ghost CTA. Below 900px only the wordmark, tag and CTA remain.
+A sticky 68px header: the wordmark (Geist 600, esmerald comma), a mono "independente" pill tag, four 15px graphite links (ink on hover, no underline), and a small ghost CTA. Below 900px only the wordmark, tag and CTA remain.
 
 ### Maps
 
-The 18 bairros are drawn as 1px non-scaling Map Line strokes over Map Fill. Hover tints a polygon to ink at 7%, and keyboard focus strokes it 2px ink. The selected bairro takes Shelter Orange Wash fill with a 1.6px orange stroke, and the selection syncs across every map on the page. Pins are ink dots ringed in panel. Done pins are hollow Slate rings. Hot pins are orange, with a single orange halo that pulses three times and then stops. An ink tooltip (9px radius, 7px 10px) names the bairro and its queue count.
+The 18 bairros are drawn as 1px non-scaling Map Line strokes over Map Fill. Hover tints a polygon to ink at 7%, and keyboard focus strokes it 2px ink. The selected bairro takes Esmerald Wash fill with a 1.6px esmerald stroke, and the selection syncs across every map on the page. Pins are ink dots ringed in panel. Done pins are hollow Slate rings. Hot pins are esmerald, with a single esmerald halo that pulses three times and then stops. An ink tooltip (9px radius, 7px 10px) names the bairro and its queue count.
 
 ### Pin Card
 
-A panel with a 4:3 credited photo (exemplo chip overlaid), a 12px category line, a 16px/600 title, a Counter in Shelter Orange Text over a hairline with its unit in meta, and a mono-dated timeline in 12px.
+A panel with a 4:3 credited photo (exemplo chip overlaid), a 12px category line, a 16px/600 title, a Counter in Esmerald Text over a hairline with its unit in meta, and a mono-dated timeline in 12px.
 
 ### Scoreboard Ruler
 
-A 22px track with 12 hairline ticks masked to the bottom 7px. An 8px ink fill with 2px radius marks the median days. A 1px Slate reference line marks 30 days, labelled in 10px mono. Fills past the deadline switch to orange at the cut. In tables, numbers are right-aligned mono and names are ink 500.
+A 22px track with 12 hairline ticks masked to the bottom 7px. An 8px ink fill with 2px radius marks the median days. A 1px Slate reference line marks 30 days, labelled in 10px mono. Fills past the deadline switch to esmerald at the cut. In tables, numbers are right-aligned mono and names are ink 500.
 
 ### Step Ruler
 
@@ -413,7 +417,7 @@ The sign-in stepper, a variant of the Scoreboard Ruler. It is 18px tall with 13 
 
 ### Bairro Queue List
 
-Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500), a right-aligned mono queue count, and a 20-slot meter of 12px cells at 2px radius on Panel Well, filled with ink as neighbours join. Hover takes Panel Recess. The selected row gets Shelter Orange Wash, orange lit slots and an orange count.
+Hairline-separated full-width rows (11px 18px) showing the bairro name (15px/500), a right-aligned mono queue count, and a 20-slot meter of 12px cells at 2px radius on Panel Well, filled with ink as neighbours join. Hover takes Panel Recess. The selected row gets Esmerald Wash, esmerald lit slots and an esmerald count.
 
 ### Not Found
 
@@ -433,15 +437,15 @@ One pictogram per category, drawn to the public-information norm: ISO 7001's con
 
 - **Do** frame every product claim with a panel inside a stage, and chip mock data "exemplo" in mono.
 - **Do** set every count, day, date and footnote marker in Geist Mono with tabular figures.
-- **Do** keep orange to the action, the clock, the selected place and the brand comma. Use Shelter Orange Text for any orange words or numbers.
-- **Do** design both themes. Dark inverts the neutral scale and lightens the orange (shelter-orange-dark, shelter-orange-text-dark).
+- **Do** keep esmerald to the action, the clock, the selected place and the brand comma. Use Esmerald Text for any accent words or numbers.
+- **Do** design both themes. Dark inverts the neutral scale and lightens the esmerald (esmerald-dark, esmerald-text-dark).
 - **Do** use 1px hairlines for structure, and dashed hairlines for things that do not exist yet.
 - **Do** use the house easing `cubic-bezier(.16,1,.3,1)`: 0.2s for state changes and a 1.1s rise with blur for entering proofs. Show the final state under reduced motion.
 
 ### Don't:
 
-- **Don't** use red, yellow or green in chrome. Errors use Shelter Orange Text. Those hues may appear only as small data marks.
-- **Don't** put white text on orange.
+- **Don't** use red or yellow in chrome, or any green but the esmerald. Errors use Ember Text. Other hues may appear only as small data marks.
+- **Don't** put ink on the light-theme esmerald, or white on the dark-theme one.
 - **Don't** add eyebrow kickers, uppercase labels or numbered section markers; numbering belongs only to the four loop steps.
 - **Don't** use the brasão, the flag palette, gov blue, Rawline or siren styling. Nothing may read as the Prefeitura or as an alert.
 - **Don't** use hard offset shadows, coloured glows or thick borders. Lift is long and soft.

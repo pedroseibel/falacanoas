@@ -186,17 +186,17 @@ function PhoneStep({
           )}
         </Field>
         {!available && (
-          <p role="alert" className="text-sm text-signal-text">
+          <p role="alert" className="text-sm text-destructive">
             Entrar com o celular está indisponível nesta versão: falta configurar a verificação anti-robô.
           </p>
         )}
         {send.isError && (
-          <p role="alert" className="text-sm text-signal-text">
+          <p role="alert" className="text-sm text-destructive">
             {SEND_FAILURE_MESSAGE[failureOf(send.error)]}
           </p>
         )}
         {withPasskey.isError && (
-          <p role="alert" className="text-sm text-signal-text">
+          <p role="alert" className="text-sm text-destructive">
             Não deu para entrar com a passkey. Tente de novo, ou entre com o celular.
           </p>
         )}
@@ -242,7 +242,7 @@ function PhoneStep({
           </p>
         )}
         {guest.isError && (
-          <p role="alert" className="text-sm text-signal-text">
+          <p role="alert" className="text-sm text-destructive">
             Não deu para continuar sem conta agora. Tente de novo, ou entre com o celular.
           </p>
         )}
@@ -330,7 +330,7 @@ function CodeStep({
           role={verify.isError ? "alert" : "status"}
           className={cn(
             "-mt-3 flex min-h-5 items-center gap-1.5 text-caption",
-            verify.isError ? "text-signal-text" : "text-muted-foreground",
+            verify.isError ? "text-destructive" : "text-muted-foreground",
           )}
         >
           {verify.isError ? (

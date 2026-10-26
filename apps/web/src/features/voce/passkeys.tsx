@@ -96,7 +96,7 @@ export function Passkeys({ nick, timezone }: { nick: string | null; timezone: st
         <p className="text-caption text-muted-foreground">Este navegador não aceita passkeys.</p>
       )}
       {add.isError && (
-        <p role="alert" className="text-caption text-signal-text">
+        <p role="alert" className="text-caption text-destructive">
           Não deu para criar a passkey. Tente de novo.
           {import.meta.env.DEV && " No ambiente de teste, passkeys só funcionam no endereço da tailnet."}
         </p>

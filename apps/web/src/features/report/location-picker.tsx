@@ -97,7 +97,7 @@ export function LocationPicker({
       aria-describedby={describedBy}
       className={cn(
         "relative h-60 overflow-hidden rounded-xl border border-hairline bg-ground outline-none focus-visible:ring-3 focus-visible:ring-ring/50 max-compact:h-52",
-        invalid && "border-signal-text",
+        invalid && "border-destructive",
       )}
     >
       {/* MapLibre sets position: relative on its container, so the positioning lives on this wrapper. */}

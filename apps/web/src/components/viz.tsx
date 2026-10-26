@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, type PointerEvent, type FocusEvent } from "r
 /**
  * Data-viz primitives, built with the dataviz skill.
  * - DaysMeter: one series. Ink up to the reference deadline, a 2px surface gap, then signal
- *   orange for the part over it ("needs attention"). Track is a lighter step of the same ramp.
+ *   the accent for the part over it ("needs attention"). Track is a lighter step of the same ramp.
  * - StatTile: label + value, sans semibold, proportional figures.
  * - Choropleth: 5-step neutral ordinal ramp (validated light and dark, light end >= 2:1),
  *   tooltip on hover and focus; the Placar bairro table is its table view.

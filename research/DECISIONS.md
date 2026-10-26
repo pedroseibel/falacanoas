@@ -398,6 +398,20 @@ The founder delegated these ("you decide the best course"). They were settled af
 2. A designated person and a backup for escalations, with the procedure reviewed by counsel.
 3. The Fala is registered on Nidus once registration opens.
 
+## Round 21: the accent colour (2026-10-26)
+
+- **Esmerald replaces the bus-shelter orange.** The founder found the orange readable but ugly. Two rounds were tried live in the app:
+  - Mid-tone accents with an ink label (framboesa, violeta, azul-piscina, verde-água) read as washed out and hard to read.
+  - Deep accents with a white label (índigo, uva, rubi, petróleo, esmeralda) all passed 6:1. The founder chose **esmeralda**.
+- **Values.**
+  - Light: `#0A6F4C`, hover `#075E3F`, text `#096B48`, white label.
+  - Dark: `#16A975`, hover `#19BA81`, text `#18B880`, ink label.
+  - On ink surfaces (the favicon and app icons) the comma takes the dark value.
+- **Errors keep a warm tone of their own** (Ember Text: `#AE3D0B` light, `#FF8B57` dark), never the accent, because a green error reads as success. The founder agreed: errors use `destructive`.
+- **What changes in DESIGN.md.** The Three Places Rule stands, now in esmerald. The Ink-On-Orange Rule becomes the Label-On-Esmerald Rule (white in light, ink in dark). The No-Alarm Rule now reads: no red, no yellow, and no green but the accent.
+- **Known trade-off.** On the map the selected pin is darker than before, closer to the ink pins. Its halo and wash carry the difference. Revisit if it proves hard to spot on a phone.
+- **Photos (open).** The founder dislikes the stock bus-stop photo the orange came from. Its replacement is still to be decided: credited Commons photos, or real photos taken in Canoas.
+
 ## Research findings that constrain design (2026-10-12)
 
 - **Maps:** the landing page uses an inline SVG of the 18 bairros (`maps/data/web/canoas-bairros.svg`, about 4 KB gzipped) and a `<select>`, with no map library. For the eventual app: MapLibre (v6 is about 439 KB gzipped, ESM-only, and fails from `file://`; v5.24 UMD works). CARTO has required an API key since 2026-09-29; it is free up to 5M tiles/month non-commercial, and access is revocable. OpenFreeMap needs no key. Flood-extent layer: UFRGS, CC BY, 48.3% of the municipality.

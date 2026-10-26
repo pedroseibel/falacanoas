@@ -1,7 +1,7 @@
 // The landing's hero figure: Canoas as a tabletop relief (Anatomy kit, MIT; ../kit). The municipal
 // boundary is the plinth, the 18 official bairros are drawn on it at their true shapes, and each pin
 // is a stack of discs, one per day open since the 18h resumo carried it; past the 30-day reference
-// deadline the discs are orange, as in the Placar. One pin (7K3QF, Niterói) is the tour: it drops,
+// deadline the discs take the accent, as in the Placar. One pin (7K3QF, Niterói) is the tour: it drops,
 // stacks a disc a day, and sinks into a resolved ring when two neighbours confirm the fix.
 //
 //   bun figures/canoas-relief/build.ts            writes src/features/landing/relief/art.generated.ts
@@ -133,7 +133,7 @@ const TOUR_ID = "7K3QF";
 const pointOf = (it: (typeof fixtures.items)[number]) =>
   it.scope.type === "point" ? toWorld([it.scope.lng, it.scope.lat]) : null;
 const open = fixtures.items.filter((i) => i.scope.type === "point" && i.community !== "resolved");
-// Most pins under the deadline, one in four past it: the orange marks what needs attention, not the city.
+// Most pins under the deadline, one in four past it: the accent marks what needs attention, not the city.
 const PINS = canoas.neighborhoods
   .map((n, idx) =>
     open.find(
@@ -477,7 +477,7 @@ function resolvedRing([x, y]: number[]) {
 /**
  * The tour pin, built once at its tallest and revealed to the day: the column is clipped below a
  * moving plane (a tall cylinder silhouette that the live code slides along z), and a cap (the top
- * face of a disc) rides that plane. Orange takes over above the deadline, as on the other pins.
+ * face of a disc) rides that plane. The accent takes over above the deadline, as on the other pins.
  */
 function tourStack() {
   const [x, y] = TOUR.at;
@@ -521,7 +521,7 @@ const svg = k.figureSvg({
   height: HEIGHT,
   className: "rf-svg",
   label:
-    "Canoas em relevo, como exemplo: o limite do município é a base, os 18 bairros estão desenhados nos seus contornos reais, e cada registro é uma pilha de discos, um por dia em aberto desde o envio das 18h. Depois de 30 dias, os discos ficam laranja. Um registro em Niterói cresce dia a dia até dois vizinhos confirmarem o conserto.",
+    "Canoas em relevo, como exemplo: o limite do município é a base, os 18 bairros estão desenhados nos seus contornos reais, e cada registro é uma pilha de discos, um por dia em aberto desde o envio das 18h. Depois de 30 dias, os discos ficam verdes. Um registro em Niterói cresce dia a dia até dois vizinhos confirmarem o conserto.",
   body: [plinth(), bairroPanels(), tourBairro(), bairroLines(), ...items.map((i) => i.svg)],
 });
 
@@ -554,7 +554,7 @@ function previewAt(markup: string, days: number) {
 
 if (process.argv.includes("--preview")) {
   for (const theme of ["light", "dark"]) {
-    const extra = `.rf-late{--anatomy-top:#F47A45;--anatomy-shade-0:#C5470F;--anatomy-shade-1:#D4511A;--anatomy-shade-2:#E05A1F;--anatomy-shade-3:#EC6528;--anatomy-lit-top:#F47A45;--anatomy-lit-shade:#E05A1F}.rf-home{fill:rgb(240 90 26/.10)}.rf-vote{fill:var(--anatomy-shade-1);stroke:var(--anatomy-mid);stroke-width:.6}.rf-vote[data-on]{fill:var(--anatomy-lit)}.iso-line.rf-mark{stroke:#F05A1A}.rf-panel{fill:#000;fill-opacity:0}.rf-panel[data-tone="1"]{fill-opacity:.018}.rf-panel[data-tone="2"]{fill-opacity:.034}.rf-panel[data-tone="3"]{fill-opacity:.05}`;
+    const extra = `.rf-late{--anatomy-top:#0E845A;--anatomy-shade-0:#075E3F;--anatomy-shade-1:#096746;--anatomy-shade-2:#0A6F4C;--anatomy-shade-3:#0C7852;--anatomy-lit-top:#0E845A;--anatomy-lit-shade:#0A6F4C}.rf-home{fill:rgb(10 111 76/.10)}.rf-vote{fill:var(--anatomy-shade-1);stroke:var(--anatomy-mid);stroke-width:.6}.rf-vote[data-on]{fill:var(--anatomy-lit)}.iso-line.rf-mark{stroke:#0A6F4C}.rf-panel{fill:#000;fill-opacity:0}.rf-panel[data-tone="1"]{fill-opacity:.018}.rf-panel[data-tone="2"]{fill-opacity:.034}.rf-panel[data-tone="3"]{fill-opacity:.05}`;
     const body = k.plateHtml({
       fig: "Fig 1",
       title: "Canoas em relevo",

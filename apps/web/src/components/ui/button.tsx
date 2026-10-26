@@ -8,7 +8,7 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
-        /* Orange: the main action only (Three Places Rule, DESIGN.md). */
+        /* The accent (esmerald): the main action only (Three Places Rule, DESIGN.md). */
         /* Painted to the border edge, so it lines up with the fields above it. */
         signal: "bg-signal bg-clip-border text-signal-foreground shadow-xs hover:bg-signal-hover",
         /* Controls floating over the map: raised card surface. */

@@ -21,7 +21,7 @@
         --ink: #0e0f10;
         --ink-2: #393b40;
         --line: rgb(14 15 16 / 0.085);
-        --orange: #f05a1a;
+        --accent: #0a6f4c;
       }
       @media (prefers-color-scheme: dark) {
         :root {
@@ -30,7 +30,7 @@
           --ink: #f3f3f4;
           --ink-2: #c6c7cb;
           --line: rgb(255 255 255 / 0.075);
-          --orange: #f4652a;
+          --accent: #16a975;
         }
       }
       * {
@@ -59,7 +59,7 @@
         letter-spacing: -0.02em;
       }
       .mark span {
-        color: var(--orange);
+        color: var(--accent);
       }
       h1 {
         margin: 0;
@@ -86,7 +86,7 @@
         cursor: pointer;
       }
       button:focus-visible {
-        outline: 3px solid color-mix(in oklch, var(--orange), transparent 50%);
+        outline: 3px solid color-mix(in oklch, var(--accent), transparent 50%);
         outline-offset: 2px;
       }
     </style>

@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 
 /**
  * The share card's layout, after the landing page's og.png: paper, the wordmark, the claim on the
- * left, the proof in a raised tray on the right. Orange only where DESIGN.md allows it: the clock
+ * left, the proof in a raised tray on the right. The accent only where DESIGN.md allows it: the clock
  * and the selected place. Satori draws a flexbox subset, so the two columns are placed absolutely
  * on the 1200×630 canvas and everything inside them is flex.
  */
@@ -17,8 +17,8 @@ const C = {
   ink3: "#5F626A",
   line: "rgba(14,15,16,0.085)",
   line2: "rgba(14,15,16,0.16)",
-  orange: "#F05A1A",
-  wash: "rgba(240,90,26,0.13)",
+  accent: "#0A6F4C",
+  wash: "rgba(10,111,76,0.1)",
 };
 
 const SANS = "Geist";
@@ -38,7 +38,7 @@ function Wordmark({ demo }: { demo: boolean }) {
     <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
       <div style={{ display: "flex", fontSize: 34, fontWeight: 600, letterSpacing: -0.6, color: C.ink }}>
         <span>Fala</span>
-        <span style={{ color: C.orange }}>,</span>
+        <span style={{ color: C.accent }}>,</span>
         <span style={{ marginLeft: 9 }}>Canoas</span>
       </div>
       {demo && (
@@ -123,11 +123,11 @@ function Place({ outline, size }: { outline: Outline; size: number }) {
       height={outline.height * scale}
       viewBox={`0 0 ${outline.width} ${outline.height}`}
     >
-      <path d={outline.d} fill={C.wash} stroke={C.orange} strokeWidth={r(2.5)} strokeLinejoin="round" />
+      <path d={outline.d} fill={C.wash} stroke={C.accent} strokeWidth={r(2.5)} strokeLinejoin="round" />
       {outline.pin && (
         <>
-          <circle cx={outline.pin.x} cy={outline.pin.y} r={r(15)} fill={C.wash} stroke={C.orange} strokeWidth={r(1)} />
-          <circle cx={outline.pin.x} cy={outline.pin.y} r={r(7)} fill={C.orange} />
+          <circle cx={outline.pin.x} cy={outline.pin.y} r={r(15)} fill={C.wash} stroke={C.accent} strokeWidth={r(1)} />
+          <circle cx={outline.pin.x} cy={outline.pin.y} r={r(7)} fill={C.accent} />
         </>
       )}
     </svg>
@@ -138,7 +138,7 @@ function Link({ link }: { link: string }) {
   return <div style={{ display: "flex", fontFamily: MONO, fontSize: 22, color: C.ink2 }}>{link}</div>;
 }
 
-/** The clock: the number large, its unit and state stacked beside it. Orange while it runs. */
+/** The clock: the number large, its unit and state stacked beside it. Esmerald while it runs. */
 function Clock({ days, open }: { days: number; open: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 18 }}>
@@ -148,7 +148,7 @@ function Clock({ days, open }: { days: number; open: boolean }) {
           fontWeight: 600,
           lineHeight: 0.8,
           letterSpacing: -6,
-          color: open ? C.orange : C.ink,
+          color: open ? C.accent : C.ink,
         }}
       >
         {days}
@@ -235,7 +235,7 @@ function Bairro({ card }: { card: BairroCard }) {
               <span style={{ fontSize: 26, color: C.ink3 }}>{card.open === 1 ? "aberto" : "abertos"}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <span style={{ fontSize: 76, fontWeight: 600, lineHeight: 1, letterSpacing: -2.5, color: C.orange }}>
+              <span style={{ fontSize: 76, fontWeight: 600, lineHeight: 1, letterSpacing: -2.5, color: C.accent }}>
                 {card.overdue}
               </span>
               <span style={{ fontSize: 26, color: C.ink3 }}>há mais de {card.deadlineDays} dias</span>

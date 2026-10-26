@@ -82,7 +82,7 @@ function CloseSteps({ onCancel, onClosed }: { onCancel: () => void; onClosed: ()
           <li>Para voltar, você cria uma conta nova, do zero.</li>
         </ul>
         {send.isError && (
-          <p role="alert" className="text-caption text-signal-text">
+          <p role="alert" className="text-caption text-destructive">
             {send.error.message}
           </p>
         )}

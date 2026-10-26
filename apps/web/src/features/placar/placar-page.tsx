@@ -248,7 +248,7 @@ export function PlacarPage({
           </Table>
           <p className="border-t border-hairline px-4 py-3 text-xs leading-relaxed text-muted-foreground">
             A marca de {deadline} dias é referência: o prazo que a lei dá para responder uma manifestação, prorrogável
-            por mais {deadline}. Laranja: a parte acima dele.
+            por mais {deadline}. Em verde: a parte acima dele.
           </p>
         </section>
 

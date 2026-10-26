@@ -288,7 +288,7 @@ export function Join({
                   </form.Subscribe>
                   <p className="text-center text-xs text-muted-foreground">Só contam inscrições confirmadas.</p>
                   {join.isError && (
-                    <p role="alert" className="text-caption font-medium text-signal-text">
+                    <p role="alert" className="text-caption font-medium text-destructive">
                       Não deu para salvar agora. Sua conexão pode ter caído; tente de novo em instantes.
                     </p>
                   )}

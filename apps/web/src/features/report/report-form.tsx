@@ -321,7 +321,7 @@ export function ReportForm({
                       <label
                         className={cn(
                           "grid size-20 cursor-pointer place-items-center content-center gap-1 rounded-lg border border-dashed border-hairline-strong bg-muted px-1 text-center text-xs leading-tight text-ink-2 transition-colors hover:bg-panel-3 has-focus-visible:ring-3 has-focus-visible:ring-ring/50",
-                          errors.length > 0 && "border-signal-text text-signal-text",
+                          errors.length > 0 && "border-destructive text-destructive",
                         )}
                       >
                         <Camera className="size-5" aria-hidden="true" />
@@ -668,7 +668,7 @@ export function ReportForm({
         )}
 
         {problem && (
-          <p role="alert" className="text-sm text-signal-text">
+          <p role="alert" className="text-sm text-destructive">
             {problem}
           </p>
         )}

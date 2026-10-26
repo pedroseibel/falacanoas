@@ -9,14 +9,14 @@
 #let d = json("data.json")
 #let m = d.meta
 
-// DESIGN.md's neutral scale for print; the orange marks the place a record is about, nothing else.
+// DESIGN.md's neutral scale for print; the accent marks the place a record is about, nothing else.
 #let ink = rgb("#0E0F10")
 #let ink2 = rgb("#393B40")
 #let ink3 = rgb("#5F626A")
 #let hair = rgb("#E4E4E6")
 #let rule = rgb("#C9CACE")
 #let wash = rgb("#F5F5F6")
-#let orange = rgb("#F05A1A")
+#let accent = rgb("#0A6F4C")
 
 #let W = 172mm // the text block's width
 
@@ -31,7 +31,7 @@
 
 #let wordmark(size) = {
   let parts = m.sender.split(",")
-  text(size: size, weight: 600, tracking: -0.01em)[#parts.at(0)#text(fill: orange)[,]#parts.slice(1).join(",")]
+  text(size: size, weight: 600, tracking: -0.01em)[#parts.at(0)#text(fill: accent)[,]#parts.slice(1).join(",")]
 }
 
 // The body a page belongs to, for the running head: one opening on this page, or the last before it.
@@ -163,7 +163,7 @@
       image(map.svg, width: width, height: height, alt: e.locatorAlt)
       pdf.artifact({
         for l in map.labels { street-label(l, width, height) }
-        place(top + left, dx: width / 2 - 2.3mm, dy: height / 2 - 2.3mm, circle(radius: 2.3mm, fill: orange, stroke: 1.3pt + white))
+        place(top + left, dx: width / 2 - 2.3mm, dy: height / 2 - 2.3mm, circle(radius: 2.3mm, fill: accent, stroke: 1.3pt + white))
         place(bottom + left, dx: 2.5mm, dy: -2.5mm, scale-bar(map.scale, width))
       })
     }),

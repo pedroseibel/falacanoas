@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * A pin that isn't there: a dashed ring (DESIGN.md draws what doesn't exist in dashed hairlines),
- * whose halo breathes three times and stops, like the map's hot pin, in ink instead of orange.
+ * whose halo breathes three times and stops, like the map's hot pin, in ink instead of the accent.
  */
 export function GhostPin({ className }: { className?: string }) {
   return (

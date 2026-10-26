@@ -169,7 +169,7 @@
 }
 
 /* shadcn roles mapped onto DESIGN.md tokens (defined in app.css, light and dark).
-   Ink is primary. Orange is "signal": the main action, the clock, the selected place. */
+   Ink is primary. The accent (esmerald) is "signal": the main action, the clock, the selected place. */
 :root {
   --background: var(--paper);
   --foreground: var(--ink);
@@ -185,8 +185,8 @@
   --muted-foreground: var(--ink-3);
   --accent: var(--panel-2);
   --accent-foreground: var(--ink);
-  /* No-Alarm rule: errors use the text orange, never red. */
-  --destructive: var(--signal-text);
+  /* No-Alarm rule: errors have their own warm text tone, never alarm red and never the accent. */
+  --destructive: var(--error-text);
   --border: var(--line-2);
   --input: var(--line-2);
   --ring: var(--ink);

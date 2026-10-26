@@ -17,7 +17,7 @@ const lift =
 function Legend({ deadline }: { deadline: number }) {
   const keys = [
     { mark: "bg-foreground", term: "Cada coluna", def: "é um registro: um disco por dia desde o resumo das 18h." },
-    { mark: "bg-signal", term: "Em laranja,", def: `os dias que passam do prazo de ${deadline}.` },
+    { mark: "bg-signal", term: "Em verde,", def: `os dias que passam do prazo de ${deadline}.` },
     {
       mark: "rounded-full border border-foreground",
       term: "Dois vizinhos",

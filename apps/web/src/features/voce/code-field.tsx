@@ -48,7 +48,7 @@ export function CodeField({
       <p
         id={`${id}-estado`}
         role={error ? "alert" : "status"}
-        className={cn("min-h-5 text-caption", error ? "text-signal-text" : "text-muted-foreground")}
+        className={cn("min-h-5 text-caption", error ? "text-destructive" : "text-muted-foreground")}
       >
         {error ?? note}
       </p>

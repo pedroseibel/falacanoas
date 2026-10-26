@@ -6,7 +6,7 @@ import type { TileSource } from "./tiles";
 /**
  * A map's ground for the PDF, as SVG: water, parks, streets and, on the city map, the bairros and the
  * municipal limit. Markers, numbers and street names are not drawn here: Typst sets them on top,
- * in the document's own type, so they stay text. Print colours, DESIGN.md's neutral scale; the orange
+ * in the document's own type, so they stay text. Print colours, DESIGN.md's neutral scale; the accent
  * is the template's, for the place a page is about.
  */
 

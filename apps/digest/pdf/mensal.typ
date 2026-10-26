@@ -7,14 +7,14 @@
 #let d = json("data.json")
 #let m = d.meta
 
-// DESIGN.md's neutral scale for print, as in the resumo. No orange: nothing here is a place or a clock.
+// DESIGN.md's neutral scale for print, as in the resumo. No accent: nothing here is a place or a clock.
 #let ink = rgb("#0E0F10")
 #let ink2 = rgb("#393B40")
 #let ink3 = rgb("#5F626A")
 #let hair = rgb("#E4E4E6")
 #let rule = rgb("#C9CACE")
 #let wash = rgb("#F5F5F6")
-#let orange = rgb("#F05A1A")
+#let accent = rgb("#0A6F4C")
 
 #set document(title: m.title, author: m.sender, keywords: ("relatório mensal", "órgãos públicos", "problemas urbanos"))
 #set text(font: "Geist", size: 9.5pt, fill: ink, lang: "pt", region: "br")
@@ -27,7 +27,7 @@
 
 #let wordmark(size) = {
   let parts = m.sender.split(",")
-  text(size: size, weight: 600, tracking: -0.01em)[#parts.at(0)#text(fill: orange)[,]#parts.slice(1).join(",")]
+  text(size: size, weight: 600, tracking: -0.01em)[#parts.at(0)#text(fill: accent)[,]#parts.slice(1).join(",")]
 }
 
 #let body-at(loc) = {

@@ -146,7 +146,7 @@ function Reauth({ hint, start, onCancel }: { hint: string | null; start: Start; 
             : "Sem o número antigo, não dá para trocar: entre com o número novo, numa conta nova."}
         </p>
         {(send.isError || withPasskey.isError) && (
-          <p role="alert" className="text-caption text-signal-text">
+          <p role="alert" className="text-caption text-destructive">
             {send.isError ? send.error.message : "Não deu para usar a passkey. Tente de novo."}
           </p>
         )}
