@@ -76,10 +76,9 @@ Next on method 1: the per-street summary (distinct rain days with reports, first
 
 ## Emergency numbers (affects the app now)
 
-- **199:** the Prefeitura's emergency page lists it as the Polícia Civil, not the Defesa Civil. The app's report form says "Defesa Civil 199".
+- **199:** the Defesa Civil (confirmed by the founder, 2026-10-26). The Prefeitura's emergency page lists it as the Polícia Civil; that page may be wrong.
 - **Defesa Civil de Canoas, 24 h:** (51) 98255-0805, phone or WhatsApp. Also 190 and 193.
 - **Alerts:** SMS **40199** with the CEP (free). Cell Broadcast for severe alerts.
-- **To confirm:** 199 with the Secretaria de Defesa Civil e Resiliência Climática.
 
 ## Partners
 
@@ -88,7 +87,7 @@ Next on method 1: the per-street summary (distinct rain days with reports, first
    - No IPH study of pluvial flooding in Canoas was found.
    - A plausible co-author of a method for citizen reports.
 2. **Cemaden, and FGV's "Dados à Prova D'Água".** The closest prior art: school rain gauges plus a flood-report app. The gauges are already Canoas's rain source.
-3. **Defesa Civil and Eclima (Canoas).** Rain and river data, pump status, the 199 question. Partnering requires the same neutrality the product keeps.
+3. **Defesa Civil and Eclima (Canoas).** Rain and river data, pump status, and the emergency page that lists 199 as the Polícia Civil. Partnering requires the same neutrality the product keeps.
 4. **Residents' committees.** Comitê Unitário dos Seis Bairros and SOS Bairro, already campaigning on drains and pumps.
 
 ## Sources

@@ -41,13 +41,13 @@ describe("demo fixtures", () => {
     for (const it of fixtures.items) expect(known.has(it.category)).toBeTrue();
   });
 
-  test("emergency lines are dialable, and 199 isn't printed until the Defesa Civil confirms it", () => {
+  test("emergency lines are dialable: the Defesa Civil's 199 first, then its 24-hour line", () => {
     const { civilDefense, fire, alertsSms } = canoas.emergency;
-    for (const line of [civilDefense, fire]) {
+    for (const line of [...civilDefense, fire]) {
       expect(line.tel).toMatch(/^\d+$/);
       expect(line.display.replace(/\D/g, "")).toBe(line.tel);
     }
-    expect(civilDefense.tel).not.toBe("199");
+    expect(civilDefense.map((l) => l.tel)).toEqual(["199", "51982550805"]);
     expect(alertsSms?.number).toBe("40199");
   });
 });

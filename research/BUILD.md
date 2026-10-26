@@ -221,7 +221,7 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 
 ## 6. Rain flooding (research/alagamentos)
 
-- [x] **6.0 Emergency numbers.** Done 2026-10-26. The report form, the FAQ and the landing footer read `emergency` from the instance: Defesa Civil de Canoas 24 h, (51) 98255-0805 (phone and WhatsApp), Bombeiros 193, and alerts by SMS to 40199 with the CEP. "Defesa Civil 199" is gone: the Prefeitura's page lists 199 as the Polícia Civil. A test keeps it out until the SDCRC confirms it.
+- [x] **6.0 Emergency numbers.** Done 2026-10-26. The report form, the FAQ and the landing footer read `emergency` from the instance: Defesa Civil 199 or its 24-hour line, (51) 98255-0805 (phone and WhatsApp), Bombeiros 193, and alerts by SMS to 40199 with the CEP. The founder confirmed 199 reaches the Defesa Civil (2026-10-26), against the Prefeitura's page, which lists it as the Polícia Civil.
 - [x] **6.1 Rain gauge archive.** Done 2026-10-26, verified against the live feed (five readings kept, none twice).
   - The instance's `rain`: Cemaden's five gauges in Canoas (7324–7328), named as in Cemaden's feed, placed from GeoCanoas's `Pluviometro` layer, with the feed and each station's page.
   - Core's `rain.ts` reads the feed: the last 10-minute value and the 1–96 h accumulations, times in UTC. Cemaden writes "-" for a window with no rain (never a numeric 0), read as 0 mm.
@@ -249,4 +249,3 @@ The Supabase project `kxawlhmxvghzsynhyvsh` is confirmed in sa-east-1. Every acc
 - **Workers Paid plan:** 2.9 (share cards need the CPU time; until then links fall back to the photo or og.png).
 - **Domains and Turnstile keys:** 4.5.
 - **Legal:** associação, privacy notice review, ECA Digital opinion. These gate the public launch, not the build.
-- **Defesa Civil:** confirm with the SDCRC whether 199 reaches them (6.0).

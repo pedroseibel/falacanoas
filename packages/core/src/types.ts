@@ -283,8 +283,8 @@ export interface Municipality {
    * channel, round 11). Shown in the report form, the FAQ and the landing's footer.
    */
   emergency: {
-    /** The civil defence's 24-hour line. */
-    civilDefense: EmergencyLine;
+    /** The civil defence's lines, the short number first ("199", then its 24-hour line). */
+    civilDefense: EmergencyLine[];
     /** The fire brigade. */
     fire: EmergencyLine;
     /** Official alerts by SMS (the national 40199 service: send the CEP). */

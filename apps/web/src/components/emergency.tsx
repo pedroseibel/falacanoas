@@ -1,4 +1,5 @@
 import type { EmergencyLine, Municipality } from "@fala/core";
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 
 const link = "font-medium text-foreground tabular-nums underline-offset-3 hover:underline";
@@ -14,25 +15,31 @@ export function Phone({ line, className }: { line: EmergencyLine; className?: st
 }
 
 /**
- * Where to turn in an emergency, from the instance (research/alagamentos): the civil defence's line
- * (and its WhatsApp, when it answers there) and the fire brigade. The Fala is never an emergency
+ * Where to turn in an emergency, from the instance (research/alagamentos): the civil defence's lines
+ * (and its WhatsApp, where one answers there) and the fire brigade. The Fala is never an emergency
  * channel (round 11), so this is plain information, never alarm styling.
  */
 export function EmergencyLines({ muni }: { muni: Municipality }) {
   const { civilDefense, fire } = muni.emergency;
   return (
     <>
-      Defesa Civil, <Phone line={civilDefense} />
-      {civilDefense.whatsapp && (
-        <>
-          {" "}
-          (também{" "}
-          <a href={`https://wa.me/55${civilDefense.tel}`} className={link}>
-            WhatsApp
-          </a>
-          )
-        </>
-      )}
+      Defesa Civil,{" "}
+      {civilDefense.map((line, i) => (
+        <Fragment key={line.tel}>
+          {i > 0 && " ou "}
+          <Phone line={line} />
+          {line.whatsapp && (
+            <>
+              {" "}
+              (também{" "}
+              <a href={`https://wa.me/55${line.tel}`} className={link}>
+                WhatsApp
+              </a>
+              )
+            </>
+          )}
+        </Fragment>
+      ))}
       ; Bombeiros, <Phone line={fire} />
     </>
   );
