@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { FloodNotesSchema, asksFlooding, floodLines, floodNotesFor } from "./flooding";
+import { FloodNotesSchema, asksFlooding, floodLines, floodNotesFor, freshFlood, freshLine, freshTag } from "./flooding";
 
 const muni = {
   categories: [
@@ -49,5 +49,39 @@ describe("the flooding questions", () => {
       { term: "A água", value: "ainda não tinha baixado" },
     ]);
     expect(floodLines({})).toEqual([]);
+  });
+});
+
+describe("fresh flooding reports", () => {
+  const now = new Date("2026-10-26T19:00:00Z");
+  const at = (min: number) => new Date(now.getTime() - min * 60_000).toISOString();
+
+  test("a flooding record from the last three hours is fresh, and says when it was seen", () => {
+    const f = freshFlood(
+      muni,
+      { category: "alaga", createdAt: at(40), lastSeenAt: at(40), flooding: { duration: "ainda" } },
+      now,
+    );
+    expect(f).toEqual({ minutes: 40, photo: false, stillThere: true });
+    if (!f) throw new Error("fresco");
+    expect(freshTag(f)).toBe("há 40 min · não baixou");
+    expect(freshLine(f)).toBe("Registrado há 40 min; a água ainda não tinha baixado.");
+  });
+
+  test("a new photo on an older record makes it fresh again, without its old answer", () => {
+    const f = freshFlood(
+      muni,
+      { category: "alaga", createdAt: at(60 * 24 * 9), lastSeenAt: at(130), flooding: { duration: "ainda" } },
+      now,
+    );
+    expect(f).toEqual({ minutes: 130, photo: true, stillThere: false });
+    if (!f) throw new Error("fresco");
+    expect(freshLine(f)).toBe("Foto nova há 2 h.");
+  });
+
+  test("expires after three hours, and only flooding types are fresh", () => {
+    expect(freshFlood(muni, { category: "alaga", createdAt: at(181), lastSeenAt: at(181) }, now)).toBeNull();
+    expect(freshFlood(muni, { category: "buraco", createdAt: at(5), lastSeenAt: at(5) }, now)).toBeNull();
+    expect(freshFlood(muni, { category: "alaga" }, now)).toBeNull();
   });
 });

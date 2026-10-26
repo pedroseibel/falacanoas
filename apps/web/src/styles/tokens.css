@@ -228,6 +228,21 @@
     0 0 0 2px var(--panel),
     0 0 0 4px var(--ink);
 }
+/* A flooding report from the last three hours, beside its pin while "Chuva agora" is on: when people
+   last saw it. An ink outline, never filled: it is a time, not a warning. */
+.fc-fresh {
+  padding: 3px 6px;
+  border: 1px solid var(--ink);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  font: 600 0.6875rem/1 var(--font);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+.fc-fresh:focus-visible,
 .fc-gauge:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;

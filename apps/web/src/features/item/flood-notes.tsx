@@ -2,6 +2,8 @@ import {
   distance,
   floodHistoryLine,
   floodLines,
+  freshLine,
+  type FreshFlood,
   mmLabel,
   rainLine,
   rainNear,
@@ -27,6 +29,7 @@ export function FloodNotesSection({
   rain,
   history,
   live,
+  fresh,
   timezone,
 }: {
   notes: FloodNotes | undefined;
@@ -34,12 +37,14 @@ export function FloodNotesSection({
   history: FloodHistory | null | undefined;
   /** A flooding record's point: the nearest gauge's rain now shows while it rains. Null otherwise. */
   live: LngLat | null;
+  /** Registered, or given a photo, in the last three hours (core flooding.ts). */
+  fresh: FreshFlood | null;
   timezone: string;
 }) {
   const { data } = useQuery({ ...rainNowQuery, enabled: live !== null });
   const now = live && data ? rainNear(live, data.gauges) : null;
   const lines = notes ? floodLines(notes) : [];
-  if (!lines.length && !rain && !history && !now) return null;
+  if (!lines.length && !rain && !history && !now && !fresh) return null;
   const measured = rain ? rainLine(rain, timezone) : null;
   const stretch = history ? floodHistoryLine(history, timezone) : null;
   return (
@@ -47,6 +52,7 @@ export function FloodNotesSection({
       <h3 id="agua" className="text-sm font-semibold">
         Sobre a água
       </h3>
+      {fresh && <p className="text-sm font-medium text-foreground">{freshLine(fresh)}</p>}
       {now && now.gauge.observedAt && now.gauge.lastHour !== null && (
         <p className="flex gap-2 rounded-xl border border-hairline-strong p-3" role="status">
           <CloudRain className="mt-0.5 size-4 shrink-0 text-foreground" aria-hidden="true" />

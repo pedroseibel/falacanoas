@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { relativeTime } from "./format";
 import type { Municipality } from "./types";
 
 /**
@@ -85,3 +86,41 @@ export function floodLines(notes: FloodNotes): { term: string; value: string }[]
     });
   return lines;
 }
+
+/** How long a flooding record or a new photo on one counts as fresh on the map ("Chuva agora", round 23). */
+export const FRESH_FLOOD_MINUTES = 180;
+
+export interface FreshFlood {
+  minutes: number;
+  /** The latest sign is a photo added after the record, not the record itself. */
+  photo: boolean;
+  /** The resident said, when registering, that the water hadn't gone down. */
+  stillThere: boolean;
+}
+
+/**
+ * A flooding record registered, or given a photo, in the last three hours; null otherwise. It says when
+ * people last saw it, never that it is flooded now, and it expires on its own.
+ */
+export function freshFlood(
+  muni: Pick<Municipality, "categories">,
+  item: { category: string; createdAt?: string; lastSeenAt?: string; flooding?: FloodNotes },
+  now: Date,
+): FreshFlood | null {
+  if (!asksFlooding(muni, item.category)) return null;
+  const seen = item.lastSeenAt ?? item.createdAt;
+  if (!seen) return null;
+  const minutes = Math.floor((now.getTime() - new Date(seen).getTime()) / 60_000);
+  if (minutes < 0 || minutes > FRESH_FLOOD_MINUTES) return null;
+  const photo = Boolean(item.createdAt && item.lastSeenAt && item.lastSeenAt > item.createdAt);
+  return { minutes, photo, stillThere: !photo && item.flooding?.duration === "ainda" };
+}
+
+/** The map's tag: "há 40 min", "há 2 h · não baixou". */
+export const freshTag = (f: FreshFlood) => `${relativeTime(f.minutes)}${f.stillThere ? " · não baixou" : ""}`;
+
+/** The record's line: "Registrado há 40 min; a água ainda não tinha baixado." */
+export const freshLine = (f: FreshFlood) =>
+  f.photo
+    ? `Foto nova ${relativeTime(f.minutes)}.`
+    : `Registrado ${relativeTime(f.minutes)}${f.stillThere ? "; a água ainda não tinha baixado" : ""}.`;

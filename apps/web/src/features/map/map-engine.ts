@@ -1,5 +1,7 @@
 import {
   asksFlooding,
+  freshFlood,
+  freshTag,
   itemLngLat,
   isOpen,
   mmLabel,
@@ -124,6 +126,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
   let selMarker: Marker | null = null;
   let hovMarker: Marker | null = null;
   let gaugeMarkers: Marker[] = [];
+  let freshMarkers: Marker[] = [];
 
   const itemsSource = (): GeoJSONSource | null => {
     const s = map.getSource("items");
@@ -364,6 +367,36 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     });
   }
 
+  /**
+   * Fresh flooding reports ("Chuva agora", round 23): a tag beside each pin registered or given a photo
+   * in the last three hours, "há 40 min", while the view is on. Re-read every minute, so tags age and
+   * go on their own.
+   */
+  function applyFresh(s: MapState) {
+    for (const m of freshMarkers) m.remove();
+    freshMarkers = [];
+    if (!s.rainView) return;
+    const now = new Date();
+    for (const it of s.visible) {
+      // The selected pin wears its own label (applySelection); a second one would sit on it.
+      if (it.id === s.selectedId) continue;
+      const f = freshFlood(muni, it, now);
+      const p = f ? itemLngLat(it) : null;
+      if (!f || !p) continue;
+      const el = document.createElement("button");
+      el.type = "button";
+      el.className = "fc-fresh";
+      el.textContent = freshTag(f);
+      el.setAttribute("aria-label", `${it.title}: ${f.photo ? "foto nova" : "relatado"} ${freshTag(f)}`);
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        opts.onPick(it.id);
+      });
+      freshMarkers.push(new ml.Marker({ element: el, anchor: "left", offset: [9, 0] }).setLngLat(p).addTo(map));
+    }
+  }
+  const freshTimer = setInterval(() => applyFresh(state), 60_000);
+
   map.on("style.load", addLayers);
   map.on("click", "clusters", (e) => {
     const f = e.features?.[0];
@@ -413,8 +446,11 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
     else if (next.visible !== prev.visible) applySelection(next, false);
     if (next.hoveredId !== prev.hoveredId) applyHover(next);
     if (next.gauges !== prev.gauges || next.selectedGauge !== prev.selectedGauge) applyGauges(next);
+    if (next.rainView !== prev.rainView || next.visible !== prev.visible || next.selectedId !== prev.selectedId)
+      applyFresh(next);
   });
   applyGauges(state);
+  applyFresh(state);
 
   const api: MapControls = {
     zoomBy: (d: number) => map.zoomTo(map.getZoom() + d, { duration: 300 }),
@@ -427,6 +463,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
   mapControls.current = api;
 
   return () => {
+    clearInterval(freshTimer);
     sub.unsubscribe();
     mapControls.current = null;
     map.remove();

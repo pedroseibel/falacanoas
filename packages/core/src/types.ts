@@ -146,6 +146,8 @@ export const ItemSchema = z.object({
   resolvingSince: z.string().nullable().optional(),
   /** When it was registered (ISO); absent on fixtures. */
   createdAt: z.string().optional(),
+  /** The latest sign of it (ISO): its registration, or a photo approved on it since. */
+  lastSeenAt: z.string().optional(),
   /** When the community closed it (ISO); absent on fixtures. */
   closedAt: z.string().nullable().optional(),
   /** Dropped by a guest (no account): held for moderation and needs two independent confirmations to count. */

@@ -17,6 +17,8 @@ export interface MapState {
   gauges: GaugeNow[];
   /** The gauge opened in the "Chuva agora" panel. */
   selectedGauge: number | null;
+  /** "Chuva agora" is on (the map shows "Água"): fresh flooding reports get their tags. */
+  rainView: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export const mapStore = createStore<MapState>({
   dark: false,
   gauges: [],
   selectedGauge: null,
+  rainView: false,
 });
 
 export const setMapState = (patch: Partial<MapState>) => {

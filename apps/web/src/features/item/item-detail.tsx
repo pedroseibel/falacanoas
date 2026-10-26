@@ -1,6 +1,7 @@
 import {
   plural,
   asksFlooding,
+  freshFlood,
   itemLngLat,
   awaitingDigest,
   communityLine,
@@ -332,6 +333,7 @@ export function ItemDetail({
           rain={it.rain}
           history={it.floodHistory}
           live={asksFlooding(muni, it.category) ? itemLngLat(it) : null}
+          fresh={freshFlood(muni, it, now)}
           timezone={muni.timezone}
         />
 

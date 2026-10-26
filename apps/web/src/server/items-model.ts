@@ -79,6 +79,7 @@ export function itemFromRows(
     protocol:
       row.protocolNumber && row.protocolAt ? { number: row.protocolNumber, at: row.protocolAt.toISOString() } : null,
     createdAt: row.createdAt.toISOString(),
+    lastSeenAt: new Date(Math.max(row.createdAt.getTime(), ...photos.map((p) => p.takenAt.getTime()))).toISOString(),
     closedAt: row.closedAt?.toISOString() ?? null,
     resolvedVotes: row.resolvedVotes,
     resolvingSince: row.resolvingSince?.toISOString() ?? null,

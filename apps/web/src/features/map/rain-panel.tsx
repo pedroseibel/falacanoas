@@ -221,10 +221,21 @@ function Body({ muni }: { muni: Municipality }) {
   );
 }
 
+/** Tells the map the view is on while mounted (stable, so it runs once each way). */
+const rainViewRef = () => {
+  setMapState({ rainView: true });
+  return () => setMapState({ rainView: false });
+};
+
 /** The readings on the map, for as long as "Água" is on (the panel or the pill is mounted). */
 function MapGauges() {
   const query = useQuery(rainNowQuery);
-  return query.data ? <SyncGauges key={query.dataUpdatedAt} gauges={query.data.gauges} /> : null;
+  return (
+    <>
+      <span hidden ref={rainViewRef} />
+      {query.data && <SyncGauges key={query.dataUpdatedAt} gauges={query.data.gauges} />}
+    </>
+  );
 }
 
 /** The panel over the map (desktop), where the legend sits otherwise. */
