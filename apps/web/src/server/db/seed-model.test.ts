@@ -106,7 +106,8 @@ describe("seedRows", () => {
       "2026-10-12T16:42:00.000Z",
     ]);
     expect(parada?.row.protocolNumber).toBe("2026/018734");
-    expect(parada?.photos[1]?.credit).toBe("Foto: Nilce Bravo, CC BY-SA 3.0");
+    // The examples carry no photos: no stock image poses as a resident's (DECISIONS round 21).
+    expect(parada?.photos).toEqual([]);
   });
 });
 

@@ -410,7 +410,12 @@ The founder delegated these ("you decide the best course"). They were settled af
 - **Errors keep a warm tone of their own** (Ember Text: `#AE3D0B` light, `#FF8B57` dark), never the accent, because a green error reads as success. The founder agreed: errors use `destructive`.
 - **What changes in DESIGN.md.** The Three Places Rule stands, now in esmerald. The Ink-On-Orange Rule becomes the Label-On-Esmerald Rule (white in light, ink in dark). The No-Alarm Rule now reads: no red, no yellow, and no green but the accent.
 - **Known trade-off.** On the map the selected pin is darker than before, closer to the ink pins. Its halo and wash carry the difference. Revisit if it proves hard to spot on a phone.
-- **Photos (open).** The founder dislikes the stock bus-stop photo the orange came from. Its replacement is still to be decided: credited Commons photos, or real photos taken in Canoas.
+- **No stock photos.** The founder rejected the stock bus-stop photo, and taking photos himself is out. The Prefeitura publishes no photo licence, and asking would break round 12 and risk looking official.
+  - The app and the map tell the story instead (round 8: "the UI and the map lead").
+  - On the landing, "Como funciona" shows the category pictogram where a photo goes, as the app does for a report without one. The clock card shows the bairro map with its pin.
+  - The example reports carry no photos.
+  - The resumo's sample uses placeholders that say "foto do morador · exemplo".
+  - No credit or licence is left to manage. Residents' real photos replace the examples once the map opens.
 
 ## Research findings that constrain design (2026-10-12)
 

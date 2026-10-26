@@ -12,6 +12,24 @@ import { countUpOnView } from "./motion";
 
 const count43 = countUpOnView(43);
 
+/**
+ * Where a resident's photo goes, as the app shows a report without one: the category's pictogram on
+ * the photo's ground. The landing shows no stock photos (DECISIONS round 21): the app and the map
+ * tell it, and nothing pretends to be a real scene.
+ */
+function PhotoSlot({ category, className }: { category: string; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "grid place-items-center rounded-lg border border-hairline bg-panel-3 text-muted-foreground",
+        className,
+      )}
+    >
+      <Icon name={categoryIcon(category)} size={28} />
+    </span>
+  );
+}
+
 function Composer({ muni }: { muni: Municipality }) {
   const types = muni.categories.filter((c) => c.kind === "occurrence");
   return (
@@ -19,15 +37,7 @@ function Composer({ muni }: { muni: Municipality }) {
       <Bar title="Novo registro" end={<Badge variant="chip">exemplo</Badge>} />
       <div className="grid gap-4.5 p-4.5">
         <div className="flex items-center gap-3.5">
-          <img
-            src="/media/parada-pin-400.webp"
-            width={400}
-            height={300}
-            alt="Foto de exemplo: parada de ônibus laranja com a calçada molhada e rachada em dia de chuva, em Canoas."
-            loading="lazy"
-            decoding="async"
-            className="h-22.5 w-30 shrink-0 rounded-lg border border-hairline object-cover max-narrow:h-18 max-narrow:w-24"
-          />
+          <PhotoSlot category="alaga" className="h-22.5 w-30 shrink-0 max-narrow:h-18 max-narrow:w-24" />
           <p className="text-caption text-muted-foreground">
             <b className="mb-0.5 block text-sm font-semibold text-foreground">Foto anexada</b>
             Rostos e placas serão borrados ao publicar.
@@ -126,22 +136,14 @@ function Digest() {
   );
 }
 
-function CountCard() {
+function CountCard({ muni }: { muni: Municipality }) {
   return (
     <Panel
       label="Exemplo de registro com a contagem de dias"
       className="mx-auto grid max-w-150 grid-cols-2 max-compact:grid-cols-1"
     >
-      <div className="relative h-full bg-panel-3 max-compact:aspect-16/10">
-        <img
-          src="/media/parada-pin-800.webp"
-          width={800}
-          height={600}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          className="size-full object-cover"
-        />
+      <div className="relative grid h-full place-items-center bg-panel-3 p-6 max-compact:aspect-16/10">
+        <MiniMap geo={muni.geo.neighborhoods} selected="niteroi" />
         <Badge variant="chip" className="absolute top-2.5 left-2.5">
           exemplo
         </Badge>
@@ -226,15 +228,7 @@ function Closing() {
       <Bar title="Parada de ônibus vira poça a cada chuva" end={<Badge variant="chip">exemplo</Badge>} />
       <div className="grid grid-cols-2 gap-2.5 px-4.5 pt-4 pb-1">
         <figure className="grid min-w-0 gap-1.5 font-mono text-micro text-muted-foreground">
-          <img
-            src="/media/parada-pin-400.webp"
-            width={400}
-            height={300}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            className="aspect-4/3 w-full rounded-lg border border-hairline object-cover"
-          />
+          <PhotoSlot category="alaga" className="aspect-4/3 w-full" />
           <figcaption>antes · 30 ago</figcaption>
         </figure>
         <figure className="grid min-w-0 gap-1.5 font-mono text-micro text-muted-foreground">
@@ -284,7 +278,7 @@ const STEPS: { title: string; body: string; more?: string; panel: (muni: Municip
     title: "O relógio conta em público.",
     body: "Cada registro mostra há quantos dias está aberto, quando foi enviado e quantos vizinhos também viram. Ninguém precisa reclamar de novo: um toque em “também vi” soma à mesma contagem.",
     more: "Antes de registrar, o mapa mostra problemas parecidos a poucos metros, para não duplicar.",
-    panel: () => <CountCard />,
+    panel: (muni) => <CountCard muni={muni} />,
   },
   {
     title: "Só fecha quando os vizinhos confirmam.",

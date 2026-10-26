@@ -30,7 +30,12 @@ const outline = niteroi ? outlineOf(niteroi) : null;
 const ring = niteroi?.geometry.type === "Polygon" ? (niteroi.geometry.coordinates[0] ?? []) : [];
 const mid = (i: number) => (Math.min(...ring.map((c) => c[i] ?? 0)) + Math.max(...ring.map((c) => c[i] ?? 0))) / 2;
 const pinned = niteroi ? outlineOf(niteroi, 400, { lng: mid(0), lat: mid(1) }) : null;
-const webp = await readFile(`${import.meta.dir}/../../web/public/media/parada-pin-400.webp`);
+// No stock photo: a plain 4:3 card that says it stands for a resident's photo.
+const placeholder = new Resvg(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect width="800" height="600" fill="#E6E6E9"/><g fill="none" stroke="#B3B5BB" stroke-width="8"><rect x="310" y="215" width="180" height="130" rx="16"/><circle cx="400" cy="280" r="38"/></g></svg>`,
+)
+  .render()
+  .asPng();
 
 const samples: Record<string, ShareCard> = {
   "card-item-photo": {
@@ -41,7 +46,7 @@ const samples: Record<string, ShareCard> = {
     days: 43,
     open: true,
     demo: true,
-    photo: await cardPhoto(`data:image/webp;base64,${webp.toString("base64")}`, INNER, decodeWebp),
+    photo: await cardPhoto(`data:image/png;base64,${Buffer.from(placeholder).toString("base64")}`, INNER, decodeWebp),
     outline,
     link: "falacanoas.com.br/o/7K3QF",
   },

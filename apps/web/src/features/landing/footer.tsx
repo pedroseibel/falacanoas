@@ -117,20 +117,6 @@ export function LandingFooter() {
               </Disclosure>
               <Disclosure title="Créditos">
                 <p>
-                  Foto da parada de ônibus: Nilce Bravo (Bravotata), via{" "}
-                  <a
-                    className={textLink}
-                    href="https://commons.wikimedia.org/wiki/File:Aconchegantes_abrigos_%22Parada_F%C3%A1cil%22_Canoas_RS_Brasil_-_panoramio.jpg"
-                  >
-                    Wikimedia Commons
-                  </a>
-                  , licença{" "}
-                  <a className={textLink} href="https://creativecommons.org/licenses/by-sa/3.0/deed.pt-br">
-                    CC BY-SA 3.0
-                  </a>
-                  . Recortada; os recortes seguem a mesma licença.
-                </p>
-                <p>
                   Limites dos bairros: IBGE, malha de bairros do Censo 2022. Tipografia: Geist e Geist Mono, licença SIL
                   Open Font License.
                 </p>

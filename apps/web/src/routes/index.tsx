@@ -44,7 +44,6 @@ export const Route = createFileRoute("/")({
     ],
     links: [
       { rel: "canonical", href: SITE },
-      { rel: "preload", href: "/media/parada-pin-400.webp", as: "image", type: "image/webp" },
     ],
   }),
   component: Landing,
