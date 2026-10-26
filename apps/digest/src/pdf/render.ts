@@ -7,6 +7,7 @@ import { drawBasemap, type Basemap } from "./basemap";
 import { boxAround, fitBox, toTile, type LngLat } from "./geo";
 import { placeMarkers } from "./markers";
 import { photoWidth, printPhoto, type PhotoSource } from "./photos";
+import { pictogramFor } from "./pictograms";
 import { qrSvg } from "./qr";
 import {
   markerFractions,
@@ -130,6 +131,7 @@ export async function assemble(doc: DigestDocument, dir: string, opts: RenderOpt
   mkdirSync(join(dir, "maps"), { recursive: true });
   mkdirSync(join(dir, "photos"), { recursive: true });
   mkdirSync(join(dir, "qr"), { recursive: true });
+  mkdirSync(join(dir, "icons"), { recursive: true });
   const entries = doc.sections.flatMap((s) => s.entries);
   const located = entries.flatMap((e) =>
     e.point ? [{ n: e.n, at: [e.point.lng, e.point.lat] satisfies LngLat }] : [],
@@ -189,6 +191,8 @@ export async function assemble(doc: DigestDocument, dir: string, opts: RenderOpt
   await pool(entries, 6, async (e) => {
     const qr = `qr/${e.id}.svg`;
     writeFileSync(join(dir, qr), qrSvg(e.url));
+    const icon = `icons/${e.categoryKey}.svg`;
+    writeFileSync(join(dir, icon), pictogramFor(e.categoryKey));
     let locator: MapAsset | null = null;
     let street: EntryAssets["street"] = null;
     if (e.point) {
@@ -199,10 +203,13 @@ export async function assemble(doc: DigestDocument, dir: string, opts: RenderOpt
         width: LOCATOR_W,
         focus,
       });
-      const file = `maps/r-${e.id}.svg`;
-      writeFileSync(join(dir, file), base.svg);
-      locator = mapAsset(base, file, [], 0, LOCATOR_W);
-      street = base.nearest;
+      // A street map with a hole in it is worse than none: the record keeps its coordinates and links.
+      if (!base.missing) {
+        const file = `maps/r-${e.id}.svg`;
+        writeFileSync(join(dir, file), base.svg);
+        locator = mapAsset(base, file, [], 0, LOCATOR_W);
+        street = base.nearest;
+      }
     }
     const width = photoWidth(totalPhotos);
     const photos: EntryAssets["photos"] = [];
@@ -216,7 +223,7 @@ export async function assemble(doc: DigestDocument, dir: string, opts: RenderOpt
       writeFileSync(join(dir, file), jpeg);
       photos.push({ file, alt: `Foto ${k + 1} de ${e.photos.length} do registro ${e.id}, enviada por um morador` });
     }
-    assets.set(e.id, { locator, street, qr, photos, missingPhotos: e.photos.length - photos.length });
+    assets.set(e.id, { locator, street, qr, icon, photos, missingPhotos: e.photos.length - photos.length });
   });
 
   return templateData(

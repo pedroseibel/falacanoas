@@ -23,6 +23,8 @@ export interface EntryAssets {
   locator: MapAsset | null;
   street: { name: string; metres: number } | null;
   qr: string;
+  /** The category's pictogram, copied into the build folder; null when the category has none. */
+  icon: string | null;
   photos: { file: string; alt: string }[];
   /** Photos the resumo lists but couldn't fetch: the page says how many, and where to see them. */
   missingPhotos: number;
@@ -62,18 +64,25 @@ const range = (entries: DigestEntry[]) => {
 
 const bairrosIn = (entries: DigestEntry[]) => new Set(entries.map((e) => e.bairro).filter(Boolean)).size;
 
+/** A body's name without "Secretaria de", for the head of its pages. */
+export const shortAgency = (agency: string) => agency.replace(/^Secretaria (Municipal )?(de|da|do|das|dos) /, "");
+
 export function templateData(
   doc: DigestDocument,
   assets: { overview: MapAsset | null; sections: (MapAsset | null)[]; entries: Map<string, EntryAssets> },
   opts: { addressee: Addressee; sample: boolean },
 ) {
   const all = doc.sections.flatMap((s) => s.entries);
+  const withPhotos = all.filter((e) => (assets.entries.get(e.id)?.photos.length ?? 0) > 0).length;
   const example = all[0]?.id ?? "AB3K2";
   const host = new URL(doc.site).host;
   return {
     meta: {
       number: doc.number,
       dateLine: doc.dateLine,
+      /** "13 de outubro de 2026, às 18:00": the cover's date, beside the municipality's name. */
+      dateLong: `${doc.dateLine.replace(`${doc.municipality}, `, "").replace(/\.$/, "")}, às ${doc.sentAt.split(" às ")[1] ?? ""}`,
+      municipality: doc.municipality,
       day: doc.day,
       sentAt: doc.sentAt,
       sender: doc.sender,
@@ -89,6 +98,7 @@ export function templateData(
         { value: String(doc.total), label: doc.total === 1 ? "registro" : "registros" },
         { value: String(doc.sections.length), label: doc.sections.length === 1 ? "órgão" : "órgãos" },
         { value: String(bairrosIn(all)), label: bairrosIn(all) === 1 ? "bairro" : "bairros" },
+        { value: String(withPhotos), label: "com fotos" },
       ],
       answer: `Responda a este e-mail com o número de protocolo de cada registro, citando o código (por exemplo: ${example}, protocolo 2026/000000). Um protocolo para o resumo inteiro também serve: diga quais códigos ele cobre. O número passa a aparecer na página pública do registro.`,
       clock: `Os dias de cada registro passam a contar a partir deste envio, em ${doc.sentAt}. A Lei 13.460/2017 (art. 16) prevê resposta ao usuário em até ${doc.deadlineDays} dias.`,
@@ -97,7 +107,7 @@ export function templateData(
       attribution:
         "Mapas: OpenFreeMap · © OpenMapTiles · © colaboradores do OpenStreetMap, sob a licença ODbL (openstreetmap.org/copyright).",
       overviewCaption:
-        assets.overview && assets.overview.markers.length
+        assets.overview?.numbered && assets.overview.markers.length
           ? "Cada número é um registro deste resumo, na ordem das páginas seguintes."
           : "Os registros deste resumo. Os números estão nos mapas de cada órgão.",
     },
@@ -112,6 +122,7 @@ export function templateData(
     sections: doc.sections.map((s, i) => ({
       key: `s${i}`,
       agency: s.agency,
+      short: shortAgency(s.agency),
       line: [
         plural(s.entries.length, "registro", "registros"),
         range(s.entries),
@@ -152,6 +163,7 @@ export function templateData(
           urlLabel: e.url.replace(/^https?:\/\//, ""),
           osm: e.point ? osmLink(e.point) : null,
           qr: a?.qr ?? null,
+          icon: a?.icon ?? null,
           qrAlt: `Código QR que abre a página pública do registro ${e.id}`,
           locator: a?.locator ?? null,
           locatorAlt: e.point

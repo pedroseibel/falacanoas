@@ -13,15 +13,17 @@ import type { TileSource } from "./tiles";
 const C = {
   outside: "#EFEFF1", // ground
   inside: "#FFFFFF", // panel
-  street: "#F5F5F6", // panel-2, the street map's ground
-  water: "#D9DFE4",
-  park: "#E7EBE4",
-  building: "#E4E4E7",
-  casing: "#C9CACE",
+  street: "#ECEDEF", // the street map's ground, a step under the white streets
+  water: "#C7D2DB",
+  park: "#DCE4DB",
+  building: "#D8D9DD",
+  airfield: "#E2E3E6", // an aerodrome's ground, a step off the street ground
+  runway: "#BFC1C6",
+  casing: "#B3B5BB",
   road: "#FFFFFF",
-  major: "#8D9096",
-  mid: "#B4B6BA",
-  minor: "#D6D7DA",
+  major: "#6F737A",
+  mid: "#A2A5AB",
+  minor: "#CBCCD0",
   bairro: "#5F626A", // ink-3
   limit: "#0E0F10", // ink
 };
@@ -45,6 +47,8 @@ export interface Basemap {
   labels: StreetLabel[];
   /** The named street nearest the focus, and how far it is. */
   nearest: { name: string; metres: number } | null;
+  /** Tiles the map needed that couldn't be had (fetch failed): a street map with holes isn't drawn. */
+  missing: number;
 }
 
 type Ring = Point[];
@@ -97,11 +101,16 @@ export async function drawBasemap(
   const water: Ring[] = [];
   const parks: Ring[] = [];
   const buildings: Ring[] = [];
+  // Airfields (Canoas has an air base inside the city): their ground and runways, so a street map
+  // there shows where it is instead of an empty square.
+  const airfields: Ring[] = [];
+  const runways: Ring[] = [];
   const roads: Record<RoadClass, Ring[]> = { major: [], mid: [], minor: [], path: [] };
   const names: Line[] = [];
   const street = opts.detail === "street";
 
   const loaded = await Promise.all(tilesIn(box).map(async ([x, y]) => ({ x, y, tile: await tiles.get(x, y) })));
+  const missing = loaded.filter((l) => !l.tile).length;
   for (const { x, y, tile } of loaded) {
     if (!tile) continue;
     each(tile, "water", x, y, (f, rings) => f === 3 && water.push(...rings));
@@ -111,6 +120,11 @@ export async function drawBasemap(
         parks.push(...rings);
     });
     if (street) each(tile, "building", x, y, (f, rings) => f === 3 && buildings.push(...rings));
+    if (street)
+      each(tile, "aeroway", x, y, (f, rings) => {
+        if (f === 3) airfields.push(...rings);
+        if (f === 2) runways.push(...rings);
+      });
     each(tile, "transportation", x, y, (f, rings, p) => {
       const bucket = ROADS[String(p.class)];
       if (f === 2 && bucket && (street || bucket !== "path")) roads[bucket].push(...rings);
@@ -129,6 +143,8 @@ export async function drawBasemap(
   };
   if (street) {
     parts.push(`<rect width="${W}" height="${H.toFixed(1)}" fill="${C.street}"/>`);
+    path(airfields, true, `fill="${C.airfield}"`);
+    path(runways, false, `fill="none" stroke="${C.runway}" stroke-width="9" stroke-linecap="butt"`);
     path(parks, true, `fill="${C.park}"`);
     path(water, true, `fill="${C.water}" fill-rule="evenodd"`);
     path(buildings, true, `fill="${C.building}"`);
@@ -173,6 +189,7 @@ export async function drawBasemap(
     widthMetres: (box.x1 - box.x0) * metresPerUnit(lat),
     labels: focus ? streetLabels(names, box, focus) : [],
     nearest: focus ? nearestStreet(names, focus) : null,
+    missing,
   };
 }
 

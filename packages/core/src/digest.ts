@@ -22,6 +22,8 @@ export interface DigestEntry {
   n: number;
   id: string;
   category: string;
+  /** The category's key in the instance ("buraco"): which pictogram the PDF sets beside it. */
+  categoryKey: string;
   bairro: string | null;
   title: string;
   /** The resident's text, when it says more than the title. */
@@ -141,6 +143,7 @@ export function digestDocument(
           n,
           id: it.id,
           category: muni.categories.find((c) => c.key === it.category)?.label ?? it.category,
+          categoryKey: it.category,
           bairro: bairroOf(it),
           title: it.title,
           text: it.text && it.text !== it.title ? it.text : null,

@@ -56,19 +56,27 @@ export function openFreeMap(cacheDir: string, fetcher: Fetcher = fetch): TileSou
       const build = new URL(url.replace(/\{[zxy]\}/g, "0")).pathname.split("/").filter(Boolean)[1] ?? "build";
       const file = join(cacheDir, "tiles", build, String(Z), String(x), `${y}.pbf`);
       let bytes: Uint8Array | null = existsSync(file) ? new Uint8Array(readFileSync(file)) : null;
-      if (!bytes) {
+      // A dropped connection shouldn't cost a record its map: up to three tries, a moment apart.
+      for (let attempt = 0; !bytes && attempt < 3; attempt++) {
+        // oxlint-disable-next-line no-await-in-loop
+        if (attempt) await Bun.sleep(400 * attempt);
         try {
+          // oxlint-disable-next-line no-await-in-loop
           const res = await fetcher(url.replace("{z}", String(Z)).replace("{x}", String(x)).replace("{y}", String(y)), {
             headers,
           });
-          if (!res.ok) return null;
+          // No tile there (nothing mapped): an empty one, not a failure.
+          if (res.status === 404) return new VectorTile(new PbfReader(new Uint8Array()));
+          if (!res.ok) continue;
+          // oxlint-disable-next-line no-await-in-loop
           bytes = new Uint8Array(await res.arrayBuffer());
           mkdirSync(dirname(file), { recursive: true });
           writeFileSync(file, bytes);
         } catch {
-          return null;
+          // try again
         }
       }
+      if (!bytes) return null;
       return new VectorTile(new PbfReader(bytes));
     },
   };

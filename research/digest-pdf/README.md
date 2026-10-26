@@ -7,6 +7,7 @@ Three research briefs, 2026-10-13:
 - [design.md](design.md): dense-document design (Tufte, Butterick, Schwabish, UK Analysis Function), briefing structure, print maps, the Manual de Redação's ofício, accessible and archival PDF (PDF/UA, CONARQ on PDF/A), exemplars.
 - [receivers.md](receivers.md): what the receiving side needs. FixMyStreet's and Open311's fields, Fala.BR's limits, Lei 13.460 and the CGU portarias on identification and splitting, field crews, attachment sizes.
 - [stack.md](stack.md): how to build it. Typst against Chromium, WeasyPrint and react-pdf; maps without a browser; QR codes; addresses; photos; fonts.
+- [craft.md](craft.md) (2026-10-26): the visual finish. Twelve exemplars, two comps, and the founder's choice, the "Dossiê" look the template now has. It supersedes the layout notes below where they differ.
 
 ## What was built (apps/digest/src/pdf, apps/digest/pdf/resumo.typ)
 

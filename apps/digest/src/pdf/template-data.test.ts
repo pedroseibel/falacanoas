@@ -33,7 +33,7 @@ const assets = (entries: Record<string, Partial<EntryAssets>> = {}) => ({
   entries: new Map(
     Object.entries(entries).map(([id, a]) => [
       id,
-      { locator: null, street: null, qr: `qr/${id}.svg`, photos: [], missingPhotos: 0, ...a },
+      { locator: null, street: null, qr: `qr/${id}.svg`, icon: null, photos: [], missingPhotos: 0, ...a },
     ]),
   ),
 });
@@ -50,7 +50,12 @@ describe("templateData", () => {
     const doc = digestDocument([item("AB3K2")], canoas, sentAt, 1);
     const { meta } = templateData(doc, assets(), { addressee, sample: false });
     expect(meta.headline).toBe("Hoje, 1 registro novo de moradores de Canoas, para 1 órgão.");
-    expect(meta.stats.map((s) => `${s.value} ${s.label}`)).toEqual(["1 registro", "1 órgão", "1 bairro"]);
+    expect(meta.stats.map((s) => `${s.value} ${s.label}`)).toEqual([
+      "1 registro",
+      "1 órgão",
+      "1 bairro",
+      "0 com fotos",
+    ]);
     expect(meta.answer).toContain("AB3K2, protocolo");
     expect(meta.clock).toContain("13/10/2026 às 18:00");
   });
