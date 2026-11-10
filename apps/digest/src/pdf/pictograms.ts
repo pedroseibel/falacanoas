@@ -24,7 +24,7 @@ export const PICTOGRAMS: Record<string, string> = {
   sinal:
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M9 1.5h6A1.5 1.5 0 0 1 16.5 3v1.5h3l-3 3V9h3l-3 3v1.5h3l-3 3V18a1.5 1.5 0 0 1-1.5 1.5H9A1.5 1.5 0 0 1 7.5 18v-1.5l-3-3h3V12l-3-3h3V7.5l-3-3h3V3A1.5 1.5 0 0 1 9 1.5zM12 3.75a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 5.25a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3zm0 5.25a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z"/><path d="M10.5 19.5h3v3h-3z"/></svg>',
   questao:
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M6.75 2.25h10.5a4.5 4.5 0 0 1 4.5 4.5v6a4.5 4.5 0 0 1-4.5 4.5H11.6L6.75 21.75v-4.5a4.5 4.5 0 0 1-4.5-4.5v-6a4.5 4.5 0 0 1 4.5-4.5zm0 3a1.5 1.5 0 0 0-1.5 1.5v6a1.5 1.5 0 0 0 1.5 1.5h3v1.35l1.6-1.35h5.9a1.5 1.5 0 0 0 1.5-1.5v-6a1.5 1.5 0 0 0-1.5-1.5z"/><path d="M9.75 8.25a2.25 2.25 0 1 1 3.4 1.95c-.7.4-1.15.85-1.15 1.55" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13.15" r="1.3"/></svg>',
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M6.75 1.5h10.5a4.5 4.5 0 0 1 4.5 4.5v9a4.5 4.5 0 0 1-4.5 4.5h-7.5l-3 3v-3a4.5 4.5 0 0 1-4.5-4.5V6a4.5 4.5 0 0 1 4.5-4.5zm0 3A1.5 1.5 0 0 0 5.25 6v9a1.5 1.5 0 0 0 1.5 1.5h10.5a1.5 1.5 0 0 0 1.5-1.5V6a1.5 1.5 0 0 0-1.5-1.5z"/><path d="M9.9 8.55a2.1 1.5 0 1 1 3.71.96c-.9.4-1.61.5-1.61.89" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="14" r="1.05"/></svg>',
 };
 
 /** A category's pictogram, or the generic one ("questao") for a category without its own. */
