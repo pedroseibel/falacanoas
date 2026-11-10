@@ -1,4 +1,3 @@
-apps/landing/
 research/
 **/routeTree.gen.ts
 *.json

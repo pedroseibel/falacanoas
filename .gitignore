@@ -38,3 +38,6 @@ research/**/*draft*
 # Claude Code: local skills and settings (the impeccable skill is installed per machine)
 .claude/skills/
 .claude/settings.local.json
+
+# impeccable: runtime logs of finished sessions
+.impeccable/questions/
