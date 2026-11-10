@@ -21,12 +21,9 @@ dist/
 .venv/
 __pycache__/
 
-# impeccable working files
-.impeccable/config.local.json
-.impeccable/review/
-.impeccable/quality-bar/
-.impeccable/mocks/
-.impeccable/*-round.json
+# impeccable: the design tool's working files, per machine
+.impeccable/
+apps/web/.impeccable/
 
 # large or re-downloadable research sources (documented in each SOURCE.md / CREDITS.md)
 research/maps/data/**/*.zip
@@ -35,9 +32,5 @@ research/brand/photos/*.jpg
 research/**/*.draft.md
 research/**/*draft*
 
-# Claude Code: local skills and settings (the impeccable skill is installed per machine)
-.claude/skills/
-.claude/settings.local.json
-
-# impeccable: runtime logs of finished sessions
-.impeccable/questions/
+# Claude Code: agents, skills and settings installed per machine
+.claude/

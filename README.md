@@ -1,6 +1,12 @@
-# Fala, Canoas
+<p align="center">
+  <img src="apps/web/public/icons/icon-512.png" width="96" height="96" alt="Ícone do Fala, Canoas: uma vírgula verde sobre fundo escuro" />
+</p>
 
-Mapa independente e de código aberto para acompanhar, em dias, os problemas urbanos de Canoas, RS.
+<h1 align="center">Fala, Canoas</h1>
+
+<p align="center">
+  Mapa independente e de código aberto para acompanhar, em dias, os problemas urbanos de Canoas, RS.
+</p>
 
 Quem mora na cidade registra um problema com foto: buraco, lixo, poste apagado, bueiro entupido, rua que alaga. Uma vez por dia os registros novos vão à Ouvidoria da Prefeitura, e a partir do envio um relógio público conta os dias. O registro só fecha quando os vizinhos confirmam o conserto. Um placar mostra onde os problemas se acumulam e quanto tempo cada órgão leva.
 
