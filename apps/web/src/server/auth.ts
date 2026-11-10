@@ -1,5 +1,5 @@
 import { passkey } from "@better-auth/passkey";
-import { suggestNicks } from "@fala/core";
+import { siteUrl, suggestNicks } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { betterAuth, type BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -93,7 +93,7 @@ export const auth = betterAuth({
       rateLimit: rateLimits,
     },
   }),
-  trustedOrigins: [`https://${canoas.branding.domain}`, ...extraOrigins],
+  trustedOrigins: [siteUrl(canoas), ...extraOrigins],
   advanced: {
     // The vault mints account ids as UUIDs; Better Auth's own ids match.
     database: { generateId: "uuid" },
@@ -143,7 +143,7 @@ export const auth = betterAuth({
     passkey({
       rpID: passkeyRpID,
       rpName: canoas.branding.name,
-      origin: passkeyOrigins.length ? passkeyOrigins : `https://${canoas.branding.domain}`,
+      origin: passkeyOrigins.length ? passkeyOrigins : siteUrl(canoas),
     }),
     tanstackStartCookies(),
   ],

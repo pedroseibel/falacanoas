@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { AuthSearchSchema, returnPath } from "@/features/auth/auth-search";
 import { TransparencyPage } from "@/features/transparency/transparency-page";
-import { transparencyQuery } from "@/lib/city";
-import { useBackLink } from "./-auth-links";
+import { transparencyQuery } from "@/features/transparency/queries";
+import { useBackLink } from "./-links";
 
 export const Route = createFileRoute("/transparencia")({
   validateSearch: AuthSearchSchema,

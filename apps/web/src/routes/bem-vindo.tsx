@@ -4,8 +4,8 @@ import { toast } from "sonner";
 import { AuthSearchSchema, returnPath } from "@/features/auth/auth-search";
 import { WelcomePage } from "@/features/auth/welcome-page";
 import { openReport } from "@/features/report/report-store";
-import { accountQuery } from "@/lib/city";
-import { useBackLink } from "./-auth-links";
+import { accountQuery } from "@/lib/account";
+import { useBackLink } from "./-links";
 
 export const Route = createFileRoute("/bem-vindo")({
   validateSearch: AuthSearchSchema,

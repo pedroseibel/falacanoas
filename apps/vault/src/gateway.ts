@@ -4,6 +4,7 @@ import {
   CODE_WINDOWS_PER_IP,
   isBrazilianMobileE164,
   maskedPhone,
+  sameText,
   signVaultAssertion,
   VAULT_ASSERTION_TTL,
   VAULT_AUDIENCE,
@@ -14,7 +15,7 @@ import {
   whatsappVariants,
   type Window,
 } from "@fala/core";
-import { codeHash, newCode, phoneMacs, same, sealPhone, unsealPhone, type VaultKeys } from "./crypto";
+import { codeHash, newCode, phoneMacs, sealPhone, unsealPhone, type VaultKeys } from "./crypto";
 
 /**
  * The auth gateway (DECISIONS round 18, Q16, Q20, Q29): it receives the phone, sends and checks the
@@ -40,15 +41,12 @@ export interface Link {
 }
 
 export interface VaultStore {
-  /** Hit times for a rate-limit key since `since`. */
   hitsSince(key: string, since: Date): Promise<Date[]>;
   addHit(key: string, at: Date): Promise<void>;
   putCode(phoneMac: string, codeHash: string, expiresAt: Date): Promise<void>;
   getCode(phoneMac: string): Promise<{ codeHash: string; attempts: number; expiresAt: Date } | null>;
-  /** Counts a wrong try. */
   failCode(phoneMac: string): Promise<void>;
   dropCode(phoneMac: string): Promise<void>;
-  /** The live link for any of these lookup HMACs. */
   findLink(phoneMacs: string[]): Promise<Link | null>;
   /**
    * In one transaction: unlink `replacing` (if any), then link the phone to `accountId`. Two
@@ -68,14 +66,12 @@ export interface VaultStore {
     at: Date,
     rekey: { phoneMac: string; phoneSealed: string; keyVersion: number } | null,
   ): Promise<void>;
-  /** The account's live link, with its sealed phone. */
   linkOf(accountId: string): Promise<(Link & { phoneSealed: string }) | null>;
   /** Closing the account: its phone is unlinked, and the 6-month deletion takes it from there. */
   unlinkAccount(accountId: string, at: Date): Promise<void>;
   /** A number change's ticket (its hash), replacing any earlier one for the account. */
   putChange(change: { accountId: string; ticketHash: string; expiresAt: Date }): Promise<void>;
   findChange(ticketHash: string): Promise<Change | null>;
-  /** A code went out under this change. */
   countChangeSend(accountId: string): Promise<void>;
   /**
    * In one transaction: unlink `unlink`, link the new number to the account, and mark the change
@@ -173,7 +169,7 @@ export async function verifyCode(
 
   const waiting = await g.store.getCode(current.mac);
   if (!waiting || waiting.expiresAt <= now || waiting.attempts >= CODE_TRIES) return { ok: false, error: "invalid" };
-  if (!same(waiting.codeHash, await codeHash(g.keys, current.mac, code))) {
+  if (!sameText(waiting.codeHash, await codeHash(g.keys, current.mac, code))) {
     await g.store.failCode(current.mac);
     return { ok: false, error: "invalid" };
   }
@@ -264,7 +260,7 @@ export async function checkReauthCode(
   if (!link) return false;
   const waiting = await g.store.getCode(link.phoneMac);
   if (!waiting || waiting.expiresAt <= now || waiting.attempts >= CODE_TRIES) return false;
-  if (!same(waiting.codeHash, await codeHash(g.keys, link.phoneMac, code))) {
+  if (!sameText(waiting.codeHash, await codeHash(g.keys, link.phoneMac, code))) {
     await g.store.failCode(link.phoneMac);
     return false;
   }

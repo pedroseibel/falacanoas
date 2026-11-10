@@ -1,11 +1,12 @@
-import { MUTE_DAYS, STRIKE_WINDOW_DAYS, SUSPEND_DAYS, type SanctionKind } from "@fala/core";
+import { DAY_MS, MUTE_DAYS, type SanctionKind, STRIKE_WINDOW_DAYS, SUSPEND_DAYS } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, isNotNull, isNull, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "./db/client";
 import { moderationCases, sanctions } from "./db/schema";
 import type { Failure } from "./member";
-import { isModerator, targetAccount } from "./moderation-store";
+import { targetAccount } from "./case-target";
+import { sessionModerator } from "./moderator";
 import { removalsOf, type SanctionRow } from "./sanctions-store";
 import { getSession } from "./session";
 
@@ -16,7 +17,6 @@ import { getSession } from "./session";
  * controller's alone (`bun --filter @fala/web sanction`).
  */
 
-const DAY = 86_400_000;
 const iso = (d: Date | null) => d?.toISOString() ?? null;
 
 export interface MySanction {
@@ -27,7 +27,6 @@ export interface MySanction {
   contest: "open" | "upheld" | "overturned" | null;
 }
 
-/** The signed-in person's sanctions in force, for Você. */
 export const getMySanctions = createServerFn({ method: "GET" }).handler(async (): Promise<MySanction[]> => {
   const user = (await getSession())?.user;
   if (!user || user.isAnonymous) return [];
@@ -58,9 +57,7 @@ export const contestSanction = createServerFn({ method: "POST" })
   });
 
 async function moderator(): Promise<{ id: string } | Failure> {
-  const user = (await getSession())?.user;
-  if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
-  return { id: user.id };
+  return (await sessionModerator()) ?? { ok: false, error: "Só moderadores decidem." };
 }
 
 /**
@@ -87,7 +84,7 @@ export const sanctionFromCase = createServerFn({ method: "POST" })
       source: "moderator",
       reason: data.reason,
       startsAt: now,
-      endsAt: new Date(now.getTime() + (mute ? MUTE_DAYS : SUSPEND_DAYS) * DAY),
+      endsAt: new Date(now.getTime() + (mute ? MUTE_DAYS : SUSPEND_DAYS) * DAY_MS),
       createdBy: mod.id,
       ...(mute ? { confirmedAt: now, confirmedBy: mod.id } : {}),
     });
@@ -128,7 +125,7 @@ export const getSanctionQueue = createServerFn({ method: "GET" }).handler(async 
     )
     .orderBy(desc(sanctions.createdAt))
     .limit(50);
-  const since = new Date(Date.now() - STRIKE_WINDOW_DAYS * DAY);
+  const since = new Date(Date.now() - STRIKE_WINDOW_DAYS * DAY_MS);
   return Promise.all(
     rows.map(async (r): Promise<QueueSanction> => ({
       id: r.id,
@@ -167,7 +164,7 @@ export const decideSuspension = createServerFn({ method: "POST" })
               confirmedAt: now,
               confirmedBy: mod.id,
               startsAt: now,
-              endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY),
+              endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY_MS),
             }
           : { liftedAt: now, liftedBy: mod.id, liftNote: data.note || "Suspensão não confirmada." },
       )

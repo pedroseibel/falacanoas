@@ -1,4 +1,4 @@
-import { monthKey, monthlyReport, parseMonth, previousMonth } from "@fala/core";
+import { monthKey, monthlyReport, parseMonth, previousMonth, siteUrl } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createHash } from "node:crypto";
 import { ADDRESSEE, type Config } from "./config";
@@ -12,11 +12,10 @@ import { readMail, takeReply, type ReplyOutcome, type Senders } from "./replies"
 import { runDigest, type RunResult } from "./run";
 import { pgMonthlyStore, pgReplyStore, pgStore } from "./store";
 
-/** One run with the real store, the PDF and the outbox for this mode. */
 export async function digestNow(config: Config, now = new Date()): Promise<RunResult> {
   const store = pgStore(config.databaseUrl, canoas.branding.name, canoas.timezone, canoas);
   const tiles = openFreeMap(config.cacheDir);
-  const photos = sitePhotos(`https://${canoas.branding.domain}`, config.photoBase);
+  const photos = sitePhotos(siteUrl(canoas), config.photoBase);
   try {
     return await runDigest(
       {
@@ -35,7 +34,6 @@ export async function digestNow(config: Config, now = new Date()): Promise<RunRe
 
 export const senders = (config: Config): Senders => ({ to: config.to, cc: config.cc, names: ADDRESSEE });
 
-/** One reply to a resumo, as raw e-mail: read, applied as far as it's safe, recorded. */
 export async function replyNow(
   config: Config,
   raw: string | Uint8Array,
@@ -61,6 +59,8 @@ export async function monthlyNow(config: Config, now = new Date(), month?: strin
   const period = month ? parseMonth(month) : previousMonth(now, canoas.timezone);
   if (!period) return { ok: false, month: month ?? "", error: "invalid" };
   const key = monthKey(period);
+  // A report is built once and kept: a month that hasn't ended would be frozen half-way.
+  if (key > monthKey(previousMonth(now, canoas.timezone))) return { ok: false, month: key, error: "invalid" };
   const store = pgMonthlyStore(config.databaseUrl);
   try {
     if (await store.built(key)) return { ok: false, month: key, error: "built" };
@@ -76,7 +76,6 @@ export async function monthlyNow(config: Config, now = new Date(), month?: strin
   }
 }
 
-/** One read of the rain gauges' live feed into the archive. */
 export async function rainNow(config: Config, now = new Date()): Promise<RainResult> {
   if (!canoas.rain) return { ok: false, error: "feed", detail: "a instância não tem pluviômetros" };
   const store = pgRainStore(config.databaseUrl);

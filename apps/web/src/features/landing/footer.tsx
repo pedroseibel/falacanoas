@@ -1,9 +1,11 @@
+import { Wordmark } from "@/components/wordmark";
 import type { Municipality } from "@fala/core";
 import { ChevronDown } from "lucide-react";
 import { AlertsSms, EmergencyLines } from "@/components/emergency";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Wrap, textLink } from "./bits";
+import { Wrap } from "./bits";
+import { textLink } from "@/components/text-link";
 
 function Disclosure({ id, title, children }: { id?: string; title: string; children: ReactNode }) {
   return (
@@ -27,7 +29,7 @@ export function LandingFooter({ muni }: { muni: Municipality }) {
         <div className="grid grid-cols-aside gap-split max-compact:grid-cols-1">
           <div>
             <p className="text-2xl leading-none font-semibold tracking-tighter text-foreground">
-              Fala<span className="text-signal">,</span> Canoas
+              <Wordmark />
             </p>
             <p className="mt-3 max-w-foot">
               Mapa independente e de código aberto para acompanhar, em dias, os problemas urbanos de Canoas, RS. Não é

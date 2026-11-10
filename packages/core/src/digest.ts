@@ -1,6 +1,7 @@
 import { floodHistoryLine } from "./flood-history";
 import { floodLines } from "./flooding";
-import { localTime, MONTHS_FULL_PT } from "./format";
+import { counted, localTime, MONTHS_FULL_PT } from "./format";
+import { agencyOf, bairroName, byAgency, categoryLabel, itemLngLat, itemUrl, siteUrl } from "./logic";
 import { rainLine } from "./rain";
 import type { Item, Municipality } from "./types";
 
@@ -15,7 +16,25 @@ import type { Item, Municipality } from "./types";
  * it (apps/digest). Both come from digestDocument, so they can't disagree.
  */
 
-export interface DigestItem extends Item {
+/** What the resumo reads of a report: what the map already shows of it, and nothing about who sent it. */
+export interface DigestItem extends Pick<
+  Item,
+  | "id"
+  | "category"
+  | "title"
+  | "text"
+  | "reference"
+  | "address"
+  | "flooding"
+  | "rain"
+  | "floodHistory"
+  | "neighborhood"
+  | "scope"
+  | "confirmations"
+  | "demo"
+  | "moderation"
+> {
+  photos: { src: string }[];
   /** When it was published (ISO). */
   createdAt?: string;
 }
@@ -90,19 +109,12 @@ const when = (iso: string, timezone: string) => {
   return `${pad(t.day)}/${pad(t.month)} às ${pad(t.hour)}:${pad(t.minute)}`;
 };
 
-/** The bucket for a category the instance doesn't route anywhere: last, so it stands out. */
-export const NO_AGENCY = "Sem órgão definido pelo Fala";
-
-function pointOf(it: Item): { lng: number; lat: number } | null {
-  const s = it.scope;
-  if (s.type === "point") return { lng: s.lng, lat: s.lat };
-  if (s.type === "place" && s.lng !== undefined && s.lat !== undefined) return { lng: s.lng, lat: s.lat };
-  return null;
+function pointOf(it: DigestItem): { lng: number; lat: number } | null {
+  const at = itemLngLat(it);
+  return at ? { lng: at[0], lat: at[1] } : null;
 }
 
 const absolute = (site: string, src: string) => (/^https?:\/\//.test(src) ? src : `${site}${src}`);
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** An OpenStreetMap link centred on the point: opens anywhere, no account, no app. */
 export const osmLink = (p: { lat: number; lng: number }) => {
@@ -110,10 +122,6 @@ export const osmLink = (p: { lat: number; lng: number }) => {
   const lng = p.lng.toFixed(5);
   return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`;
 };
-
-/** Which digests an item belongs in: published, real, an occurrence, and not sent yet. */
-export const digestible = (it: DigestItem & { sentAt?: string | null }) =>
-  !it.demo && !it.moderation && it.kind === "occurrence" && !it.sentAt;
 
 /**
  * The resumo's content. Bodies in alphabetical order (the unrouted bucket last); inside each, by
@@ -125,17 +133,19 @@ export function digestDocument(
   sentAt: Date,
   sequence: number,
 ): DigestDocument {
-  const site = `https://${muni.branding.domain}`;
+  const site = siteUrl(muni);
   const t = localTime(sentAt, muni.timezone);
   const real = items.filter((it) => !it.demo && !it.moderation);
-  const agencyOf = (it: Item) => muni.categories.find((c) => c.key === it.category)?.agency ?? NO_AGENCY;
-  const bairroOf = (it: Item) => muni.neighborhoods.find((b) => b.slug === it.neighborhood)?.name ?? null;
+  const bairroOf = (it: DigestItem) => bairroName(muni, it.neighborhood);
 
   const groups = new Map<string, DigestItem[]>();
-  for (const it of real) groups.set(agencyOf(it), [...(groups.get(agencyOf(it)) ?? []), it]);
-  const order = [...groups.keys()].toSorted((a, b) =>
-    a === NO_AGENCY ? 1 : b === NO_AGENCY ? -1 : a.localeCompare(b, "pt-BR"),
-  );
+  for (const it of real) {
+    const agency = agencyOf(muni, it.category);
+    const group = groups.get(agency);
+    if (group) group.push(it);
+    else groups.set(agency, [it]);
+  }
+  const order = [...groups.keys()].toSorted(byAgency);
 
   let n = 0;
   const sections = order.map((agency) => ({
@@ -143,7 +153,8 @@ export function digestDocument(
     entries: (groups.get(agency) ?? [])
       .toSorted(
         (a, b) =>
-          (bairroOf(a) ?? "~").localeCompare(bairroOf(b) ?? "~", "pt-BR") ||
+          Number(bairroOf(a) === null) - Number(bairroOf(b) === null) ||
+          (bairroOf(a) ?? "").localeCompare(bairroOf(b) ?? "", "pt-BR") ||
           (a.createdAt ?? "").localeCompare(b.createdAt ?? ""),
       )
       .map((it): DigestEntry => {
@@ -151,7 +162,7 @@ export function digestDocument(
         return {
           n,
           id: it.id,
-          category: muni.categories.find((c) => c.key === it.category)?.label ?? it.category,
+          category: categoryLabel(muni, it.category),
           categoryKey: it.category,
           bairro: bairroOf(it),
           title: it.title,
@@ -166,7 +177,7 @@ export function digestDocument(
           registered: it.createdAt ? when(it.createdAt, muni.timezone) : null,
           confirmations: it.confirmations,
           photos: it.photos.map((p) => absolute(site, p.src)),
-          url: `${site}/o/${it.id}`,
+          url: itemUrl(muni, it.id),
         };
       }),
   }));
@@ -193,11 +204,11 @@ export function digestText(doc: DigestDocument, { attachment }: { attachment: bo
     "",
     `Este é o resumo diário do ${doc.sender}, um mapa independente e de código aberto onde moradores de ${doc.municipality} registram problemas urbanos. Ele não é um canal da Prefeitura.`,
     "",
-    `Hoje: ${plural(doc.total, "registro novo", "registros novos")}, para ${plural(doc.sections.length, "órgão", "órgãos")}.`,
+    `Hoje: ${counted(doc.total, "registro novo", "registros novos")}, para ${counted(doc.sections.length, "órgão", "órgãos")}.`,
     ...doc.sections.map((s) => {
       const ns = s.entries.map((e) => e.n);
       const range = ns.length === 1 ? `nº ${ns[0]}` : `nº ${ns[0]} a ${ns.at(-1)}`;
-      return `- ${s.agency}: ${plural(s.entries.length, "registro", "registros")} (${range})`;
+      return `- ${s.agency}: ${counted(s.entries.length, "registro", "registros")} (${range})`;
     }),
     "",
     ...(attachment
@@ -211,7 +222,7 @@ export function digestText(doc: DigestDocument, { attachment }: { attachment: bo
     "Quem registrou não é identificado neste resumo.",
   ];
   for (const s of doc.sections) {
-    lines.push("", "", `${s.agency} · ${plural(s.entries.length, "registro", "registros")}`);
+    lines.push("", "", `${s.agency} · ${counted(s.entries.length, "registro", "registros")}`);
     for (const e of s.entries)
       lines.push(
         "",
@@ -230,7 +241,7 @@ export function digestText(doc: DigestDocument, { attachment }: { attachment: bo
         ...e.photos.map((src, i) => `   Foto ${i + 1}: ${src}`),
         `   ${[
           e.registered ? `Registrado em ${e.registered}` : null,
-          e.confirmations > 0 ? plural(e.confirmations, "vizinho confirmou", "vizinhos confirmaram") : null,
+          e.confirmations > 0 ? counted(e.confirmations, "vizinho confirmou", "vizinhos confirmaram") : null,
         ]
           .filter(Boolean)
           .join(" · ")}`.trimEnd(),
@@ -254,7 +265,7 @@ export function buildDigest(
 ): Digest {
   const document = digestDocument(items, muni, sentAt, sequence);
   return {
-    subject: `${document.sender} · Resumo diário nº ${document.number} · ${document.day} · ${plural(document.total, "registro", "registros")}`,
+    subject: `${document.sender} · Resumo diário nº ${document.number} · ${document.day} · ${counted(document.total, "registro", "registros")}`,
     text: digestText(document, { attachment }),
     itemIds: document.sections.flatMap((s) => s.entries.map((e) => e.id)),
     document,

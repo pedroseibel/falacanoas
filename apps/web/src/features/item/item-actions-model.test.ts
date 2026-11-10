@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { isOpen } from "@fala/core";
 import { fixtures } from "@fala/instance-canoas/fixtures";
-import type { ViewerState } from "@/server/items";
 import {
   ActionInputSchema,
   predictAction,
@@ -9,6 +8,7 @@ import {
   refusalMessage,
   toActionFormData,
   toItemAction,
+  type ViewerState,
 } from "./item-actions-model";
 
 const photo = () => new File([new Uint8Array([0xff, 0xd8, 0xff])], "depois.jpg", { type: "image/jpeg" });

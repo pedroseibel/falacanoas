@@ -18,7 +18,6 @@ const third = "+5553999990000";
 
 type Gw = Awaited<ReturnType<typeof gateway>>;
 
-/** Re-authenticates by code and returns the ticket. */
 async function ticketFor(gw: Gw, accountId: string, at: Date): Promise<string> {
   await sendReauthCode(gw.g, { accountId, now: at });
   const r = await beginChange(gw.g, { accountId, code: gw.sent.at(-1)?.code, fresh: false, now: at });
@@ -26,7 +25,6 @@ async function ticketFor(gw: Gw, accountId: string, at: Date): Promise<string> {
   return r.ticket;
 }
 
-/** Sends a code to `to` under the ticket and verifies it. */
 async function changeTo(gw: Gw, ticket: string, to: string, at: Date) {
   expect(await sendChangeCode(gw.g, { ticket, phone: to, ip: null, now: at })).toEqual({ ok: true });
   return verifyChangeCode(gw.g, { ticket, phone: to, code: gw.sent.at(-1)?.code, ip: null, now: at });
@@ -44,7 +42,6 @@ describe("changing number", () => {
     expect(live[0]?.accountId).toBe(a.sub);
     expect(gw.mem.links.filter((l) => l.unlinkedAt)).toHaveLength(1);
     expect(gw.notices).toEqual([{ phone, text: CHANGE_NOTICE }]);
-    expect(CHANGE_NOTICE).not.toContain("8888");
 
     // The app picks the result up once.
     expect(await takeChange(gw.g, { accountId: a.sub, now: later(3000) })).toEqual({

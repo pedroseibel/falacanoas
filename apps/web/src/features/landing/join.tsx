@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 import {
   QueueSignupSchema,
   maskPhoneBR,
@@ -19,7 +20,9 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { RadioGroupSegment, RadioGroupSegmented } from "@/components/ui/radio-group";
 import { joinQueue } from "@/server/queue";
 import { PickMap } from "./bairro-map";
-import { Bar, Panel, Stage, Wrap, textLink } from "./bits";
+import { Stage, Wrap } from "./bits";
+import { Bar, Panel } from "@/components/panel";
+import { textLink } from "@/components/text-link";
 import { bairrosByName, fmt, plural, queueState, shareMessage, shareUrl, type QueueState } from "./landing-model";
 import { QueueMeter } from "./queue-meter";
 
@@ -307,7 +310,7 @@ function focusOnMount(el: HTMLElement | null) {
   if (!el) return;
   el.focus({ preventScroll: true });
   el.scrollIntoView({
-    behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    behavior: prefersReducedMotion() ? "auto" : "smooth",
     block: "center",
   });
 }
@@ -356,7 +359,7 @@ function Done({
       </h3>
       <p className="text-ui text-ink-2">
         {result.alreadyConfirmed
-          ? "Esta inscrição já foi confirmada antes e continua contando. Nada mudou."
+          ? "Esta inscrição já foi confirmada antes e continua contando."
           : wa
             ? result.whatsappNumber
               ? `Toque no botão e envie a mensagem que já vem escrita. É assim que sabemos que o número é seu. Só depois disso você passa a contar na fila de ${b.name}.`

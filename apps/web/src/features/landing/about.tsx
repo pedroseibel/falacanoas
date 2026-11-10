@@ -1,5 +1,6 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bar, Panel, SecHead, Section, Stage } from "./bits";
+import { SecHead, Section, Stage } from "./bits";
+import { Bar, Panel } from "@/components/panel";
 import { reveal } from "./motion";
 
 const FACTS: [string, string][] = [

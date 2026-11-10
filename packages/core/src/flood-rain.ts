@@ -1,4 +1,5 @@
 import { asksFlooding } from "./flooding";
+import { itemLngLat } from "./logic";
 import { dayRain, localDayBounds, type DayReading, type RainDay } from "./rain";
 import type { Item, LngLat, Municipality } from "./types";
 
@@ -10,10 +11,9 @@ export function rainWindow(
   muni: Pick<Municipality, "categories" | "timezone" | "rain">,
   item: Pick<Item, "category" | "scope" | "createdAt">,
 ): { at: LngLat; from: Date; to: Date } | null {
-  const s = item.scope;
   if (!muni.rain || !item.createdAt || !asksFlooding(muni, item.category)) return null;
-  if ((s.type !== "point" && s.type !== "place") || s.lng === undefined || s.lat === undefined) return null;
-  return { at: [s.lng, s.lat], ...localDayBounds(new Date(item.createdAt), muni.timezone) };
+  const at = itemLngLat(item);
+  return at ? { at, ...localDayBounds(new Date(item.createdAt), muni.timezone) } : null;
 }
 
 /** The day's rain for a record, from any readings that include its day; null when it gets none. */

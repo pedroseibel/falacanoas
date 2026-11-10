@@ -1,6 +1,7 @@
 import { FileText } from "lucide-react";
-import { AuthFrame, type BackLink } from "@/features/auth/auth-frame";
-import { textLink } from "@/features/landing/bits";
+import { AuthFrame } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
+import { textLink } from "@/components/text-link";
 import type { MonthlyListing } from "@/server/monthly";
 
 const kb = (bytes: number) => `${Math.max(1, Math.round(bytes / 1024))} KB`;
@@ -11,7 +12,7 @@ const sentence = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
  * /relatorios: the monthly report per body (core monthly-report.ts), one PDF a month, built on the
  * 1st and never changed. Each body's page can be sent on as it is.
  */
-export function MonthlyPage({ back, reports }: { back: BackLink; reports: MonthlyListing[] }) {
+export function MonthlyPage({ back, reports }: { back: AppLink; reports: MonthlyListing[] }) {
   return (
     <AuthFrame back={back} width="read">
       <header className="grid gap-2">

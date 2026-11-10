@@ -1,5 +1,4 @@
 import { REPORT } from "@fala/core";
-import { fitWithin } from "./report-model";
 
 const encode = (canvas: HTMLCanvasElement, type: string, quality: number) =>
   new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b?.type === type ? b : null), type, quality));
@@ -25,4 +24,9 @@ export async function preparePhoto(file: File): Promise<File> {
   // A random name replaces the original (which can carry a date or a device name) and keys the preview.
   const name = `foto-${crypto.randomUUID().slice(0, 8)}.${blob.type === "image/webp" ? "webp" : "jpg"}`;
   return new File([blob], name, { type: blob.type });
+}
+
+export function fitWithin(width: number, height: number, max: number): { width: number; height: number } {
+  const scale = Math.min(1, max / Math.max(width, height));
+  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }

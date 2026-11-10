@@ -1,26 +1,17 @@
-import { SUSPEND_DAYS, type ModerationFlag } from "@fala/core";
-import { and, eq, sql } from "drizzle-orm";
-import { db, type Db } from "./db/client";
-import {
-  escalations,
-  itemAuthors,
-  itemEvents,
-  itemPhotos,
-  items,
-  moderationCases,
-  moderators,
-  sanctions,
-} from "./db/schema";
+import { DAY_MS, type ModerationFlag, type RemovalWeight, SUSPEND_DAYS } from "@fala/core";
+import { and, eq, isNull, sql } from "drizzle-orm";
+import { targetAccount } from "./case-target";
+import { recheck, strike } from "./sanctions-store";
+import { db, type Q, type Tx } from "./db/client";
+import { escalations, itemEvents, itemPhotos, items, moderationCases, moderators, sanctions } from "./db/schema";
 
 /**
  * Moderation's plain server helpers, apart from the server functions in moderation.ts: a module the
  * browser imports must hold only server functions, or the database client leaks into the bundle.
  */
 
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
-type Q = Db | Tx;
 export type CaseRow = typeof moderationCases.$inferSelect;
-type CaseReason = CaseRow["reason"];
+export type CaseReason = CaseRow["reason"];
 
 export const ACTOR = "Moderação";
 
@@ -50,6 +41,38 @@ export async function openCase(
   return c.id;
 }
 
+/**
+ * The open case about one target (a photo, an update, or the item itself when neither is given),
+ * locked for this transaction; opened for `reason` when there is none.
+ */
+export async function openCaseFor(
+  tx: Tx,
+  itemId: string,
+  target: { photoId?: string; eventId?: string },
+  reason: CaseReason,
+): Promise<CaseRow> {
+  const find = (id?: string) =>
+    tx
+      .select()
+      .from(moderationCases)
+      .where(
+        id
+          ? eq(moderationCases.id, id)
+          : and(
+              eq(moderationCases.itemId, itemId),
+              eq(moderationCases.status, "open"),
+              target.photoId ? eq(moderationCases.photoId, target.photoId) : isNull(moderationCases.photoId),
+              target.eventId ? eq(moderationCases.eventId, target.eventId) : isNull(moderationCases.eventId),
+            ),
+      )
+      .limit(1)
+      .for("update");
+  const [open] = await find();
+  const [c] = open ? [open] : await find(await openCase(tx, itemId, reason, [], target));
+  if (!c) throw new Error("caso não encontrado");
+  return c;
+}
+
 /** Each new photo on a published item waits for moderation's first look: one case per photo. */
 export async function openPhotoCases(q: Q, itemId: string, photoIds: string[]): Promise<void> {
   if (!photoIds.length) return;
@@ -64,11 +87,11 @@ export async function moderatorOf(accountId: string) {
   return row ?? null;
 }
 
-export async function isModerator(accountId: string): Promise<boolean> {
-  return Boolean(await moderatorOf(accountId));
-}
+export type Moderator = NonNullable<Awaited<ReturnType<typeof moderatorOf>>>;
 
-/** What a case is about: the item as a whole, one photo, or one update. */
+export const covers = (mod: Pick<Moderator, "neighborhoods">, neighborhood: string | null) =>
+  !mod.neighborhoods || mod.neighborhoods.includes(neighborhood ?? "");
+
 export type CaseTarget = "item" | "photo" | "update";
 export const targetOf = (c: Pick<CaseRow, "photoId" | "eventId">): CaseTarget =>
   c.photoId ? "photo" : c.eventId ? "update" : "item";
@@ -77,24 +100,6 @@ export const targetOf = (c: Pick<CaseRow, "photoId" | "eventId">): CaseTarget =>
 export const heldItem = (c: Pick<CaseRow, "reason">) =>
   c.reason === "guest_pin" || c.reason === "prescreen" || c.reason === "muted";
 
-/**
- * The account behind what a case is about: who sent the photo, who wrote the update, or who posted the
- * item. Never leaves the server: it decides who can contest, and whose refusals a moderator counts.
- */
-export async function targetAccount(q: Q, c: Pick<CaseRow, "itemId" | "photoId" | "eventId">): Promise<string | null> {
-  if (c.photoId) {
-    const [p] = await q.select({ a: itemPhotos.accountId }).from(itemPhotos).where(eq(itemPhotos.id, c.photoId));
-    return p?.a ?? null;
-  }
-  if (c.eventId) {
-    const [e] = await q.select({ a: itemEvents.accountId }).from(itemEvents).where(eq(itemEvents.id, c.eventId));
-    return e?.a ?? null;
-  }
-  const [a] = await q.select({ a: itemAuthors.accountId }).from(itemAuthors).where(eq(itemAuthors.itemId, c.itemId));
-  return a?.a ?? null;
-}
-
-/** The history line a removal leaves, with the moderator's reason. */
 const REMOVED: Record<CaseTarget, (note: string) => string> = {
   item: (note) => `Retirado do mapa pela moderação: ${note}`,
   photo: (note) => `Foto removida pela moderação: ${note}`,
@@ -116,7 +121,7 @@ async function history(q: Q, itemId: string, now: Date, text: string): Promise<v
  * for routine looks (a photo approved, a report dismissed); every removal is written down, with its
  * reason, because nothing on the Fala disappears silently.
  */
-export async function applyDecision(
+async function applyDecision(
   q: Q,
   c: CaseRow,
   decision: "publish" | "reject" | "republish",
@@ -163,14 +168,12 @@ export async function applyDecision(
     );
     return;
   }
-  // A report about a published item: kept as it is, or taken off the map.
   if (show) return;
   await q.update(items).set({ moderation: "rejected", updatedAt: now }).where(eq(items.id, c.itemId));
   await history(q, c.itemId, now, REMOVED.item(note ?? ""));
 }
 
-/** A contest won: the target comes back, and the history says so. */
-export async function restore(q: Q, c: CaseRow, note: string, now: Date): Promise<void> {
+async function restore(q: Q, c: CaseRow, note: string, now: Date): Promise<void> {
   const target = targetOf(c);
   if (target === "photo" && c.photoId)
     await q.update(itemPhotos).set({ review: "approved" }).where(eq(itemPhotos.id, c.photoId));
@@ -188,11 +191,40 @@ export async function restore(q: Q, c: CaseRow, note: string, now: Date): Promis
   await history(q, c.itemId, now, `${RESTORED[target]} ${note}`);
 }
 
+/**
+ * A moderator's decision on a case, whole: the case is closed with it, its target goes up or comes
+ * down with a line in the item's history, and a removal that weighs counts against whoever sent it.
+ */
+export async function decide(
+  tx: Tx,
+  c: CaseRow,
+  d: {
+    decision: "publish" | "reject" | "republish";
+    note: string | null;
+    weight: RemovalWeight;
+    by: string;
+    now: Date;
+  },
+): Promise<void> {
+  const status = d.decision === "publish" ? "published" : d.decision === "reject" ? "rejected" : "republish";
+  await tx
+    .update(moderationCases)
+    .set({ status, note: d.note, weight: d.weight, decidedBy: d.by, decidedAt: d.now })
+    .where(eq(moderationCases.id, c.id));
+  await applyDecision(tx, c, d.decision, d.note, d.now);
+  if (d.decision === "reject" && d.weight !== "none") await strike(tx, await targetAccount(tx, c), d.now);
+}
+
+/** A contest won: the target comes back, and an automatic mute the remaining removals no longer justify is lifted. */
+export async function overturn(tx: Tx, c: CaseRow, note: string, now: Date): Promise<void> {
+  await restore(tx, c, note, now);
+  await recheck(tx, await targetAccount(tx, c), now);
+}
+
 /** What the item's history says: neutral, so the history itself never describes the material. */
-export const ILLEGAL = "Conteúdo ilegal removido.";
-export const SUSPENDED_FOR_LAW =
+const ILLEGAL = "Conteúdo ilegal removido.";
+const SUSPENDED_FOR_LAW =
   "Uma publicação sua foi removida por violar a lei. O caso está com a equipe responsável pelo Fala.";
-const DAY = 86_400_000;
 
 /**
  * Hands a case over as child abuse material (round 20; ECA arts. 241-A and 241-B), in the caller's
@@ -243,7 +275,7 @@ export async function escalateCase(
       source: "auto",
       reason: SUSPENDED_FOR_LAW,
       startsAt: now,
-      endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY),
+      endsAt: new Date(now.getTime() + SUSPEND_DAYS * DAY_MS),
       confirmedAt: now,
       escalationId: escalation.id,
     });

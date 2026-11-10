@@ -112,5 +112,3 @@ export const canoas = defineMunicipality({
     ],
   },
 });
-
-export default canoas;

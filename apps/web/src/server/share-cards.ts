@@ -1,4 +1,16 @@
-import { isOpen, outlineOf, type BairroCard, type Item, type ItemCard, type Scope, type ShareCard } from "@fala/core";
+import {
+  type BairroCard,
+  bairroName,
+  categoryLabel,
+  isOpen,
+  isOverDeadline,
+  type Item,
+  type ItemCard,
+  itemPath,
+  outlineOf,
+  type Scope,
+  type ShareCard,
+} from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { findItem, listItems } from "./items";
 import { getPhoto } from "./photos";
@@ -24,7 +36,6 @@ async function photoOf(it: Item, origin: string): Promise<string | null> {
   return body.length <= 2_500_000 ? `data:${type};base64,${Buffer.from(body).toString("base64")}` : null;
 }
 
-/** Where the dot goes: a point, or a place with coordinates. */
 function pointOf(scope: Scope): { lng: number; lat: number } | null {
   if (scope.type === "point") return { lng: scope.lng, lat: scope.lat };
   if (scope.type === "place" && scope.lng !== undefined && scope.lat !== undefined)
@@ -46,14 +57,14 @@ export async function itemShareCard(
   const card: ItemCard = {
     kind: "item",
     title: it.title,
-    category: canoas.categories.find((c) => c.key === it.category)?.label ?? it.category,
-    place: canoas.neighborhoods.find((n) => n.slug === it.neighborhood)?.name ?? null,
+    category: categoryLabel(canoas, it.category),
+    place: bairroName(canoas, it.neighborhood),
     days: it.days,
     open: isOpen(it),
     demo: Boolean(it.demo),
     photo: await photoOf(it, origin),
     outline: bairro ? outlineOf(bairro, 400, pointOf(it.scope)) : null,
-    link: `${host}/o/${it.id}`,
+    link: `${host}${itemPath(it.id)}`,
   };
   return { card, fallback: it.photos[0]?.src ?? "/og.png" };
 }
@@ -72,7 +83,7 @@ export async function bairroShareCard(
     kind: "bairro",
     name: bairro.name,
     open: open.length,
-    overdue: open.filter((i) => i.days > canoas.deadlineDays).length,
+    overdue: open.filter((i) => isOverDeadline(i, canoas.deadlineDays)).length,
     deadlineDays: canoas.deadlineDays,
     demo: mine.some((i) => i.demo),
     outline: f ? outlineOf(f) : null,

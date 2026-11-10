@@ -1,5 +1,5 @@
 import { db } from "./db/client";
-import { escalateKnownMatches, recordScreens, screenBytes, type ScreenRow } from "./known-material";
+import { escalateKnownMatches, recordScreens, screenBytes, type ScreenRow, triagem } from "./known-material";
 
 /**
  * The app's side of the screening service (apps/triagem; DECISIONS round 20; BUILD 5.8). After a photo
@@ -18,12 +18,11 @@ export interface PhotoScreen {
   plates: number;
 }
 
-/** Screens freshly stored photos and records what was seen. Runs in the background, after the response. */
+/** Runs in the background, after the response. */
 export async function screenStored(photos: { key: string; bytes: Uint8Array<ArrayBuffer> }[]): Promise<void> {
-  const url = process.env.TRIAGEM_URL;
-  if (!url || !photos.length) return;
-  const env = { url, token: process.env.TRIAGEM_TOKEN };
-  const results = await Promise.all(photos.map((p) => screenBytes(p.bytes, p.key, env).catch(() => null)));
+  const service = triagem();
+  if (!service || !photos.length) return;
+  const results = await Promise.all(photos.map((p) => screenBytes(p.bytes, p.key, service).catch(() => null)));
   const rows = results.flatMap((r): ScreenRow[] => (r ? [r] : []));
   const now = new Date();
   await recordScreens(db, rows, now);

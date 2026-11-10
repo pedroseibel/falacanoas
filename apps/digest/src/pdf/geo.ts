@@ -23,7 +23,6 @@ export function toTile([lng, lat]: LngLat): Point {
 /** Metres covered by one tile unit at a latitude (east-west and north-south alike, in Mercator). */
 export const metresPerUnit = (lat: number) => (40_075_016.686 * Math.cos((lat * Math.PI) / 180)) / N;
 
-/** The tiles a box touches, as [x, y]. */
 export function tilesIn(b: Box): Point[] {
   const out: Point[] = [];
   for (let y = Math.floor(b.y0); y <= Math.floor(b.y1); y++)
@@ -31,7 +30,6 @@ export function tilesIn(b: Box): Point[] {
   return out;
 }
 
-/** A window of `w` × `h` metres centred on a point. */
 export function boxAround(p: LngLat, w: number, h: number): Box {
   const [x, y] = toTile(p);
   const m = metresPerUnit(p[1]);

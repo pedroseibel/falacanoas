@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DAY_MS } from "./format";
 
 /**
  * Access evidence (DECISIONS round 18, Q21-Q23; Marco Civil art. 15, Decreto 8.771 art. 15-A): who
@@ -87,7 +88,12 @@ export function connectionFromHeaders(h: Pick<Headers, "get">): Connection {
 /** Evidence older than this is deleted, unless a hold covers it: 6 calendar months (art. 15). */
 export function evidenceCutoff(now: Date): Date {
   const cut = new Date(now);
+  // From the 1st, so a month end doesn't overflow (31 Aug − 6 months is 28 Feb, not 3 Mar): a late
+  // cutoff would delete evidence before its six months are up.
+  cut.setUTCDate(1);
   cut.setUTCMonth(cut.getUTCMonth() - 6);
+  const lastDay = new Date(Date.UTC(cut.getUTCFullYear(), cut.getUTCMonth() + 1, 0)).getUTCDate();
+  cut.setUTCDate(Math.min(now.getUTCDate(), lastDay));
   return cut;
 }
 
@@ -113,5 +119,5 @@ export function holdActive(h: PreservationHold, now: Date): boolean {
   if (h.requestedAt > now || h.releasedAt || h.refusedAt) return false;
   if (h.endsAt && h.endsAt <= now) return false;
   if (h.courtOrderSoughtAt) return true;
-  return now.getTime() - h.requestedAt.getTime() < HOLD_LAPSE_DAYS * 864e5;
+  return now.getTime() - h.requestedAt.getTime() < HOLD_LAPSE_DAYS * DAY_MS;
 }

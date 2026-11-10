@@ -45,7 +45,6 @@ export interface Basemap {
   widthMetres: number;
   /** Street names to set on a street map, nearest the focus first. */
   labels: StreetLabel[];
-  /** The named street nearest the focus, and how far it is. */
   nearest: { name: string; metres: number } | null;
   /** Tiles the map needed that couldn't be had (fetch failed): a street map with holes isn't drawn. */
   missing: number;
@@ -214,7 +213,6 @@ function each(
   }
 }
 
-/** The closest point of a polyline to `p`, with the segment's angle there. */
 function closest(points: Point[], p: Point): { at: Point; d: number; angle: number } | null {
   let best: { at: Point; d: number; angle: number } | null = null;
   for (let i = 1; i < points.length; i++) {

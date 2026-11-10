@@ -1,7 +1,7 @@
+import { StageBadge, Wordmark } from "@/components/wordmark";
 import { initials } from "@fala/core";
 import { BarChart3, Home, Map as MapIcon, Plus, Search, User } from "lucide-react";
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShortcutHint } from "@/features/command/command-palette";
 import { cn } from "@/lib/utils";
@@ -36,9 +36,9 @@ export function AppShell({ section, onSearch, onReport, signedIn, nick, onSignIn
           "mapa",
           <>
             <span className="text-base font-semibold tracking-tight">
-              Fala<span className="text-signal">,</span> Canoas
+              <Wordmark />
             </span>
-            <Badge variant="outline">protótipo</Badge>
+            <StageBadge />
           </>,
           "flex shrink-0 items-center gap-2.5 whitespace-nowrap",
           false,

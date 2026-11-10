@@ -159,7 +159,6 @@ export const items = fala
       /** protocoladoEm and its number, when the Prefeitura answered with one. */
       protocolNumber: text(),
       protocolAt: timestamp({ withTimezone: true }),
-      /** When the community closed it. */
       closedAt: timestamp({ withTimezone: true }),
       /** Neighbours who said it was fixed in the current round (round 4). */
       resolvedVotes: integer().notNull().default(0),

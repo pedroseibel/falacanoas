@@ -1,11 +1,12 @@
 import {
+  categoryLabel,
   covers,
   followLabel,
   FollowPlaceSchema,
-  itemNotice,
-  newItemNotice,
   type Item,
   type ItemChange,
+  itemNotice,
+  newItemNotice,
   type Notice,
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
@@ -76,8 +77,7 @@ export function notifyPlaces(it: Item, authorId: string | null): void {
         if (place.success && covers(place.data, it) && !first.has(r.accountId))
           first.set(r.accountId, followLabel(place.data, canoas).title);
       }
-      const category = canoas.categories.find((c) => c.key === it.category)?.label ?? it.category;
-      // One notice per place label, each to the accounts that follow such a place.
+      const category = categoryLabel(canoas, it.category);
       const byWhere = new Map<string, string[]>();
       for (const [accountId, where] of first) byWhere.set(where, [...(byWhere.get(where) ?? []), accountId]);
       await Promise.all(

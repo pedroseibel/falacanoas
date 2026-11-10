@@ -1,3 +1,4 @@
+import { hasBearer } from "@fala/core";
 import { cron } from "@elysiajs/cron";
 import { canoas } from "@fala/instance-canoas";
 import { Elysia } from "elysia";
@@ -74,14 +75,14 @@ new Elysia()
     rain: config.rain ? { next: store.cron.chuva.nextRun()?.toISOString() ?? null, last: lastRain } : null,
   }))
   .post("/resumo", async ({ headers, status }) => {
-    if (!config.token || headers.authorization !== `Bearer ${config.token}`) return status(401, "Não autorizado.");
+    if (!hasBearer(headers.authorization, config.token)) return status(401, "Não autorizado.");
     const result = await run("manual");
     if (result.ok) return result;
     return status(result.error === "busy" ? 409 : 502, result);
   })
   // The monthly report by hand: the month that just ended, or ?mes=AAAA-MM. Built once.
   .post("/mensal", async ({ headers, query, status }) => {
-    if (!config.token || headers.authorization !== `Bearer ${config.token}`) return status(401, "Não autorizado.");
+    if (!hasBearer(headers.authorization, config.token)) return status(401, "Não autorizado.");
     const shown = await runMonthly("manual", typeof query.mes === "string" ? query.mes : undefined);
     return shown.ok ? shown : status(shown.error === "built" ? 409 : shown.error === "empty" ? 404 : 400, shown);
   })
@@ -90,8 +91,7 @@ new Elysia()
   .post(
     "/respostas",
     async ({ headers, request, status }) => {
-      if (!config.repliesToken || headers.authorization !== `Bearer ${config.repliesToken}`)
-        return status(401, "Não autorizado.");
+      if (!hasBearer(headers.authorization, config.repliesToken)) return status(401, "Não autorizado.");
       const raw = new Uint8Array(await request.arrayBuffer());
       if (!raw.byteLength || raw.byteLength > 25 * 1024 * 1024) return status(413, "E-mail vazio ou grande demais.");
       const outcome = await replyNow(config, raw);

@@ -4,10 +4,10 @@ import { toast } from "sonner";
 import { AuthSearchSchema, REASON, returnPath } from "@/features/auth/auth-search";
 import { SignInPage } from "@/features/auth/sign-in-page";
 import { openReport } from "@/features/report/report-store";
-import { accountQuery } from "@/lib/city";
+import { accountQuery } from "@/lib/account";
 import { authClient } from "@/lib/auth-client";
 import { getAccount, getAuthConfig } from "@/server/account";
-import { useBackLink } from "./-auth-links";
+import { useBackLink } from "./-links";
 
 export const Route = createFileRoute("/entrar")({
   validateSearch: AuthSearchSchema,

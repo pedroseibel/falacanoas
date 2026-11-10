@@ -2,7 +2,8 @@ import { describe, expect, test } from "bun:test";
 import { isOpen } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { fixtures } from "@fala/instance-canoas/fixtures";
-import { queryWords, visibleItems } from "@/features/map/selectors";
+import { visibleItems } from "@/features/map/selectors";
+import { queryWords } from "@/lib/search";
 import { bairroLeads, matchCommands, rankBairros, rankPins, seeOnMapLabel, shortcutKeys } from "./palette-model";
 
 const all = fixtures.items;

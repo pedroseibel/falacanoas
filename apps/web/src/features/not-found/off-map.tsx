@@ -1,14 +1,10 @@
+import { type Go } from "@/components/app-link";
 import type { NeighborhoodCollection } from "@fala/core";
-import { useMemo, useRef, useState, type MouseEvent } from "react";
+import { useMemo, useRef, useState } from "react";
 import { project } from "@/components/viz";
-import { Bar, Panel } from "@/features/landing/bits";
+import { Bar, Panel } from "@/components/panel";
 import { cn } from "@/lib/utils";
 import { GhostPin } from "./ghost-pin";
-
-/** A real link that a plain click keeps inside the app (the route adapter navigates). */
-export interface Go {
-  (href: string): { href: string; onClick: (e: MouseEvent<HTMLAnchorElement>) => void };
-}
 
 /** Room around the city, in map units, so the ghost pin and its label sit inside the frame. */
 const PAD = 30;

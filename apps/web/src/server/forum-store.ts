@@ -40,7 +40,6 @@ async function withReplies(rows: ThreadRow[], now: Date): Promise<Thread[]> {
   }));
 }
 
-/** A bairro's board, most recently active first. */
 export async function boardThreads(neighborhood: string, now = new Date()): Promise<Thread[]> {
   const rows = await db
     .select()
@@ -51,7 +50,6 @@ export async function boardThreads(neighborhood: string, now = new Date()): Prom
   return withReplies(rows, now);
 }
 
-/** A pin's conversation, if anyone has started it. */
 export async function pinThread(itemId: string, now = new Date()): Promise<Thread | null> {
   const rows = await db
     .select()

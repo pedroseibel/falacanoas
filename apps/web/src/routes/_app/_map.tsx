@@ -5,7 +5,7 @@ import { canoas } from "@fala/instance-canoas";
 import { useMemo, useState } from "react";
 import { MapPage } from "@/features/map/map-page";
 import { setMapState } from "@/features/map/map-store";
-import { pinIntent } from "@/features/map/pin-intent";
+import { pinIntent } from "@/lib/pin-intent";
 import { MapSearchSchema, visibleItems, type MapSearch } from "@/features/map/selectors";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cityQuery } from "@/lib/city";

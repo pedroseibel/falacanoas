@@ -1,7 +1,8 @@
 import type { Municipality } from "@fala/core";
 import { HintList } from "./hint-list";
 import { findBairro, shownPath } from "./not-found-model";
-import { OffMap, type Go } from "./off-map";
+import type { Go } from "@/components/app-link";
+import { OffMap } from "./off-map";
 
 /**
  * /bairro/<something that isn't one>, inside the app: what's close ("você quis dizer…"), then every
@@ -21,8 +22,7 @@ export function BairroNotFound({ muni, slug, go }: { muni: Municipality; slug: s
           <h1 className="text-heading font-semibold text-balance">{muni.name} não tem um bairro com esse nome.</h1>
           <p className="text-ui text-pretty text-ink-2">
             O endereço pede{" "}
-            <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-caption">{shownPath(slug, 32)}</span>, que
-            não está entre os {muni.neighborhoods.length} bairros oficiais da cidade.
+            <span className="rounded-sm bg-muted px-1 py-0.5 font-mono text-caption">{shownPath(slug, 32)}</span>.
           </p>
         </div>
         <HintList title="Você quis dizer:" hints={near} go={go} />

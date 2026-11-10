@@ -5,22 +5,13 @@ import { pdfName, runDigest, type DigestStore, type Mail, type Outbox } from "./
 
 const item = (id: string, over: Partial<DigestItem> = {}): DigestItem => ({
   id,
-  kind: "occurrence",
   category: canoas.categories[0]?.key ?? "buraco",
   title: "Buraco fundo na esquina",
   text: "",
   neighborhood: null,
   scope: { type: "point", lng: -51.18, lat: -29.91 },
-  days: 0,
-  updatedMinutesAgo: 0,
   confirmations: 0,
-  followers: 0,
-  updates: 0,
   photos: [],
-  visibility: "anonymous",
-  author: null,
-  community: "reported",
-  official: null,
   createdAt: "2026-10-12T15:00:00.000Z",
   ...over,
 });

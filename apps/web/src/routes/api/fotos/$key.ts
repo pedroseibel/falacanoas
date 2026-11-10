@@ -1,8 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { isModerator } from "@/server/moderation-store";
-import { photoAudience } from "@/server/photo-access";
+import { photoAccess } from "@/server/photo-access";
 import { getPhoto, isPhotoKey } from "@/server/photos";
-import { getSession } from "@/server/session";
 
 const missing = () => new Response("Foto não encontrada.", { status: 404 });
 
@@ -17,12 +15,8 @@ export const Route = createFileRoute("/api/fotos/$key")({
     handlers: {
       GET: async ({ params, request }) => {
         if (!isPhotoKey(params.key)) return missing();
-        const audience = await photoAudience(params.key);
+        const audience = await photoAccess(params.key);
         if (!audience) return missing();
-        if (audience === "moderators") {
-          const user = (await getSession())?.user;
-          if (!user || !(await isModerator(user.id))) return missing();
-        }
         const headers = {
           "content-type": params.key.endsWith(".webp") ? "image/webp" : "image/jpeg",
           "cache-control": audience === "public" ? "public, max-age=3600" : "private, no-store",

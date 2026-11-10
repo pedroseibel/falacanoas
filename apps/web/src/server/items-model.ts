@@ -1,4 +1,4 @@
-import { calendarDays, eventStamp, type Item, type ItemEvent } from "@fala/core";
+import { calendarDays, DAY_MS, eventStamp, type Item, type ItemEvent } from "@fala/core";
 import type { itemEvents, itemPhotos, items } from "./db/schema";
 
 /**
@@ -15,13 +15,11 @@ export type PhotoRow = Pick<typeof itemPhotos.$inferSelect, "src" | "takenAt" | 
   Partial<Pick<typeof itemPhotos.$inferSelect, "id" | "review">>;
 export type PhotoInsert = typeof itemPhotos.$inferInsert;
 
-const DAY = 864e5;
-
 /**
  * Days on the public clock: from the digest that carried it (sentAt) to now, or to the day the community closed it.
  * Zero while it waits for its first digest: the clock hasn't started.
  */
-export function clockDays(row: Pick<ItemRow, "sentAt" | "closedAt">, now: Date, timezone: string): number {
+function clockDays(row: Pick<ItemRow, "sentAt" | "closedAt">, now: Date, timezone: string): number {
   if (!row.sentAt) return 0;
   return Math.max(0, calendarDays(row.sentAt, row.closedAt ?? now, timezone));
 }
@@ -71,7 +69,7 @@ export function itemFromRows(
         ? {
             status: row.officialStatus,
             agency: row.officialAgency,
-            daysAgo: Math.max(0, Math.floor((now.getTime() - row.officialAt.getTime()) / DAY)),
+            daysAgo: Math.max(0, Math.floor((now.getTime() - row.officialAt.getTime()) / DAY_MS)),
           }
         : null,
     ...(row.disagreeing ? { disagreeing: row.disagreeing } : {}),

@@ -36,7 +36,6 @@ export function whatsappVariants(id: string): string[] {
   return [d];
 }
 
-/** A WhatsApp sign-up as the service reads it. */
 export interface WhatsappSignup {
   neighborhood: string;
   code: string;
@@ -83,7 +82,7 @@ export function replyFor(outcome: Outcome, muni: Municipality, { reporting = fal
       ].join("\n\n");
     }
     case "already":
-      return `Esta inscrição já estava confirmada e continua contando na fila de ${bairro(outcome.neighborhood)?.name ?? outcome.neighborhood}. Nada mudou.`;
+      return `Esta inscrição já estava confirmada e continua contando na fila de ${bairro(outcome.neighborhood)?.name ?? outcome.neighborhood}.`;
     case "wrong-code":
       return `Este código não é o da sua inscrição. Confira o código na página onde você se inscreveu, ou inscreva-se de novo em https://${site}.`;
     case "unknown":

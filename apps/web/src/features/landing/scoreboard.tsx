@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { DaysMeter } from "@/components/viz";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Fn, Num, Panel, SecHead, Stage, Wrap } from "./bits";
+import { Fn, Num, SecHead, Stage, Wrap } from "./bits";
+import { Panel } from "@/components/panel";
 import { BOARD_BY_AGENCY, BOARD_BY_TYPE, bairrosByQueue, fmt } from "./landing-model";
 
 /** The caption under each reading. Not a <caption>: it sits below the mobile list too. */

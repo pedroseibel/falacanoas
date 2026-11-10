@@ -91,7 +91,6 @@ export function Relief({ deadline, className }: { deadline: number; className?: 
         t = (t + dt) % LOOP;
         target = t;
       } else {
-        // Scrubbing eases toward the pointer instead of jumping to it.
         t += (target - t) * (1 - Math.exp(-dt / 0.12));
         if (Math.abs(target - t) < 0.002) t = target;
       }

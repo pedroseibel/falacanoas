@@ -1,10 +1,9 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 import type { Photo } from "@fala/core";
 import { Camera, ChevronLeft, ChevronRight, Flag, ScanEye } from "lucide-react";
 import { useRef, useState, type KeyboardEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
  * A pin's photos over time. The big photo is a native scroll-snap strip, so a finger swipes it with
@@ -39,7 +38,7 @@ export function PhotoViewer({
     const k = Math.max(0, Math.min(count - 1, i));
     setIndex(k);
     const el = strip.current;
-    if (el) el.scrollTo({ left: k * el.clientWidth, behavior: reducedMotion() ? "auto" : "smooth" });
+    if (el) el.scrollTo({ left: k * el.clientWidth, behavior: prefersReducedMotion() ? "auto" : "smooth" });
   };
   // A swipe or a trackpad moves the strip: the photo nearest the middle is the current one.
   const onScroll = () => {

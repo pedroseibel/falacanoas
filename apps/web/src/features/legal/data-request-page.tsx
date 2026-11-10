@@ -18,9 +18,10 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { AuthFrame, AuthHead, type BackLink } from "@/features/auth/auth-frame";
-import { useTurnstile } from "@/features/auth/turnstile";
-import { textLink } from "@/features/landing/bits";
+import { AuthFrame, AuthHead } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
+import { useTurnstile } from "@/lib/turnstile";
+import { textLink } from "@/components/text-link";
 import { useHydrated } from "@/lib/use-hydrated";
 import { submitDataRequest } from "@/server/data-requests";
 
@@ -45,7 +46,7 @@ export function DataRequestPage({
   initial,
   onDownload,
 }: {
-  back: BackLink;
+  back: AppLink;
   signedIn: boolean;
   turnstileSiteKey: string | null;
   initial: { requester?: Requester; item?: string };

@@ -45,7 +45,6 @@ export default class Cards extends WorkerEntrypoint {
     return new Response("Não encontrado.", { status: 404 });
   }
 
-  /** RPC: the card as a PNG. */
   async render(input: unknown): Promise<Uint8Array> {
     return this.draw(input).catch((e: unknown) => {
       // A stack doesn't cross the service binding; the message does.

@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { downpourNow, gaugesNow, hourlyBars, mmLabel, rainNear, type GaugeNow } from "./rain-now";
+import { mmLabel } from "./format";
+import { downpourNow, gaugesNow, hourlyBars, rainNear, type GaugeNow } from "./rain-now";
 import type { RainSource } from "./rain";
 
 const source: RainSource = {

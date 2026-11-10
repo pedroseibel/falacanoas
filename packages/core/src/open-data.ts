@@ -1,4 +1,5 @@
 import { calendarDays } from "./format";
+import { bairroName, itemUrl } from "./logic";
 import type { Municipality } from "./types";
 
 /**
@@ -96,7 +97,7 @@ export function openRecord(row: OpenRow, muni: Municipality, now: Date): OpenRec
     categoria_nome: category?.label ?? row.categoria,
     orgao_responsavel: category?.agency ?? null,
     bairro: row.bairro,
-    bairro_nome: muni.neighborhoods.find((n) => n.slug === row.bairro)?.name ?? null,
+    bairro_nome: bairroName(muni, row.bairro),
     lng: row.lng,
     lat: row.lat,
     registrado_em: row.registrado_em.toISOString(),
@@ -112,7 +113,7 @@ export function openRecord(row: OpenRow, muni: Municipality, now: Date): OpenRec
     fechado_em: iso(row.fechado_em),
     confirmacoes: row.confirmacoes,
     atualizado_em: row.atualizado_em.toISOString(),
-    pagina: `https://${muni.branding.domain}/o/${row.codigo}`,
+    pagina: itemUrl(muni, row.codigo),
   };
 }
 
@@ -192,7 +193,6 @@ export const RECORD_COLUMNS: readonly (keyof OpenRecord)[] = [
 
 export const EVENT_COLUMNS: readonly (keyof OpenEvent)[] = ["codigo", "em", "evento", "quem", "texto"];
 
-/** The data dictionary, in pt-BR: what each field and each code means. */
 export const OPEN_DATA_DICTIONARY = {
   registros: {
     codigo: "Código público do registro, o mesmo da página (/o/<código>).",

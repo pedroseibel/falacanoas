@@ -3,10 +3,10 @@ import { Loader2, LocateFixed } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { prefersDark } from "@/features/map/map-engine";
+import { prefersDark } from "@/lib/theme";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
-import { mountPicker, type Picker } from "./picker-engine";
+import { mountPicker, type Picker } from "@/features/map/picker-engine";
 
 /**
  * The map under a fixed crosshair (research/DECISIONS.md, round 15). An imperative island like the

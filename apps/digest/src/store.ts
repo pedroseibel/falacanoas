@@ -24,7 +24,6 @@ const LOCK = 7_314_002;
 
 interface PendingRow {
   id: string;
-  kind: "occurrence" | "public_issue";
   category: string;
   title: string;
   text: string;
@@ -51,7 +50,6 @@ export function pgStore(
     await connected;
     return (await client.query<T>(sql, params)).rows;
   };
-  /** The day's rain on the flooding records, from one read of the archive over their days. */
   async function withRain(found: DigestItem[], m: NonNullable<typeof muni>): Promise<DigestItem[]> {
     const windows = found.map((it) => rainWindow(m, it)).filter((w) => w !== null);
     if (!windows.length) return found;
@@ -108,7 +106,7 @@ export function pgStore(
       const rows = await q<PendingRow>(
         // A report waits until moderation has looked at its photos: the Ouvidoria gets, in the Fala's
         // name, only what anyone can already see. Removed photos never go.
-        `select i.id, i.kind, i.category, i.title, i.text, i.reference, i.address, i.flooding, i.neighborhood, i.scope, i.confirmations, i.created_at,
+        `select i.id, i.category, i.title, i.text, i.reference, i.address, i.flooding, i.neighborhood, i.scope, i.confirmations, i.created_at,
                 coalesce(array_agg(p.src order by p.position) filter (where p.review = 'approved'), '{}') as photos
            from fala.items i left join fala.item_photos p on p.item_id = i.id
           where i.sent_at is null and i.moderation = 'published' and not i.demo and i.kind = 'occurrence'
@@ -118,7 +116,6 @@ export function pgStore(
       );
       const found: DigestItem[] = rows.map((r) => ({
         id: r.id,
-        kind: r.kind,
         category: r.category,
         title: r.title,
         text: r.text,
@@ -126,16 +123,8 @@ export function pgStore(
         address: r.address,
         neighborhood: r.neighborhood,
         scope: r.scope,
-        days: 0,
-        updatedMinutesAgo: 0,
         confirmations: r.confirmations,
-        followers: 0,
-        updates: 0,
-        photos: r.photos.map((src) => ({ src, takenAt: "", by: "" })),
-        visibility: "anonymous",
-        author: null,
-        community: "reported",
-        official: null,
+        photos: r.photos.map((src) => ({ src })),
         createdAt: r.created_at.toISOString(),
         ...(r.flooding ? { flooding: r.flooding } : {}),
       }));
@@ -193,7 +182,7 @@ export function pgStore(
  * already sent; never repeated; with `keep`, a report that has a protocol keeps it (a protocol for the
  * whole resumo doesn't replace one given to the report itself). Returns the codes written.
  */
-export async function writeProtocol(
+async function writeProtocol(
   client: Client,
   input: { ids: string[]; number: string; at: Date; by: string; keep: boolean; actor: string },
 ): Promise<string[]> {
@@ -225,7 +214,6 @@ export async function writeProtocol(
   }
 }
 
-/** The CLI's `protocolo`: one report, by hand. */
 export async function recordProtocol(
   connectionString: string,
   input: { id: string; number: string; at: Date; by: string; actor: string },
@@ -252,7 +240,6 @@ export interface ReplyRow {
   item_ids: string[] | null;
 }
 
-/** Replies to the resumo in Postgres: what takeReply needs, and the operator's review. */
 export function pgReplyStore(connectionString: string, actor: string, timezone: string) {
   const client = new Client({ connectionString });
   const connected = client.connect();
@@ -308,7 +295,6 @@ export function pgReplyStore(connectionString: string, actor: string, timezone: 
         `select r.*, d.item_ids from fala.digest_replies r left join fala.digests d on d.id = r.digest_id
           where r.status = 'review' order by r.received_at`,
       ),
-    /** One reply by the start of its id, as the list shows it. */
     async find(prefix: string) {
       const rows = await q<ReplyRow>(
         `select r.*, d.item_ids from fala.digest_replies r left join fala.digests d on d.id = r.digest_id

@@ -1,5 +1,6 @@
+import { DAY_MS } from "@fala/core";
 import { Client } from "pg";
-import { adminDatabaseUrl } from "./dev-env";
+import { adminDatabaseUrl } from "@fala/dev-vars";
 
 /**
  * The controller's sanctions (DECISIONS round 19): the only way to give a permanent one, and a way to
@@ -89,7 +90,7 @@ if (command === "list") {
   await client.query(
     `insert into fala.sanctions (account_id, kind, source, reason, starts_at, ends_at, confirmed_at)
      values ($1, $2, 'controller', $3, now(), $4, now())`,
-    [accountId, command, reason, days === null ? null : new Date(Date.now() + days * 86_400_000)],
+    [accountId, command, reason, days === null ? null : new Date(Date.now() + days * DAY_MS)],
   );
   console.log(
     `${command === "mute" ? "Silenciada" : "Suspensa"} ${days === null ? "permanentemente" : `por ${days} dias`}.`,

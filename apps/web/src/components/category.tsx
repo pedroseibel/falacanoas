@@ -3,7 +3,7 @@ import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-/** Category pictogram + label. Pictograms are temporary (signage-norm redesign pending). */
+/** Pictograms are temporary (signage-norm redesign pending). */
 export function CategoryLine({
   muni,
   category,

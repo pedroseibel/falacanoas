@@ -56,7 +56,8 @@ describe("format (pt-BR)", () => {
     expect(distance(7340)).toBe("7,3 km");
     expect(distance(Number.POSITIVE_INFINITY)).toBe("");
   });
-  test("dates count back from now", () => expect(dateAgo(new Date("2026-10-12T14:20:00-03:00"), 43)).toBe("30 ago"));
+  test("dates count back from now", () =>
+    expect(dateAgo(new Date("2026-10-12T14:20:00-03:00"), 43, "America/Sao_Paulo")).toBe("30 ago"));
 });
 
 describe("municipal clock", () => {

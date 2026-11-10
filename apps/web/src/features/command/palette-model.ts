@@ -1,5 +1,5 @@
 import { isOpen, type Item, type Municipality } from "@fala/core";
-import { matchesWords, normalize, searchText } from "@/features/map/selectors";
+import { matchesWords, normalize, searchText } from "@/lib/search";
 
 /**
  * What the ⌘K palette finds, as plain functions: pins ranked by where the words land (the code first,

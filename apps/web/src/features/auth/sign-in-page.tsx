@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 import { isBrazilianMobileE164, maskPhoneBR, maskedPhone, toE164BR } from "@fala/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { REGEXP_ONLY_DIGITS } from "input-otp";
@@ -9,18 +10,19 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { authClient } from "@/lib/auth-client";
-import { accountQuery } from "@/lib/city";
+import { accountQuery } from "@/lib/account";
 import { useHydrated } from "@/lib/use-hydrated";
 import { useNow } from "@/lib/use-now";
 import { cn } from "@/lib/utils";
 import { getAccount, type Account } from "@/server/account";
-import { AuthFrame, AuthHead, type BackLink } from "./auth-frame";
+import { AuthFrame, AuthHead } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
 import { usePasskeySupport } from "./passkey-support";
 import { devCode, requestCode, SendError, signInWithCode } from "./identity-api";
 import { SEND_CODE_ACTION, SEND_FAILURE_MESSAGE } from "./send-code";
-import { textLink } from "@/features/landing/bits";
+import { textLink } from "@/components/text-link";
 import { StepRuler } from "./step-ruler";
-import { TurnstileUnavailable, useTurnstile } from "./turnstile";
+import { TurnstileUnavailable, useTurnstile } from "@/lib/turnstile";
 
 const SLOTS = [0, 1, 2, 3, 4, 5];
 /** Seconds before "Mandar de novo" unlocks. */
@@ -55,7 +57,7 @@ export function SignInPage({
   onGuest,
 }: {
   reason: string | null;
-  back: BackLink;
+  back: AppLink;
   /** Null when no key is configured (production without Turnstile): codes can't be sent. */
   turnstileSiteKey: string | null;
   onDone: (account: Account) => void;
@@ -71,7 +73,7 @@ export function SignInPage({
     if (!account.nick) return onDone(account);
     // Returning neighbours: the ruler runs to the end, then the page hands back.
     setFinished(true);
-    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduce = prefersReducedMotion();
     window.setTimeout(() => onDone(account), reduce ? 0 : FINISH_MS);
   };
 
@@ -153,9 +155,7 @@ function PhoneStep({
   };
   return (
     <>
-      <AuthHead title="Entre com o seu celular">
-        {reason ?? "Mandamos um código de 6 números pelo WhatsApp. Não tem senha para lembrar."}
-      </AuthHead>
+      <AuthHead title="Entre com o seu celular">{reason ?? "Mandamos um código de 6 números pelo WhatsApp."}</AuthHead>
       <form noValidate onSubmit={submit} className="grid gap-5">
         <Field data-invalid={invalid}>
           <FieldLabel htmlFor="entrar-celular">Seu celular, com DDD</FieldLabel>

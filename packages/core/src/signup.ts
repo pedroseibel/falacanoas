@@ -19,7 +19,6 @@ export function maskPhoneBR(v: string): string {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
 }
 
-/** A pt-BR message for a contact that can't be right, or null when it looks fine. */
 export function contactError(channel: SignupChannel, value: string): string | null {
   const v = value.trim();
   if (channel === "whatsapp") {
@@ -43,7 +42,6 @@ const nationalDigits = (v: string) => {
   return d.length >= 12 && d.startsWith("55") ? d.slice(2) : d;
 };
 
-/** How a contact is stored: 55 + digits for WhatsApp, lower-case for e-mail. */
 export const normalizeContact = (channel: SignupChannel, value: string) =>
   channel === "whatsapp" ? `55${nationalDigits(value)}` : value.trim().toLowerCase();
 
@@ -63,7 +61,6 @@ export type QueueSignup = z.infer<typeof QueueSignupSchema>;
 
 const CODE_ALPHABET = "ACDEFHJKMNPRTUVWXY3479";
 
-/** Whether every character could be in a readable code (any case). */
 export const isReadableCode = (s: string) => [...s.toUpperCase()].every((c) => CODE_ALPHABET.includes(c));
 
 /** A short code people can read aloud or type, without look-alikes (0/O, 1/I, 5/S…). */

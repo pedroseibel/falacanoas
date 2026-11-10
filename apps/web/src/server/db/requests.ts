@@ -1,9 +1,9 @@
-import { DATA_REQUEST_DAYS, localStamp, REQUEST_KIND_LABEL, REQUESTER_LABEL } from "@fala/core";
+import { DATA_REQUEST_DAYS, DAY_MS, localStamp, REQUEST_KIND_LABEL, REQUESTER_LABEL } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { asc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
-import { adminDatabaseUrl } from "./dev-env";
+import { adminDatabaseUrl } from "@fala/dev-vars";
 import * as schema from "./schema";
 
 /**
@@ -32,7 +32,7 @@ if (command === "answered") {
   const open = await db.select().from(t).where(eq(t.status, "open")).orderBy(asc(t.createdAt));
   if (!open.length) console.log("Nenhum pedido aberto.");
   for (const r of open) {
-    const left = DATA_REQUEST_DAYS - Math.floor((Date.now() - r.createdAt.getTime()) / 86_400_000);
+    const left = DATA_REQUEST_DAYS - Math.floor((Date.now() - r.createdAt.getTime()) / DAY_MS);
     console.log(
       [
         `${r.protocol} · ${localStamp(r.createdAt, canoas.timezone)} · ${left >= 0 ? `${left} dias para responder` : `${-left} dias atrasado`}`,

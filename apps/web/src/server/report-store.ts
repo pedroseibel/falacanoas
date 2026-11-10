@@ -1,22 +1,34 @@
 import {
+  type Connection,
+  DAY_MS,
   digestDay,
   holdsPublication,
   inElection,
+  type Item,
   itemFromReport,
+  itemLngLat,
+  itemPath,
   limitMessage,
+  type ModerationFlag,
   newItemId,
   postingLimits,
   prescreen,
-  type Connection,
-  type Item,
   type ReportFields,
   type Visibility,
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
-import { db } from "./db/client";
-import { createdSince, findItem, insertItem, itemExists, itemIdByClientKey, joinItem, photosSince } from "./items";
+import {
+  createdSince,
+  findItem,
+  hashKey,
+  insertItem,
+  itemExists,
+  itemIdByClientKey,
+  joinItem,
+  photosSince,
+} from "./items";
 import type { Failure, Member } from "./member";
-import { openCase } from "./moderation-store";
+import type { CaseReason } from "./moderation-store";
 import { markNickPublished } from "./nicks";
 import { keepPhotos, PHOTO_ERROR } from "./photo-intake";
 import { storeAddress } from "./address";
@@ -49,16 +61,13 @@ export type JoinResult =
       confirmation: "counts" | "already" | "too-new";
     };
 
-export const DAY = 86_400_000;
-
 /** A report on a point gets its street and number looked up once, after the response. */
-export function addressLater(item: Item): void {
-  const s = item.scope;
-  if ((s.type === "point" || s.type === "place") && s.lng !== undefined && s.lat !== undefined)
-    inBackground("endereço", storeAddress(item.id, [s.lng, s.lat]));
+function addressLater(item: Item): void {
+  const at = itemLngLat(item);
+  if (at) inBackground("endereço", storeAddress(item.id, at));
 }
 
-export async function uniqueId(): Promise<string> {
+async function uniqueId(): Promise<string> {
   const id = newItemId(crypto.getRandomValues(new Uint32Array(5)));
   return (await itemExists(id)) ? uniqueId() : id;
 }
@@ -67,6 +76,56 @@ export async function uniqueId(): Promise<string> {
 async function already(id: string, now: Date): Promise<ReportResult> {
   const item = await findItem(id, now);
   return item ? { ok: true, item, digest: digestDay(now, canoas) } : { ok: false, error: "Confira o registro." };
+}
+
+interface Sender {
+  accountId: string;
+  /** The apelido, or "Anônimo" for a guest. */
+  nick: string;
+  guest?: boolean;
+  trackingKeyHash?: string;
+  clientKey?: string;
+  /**
+   * Why this sender's report waits for a moderator, given what the pre-screen flagged (round 5:
+   * personal data, insults, named people, anonymous propaganda in a campaign); null publishes it.
+   */
+  holdFor: (flags: ModerationFlag[]) => CaseReason | null;
+}
+
+/**
+ * Every new report goes in here, whoever sends it: its photos are stored, it is pre-screened, and
+ * the item, its photos and its moderation case are written together. Photos stored for a report
+ * that then fails to save are removed.
+ */
+async function storeReport(
+  fields: ReportFields,
+  sender: Sender,
+  now: Date,
+): Promise<{ item: Item; held: boolean } | Failure> {
+  const photos = await keepPhotos(fields.photos);
+  if (!photos) return { ok: false, error: PHOTO_ERROR };
+  const id = await uniqueId();
+  const flags = prescreen(`${fields.title} ${fields.text} ${fields.reference}`, { electoral: inElection(canoas, now) });
+  const reason = sender.holdFor(flags);
+  const item: Item = {
+    ...itemFromReport(fields, canoas, { id, nick: sender.nick, photos: photos.srcs, now }),
+    ...(sender.guest ? { guest: true } : {}),
+  };
+  try {
+    await insertItem(item, {
+      accountId: sender.accountId,
+      now,
+      hold: reason ? { reason, flags } : null,
+      trackingKeyHash: sender.trackingKeyHash,
+      clientKey: sender.clientKey,
+    });
+  } catch (e) {
+    await removePhotos(photos.keys);
+    throw e;
+  }
+  addressLater(item);
+  // As readers see it: its photos wait for moderation's first look, as a count, not as images.
+  return { item: (await findItem(id, now)) ?? item, held: Boolean(reason) };
 }
 
 /**
@@ -86,40 +145,69 @@ export async function publishReport(
   if (known) return already(known, now);
   // Daily limits (round 19): far lower for an account whose phone is less than 72 h old.
   const limits = postingLimits(who.phoneVerifiedAt, now);
-  if ((await createdSince(who.id, DAY, now)) >= limits.pins) return { ok: false, error: limitMessage("pins", limits) };
-  if ((await photosSince(who.id, DAY, now)) + fields.photos.length > limits.photos)
+  if ((await createdSince(who.id, DAY_MS, now)) >= limits.pins)
+    return { ok: false, error: limitMessage("pins", limits) };
+  if ((await photosSince(who.id, DAY_MS, now)) + fields.photos.length > limits.photos)
     return { ok: false, error: limitMessage("photos", limits) };
-  const photos = await keepPhotos(fields.photos);
-  if (!photos) return { ok: false, error: PHOTO_ERROR };
-  const id = await uniqueId();
-  // The pre-screen (round 5): personal data, insults, named people, anonymous propaganda in a
-  // campaign. Anything it flags waits for a moderator instead of going out; so does everything a
-  // muted account sends (round 19).
-  const flags = prescreen(`${fields.title} ${fields.text} ${fields.reference}`, { electoral: inElection(canoas, now) });
+  // Everything a muted account sends waits for a moderator (round 19).
   const muted = who.standing.kind === "mute";
-  const held = muted || holdsPublication(flags, fields.visibility);
-  const item: Item = {
-    ...itemFromReport(fields, canoas, { id, nick: who.nick, photos: photos.srcs, now }),
-    ...(held ? { moderation: "pending" } : {}),
-  };
-  try {
-    await insertItem(item, who.id, now, null, clientKey ?? null);
-    if (held) await openCase(db, id, muted ? "muted" : "prescreen", flags);
-  } catch (e) {
-    await removePhotos(photos.keys);
+  const stored = await storeReport(
+    fields,
+    {
+      accountId: who.id,
+      nick: who.nick,
+      clientKey,
+      holdFor: (flags) => (muted ? "muted" : holdsPublication(flags, fields.visibility) ? "prescreen" : null),
+    },
+    now,
+  ).catch(async (e: unknown) => {
     // The same report sent twice at once: the other request made it.
     const raced = clientKey ? await itemIdByClientKey(clientKey, who.id) : null;
     if (raced) return already(raced, now);
     throw e;
-  }
+  });
+  if ("ok" in stored) return stored;
   if (fields.visibility === "pseudonymous") await markNickPublished(who.id);
-  addressLater(item);
-  await recordEvidence("publication", who.id, item.id, connection);
-  // As readers see it: its photos wait for moderation's first look, as a count, not as images.
-  const stored = (await findItem(id, now)) ?? item;
+  await recordEvidence("publication", who.id, stored.item.id, connection);
   // Published at once: the neighbours following this place hear of it. A held report waits for moderation.
-  if (!held) notifyPlaces(stored, who.id);
-  return { ok: true, item: stored, digest: digestDay(now, canoas) };
+  if (!stored.held) notifyPlaces(stored.item, who.id);
+  return { ok: true, item: stored.item, digest: digestDay(now, canoas) };
+}
+
+/** Guest pins per guest session per day: enough for a neighbour, too few to flood moderation. */
+const GUEST_PER_DAY = 3;
+
+/**
+ * A guest pin (round 2, round 18 Q4), already parsed and past the robot check: it appears as Anônimo,
+ * always waits for moderation before it shows on the map, and is followed through a secret link.
+ */
+export async function publishGuestReport(guestId: string, report: ReportFields): Promise<ReportResult> {
+  const now = new Date();
+  if ((await createdSince(guestId, DAY_MS, now)) >= GUEST_PER_DAY)
+    return {
+      ok: false,
+      error: `Sem conta, são até ${GUEST_PER_DAY} registros por dia. Entre com o celular para registrar mais.`,
+    };
+  const key = Buffer.from(crypto.getRandomValues(new Uint8Array(24))).toString("base64url");
+  const stored = await storeReport(
+    { ...report, visibility: "anonymous" },
+    {
+      accountId: guestId,
+      nick: "Anônimo",
+      guest: true,
+      trackingKeyHash: await hashKey(key),
+      holdFor: () => "guest_pin",
+    },
+    now,
+  );
+  if ("ok" in stored) return stored;
+  await recordEvidence("guest_pin", guestId, stored.item.id);
+  return {
+    ok: true,
+    item: stored.item,
+    digest: digestDay(now, canoas),
+    tracking: `${itemPath(stored.item.id)}?chave=${key}`,
+  };
 }
 
 /** "Já existe algo parecido": confirm the existing problem and add the photos to its timeline. */
@@ -129,7 +217,7 @@ export async function joinReport(
   connection?: Connection,
 ): Promise<JoinResult> {
   const limits = postingLimits(who.phoneVerifiedAt, new Date());
-  if (join.photos.length && (await photosSince(who.id, DAY)) + join.photos.length > limits.photos)
+  if (join.photos.length && (await photosSince(who.id, DAY_MS)) + join.photos.length > limits.photos)
     return { ok: false, error: limitMessage("photos", limits) };
   const photos = await keepPhotos(join.photos);
   if (!photos) return { ok: false, error: PHOTO_ERROR };

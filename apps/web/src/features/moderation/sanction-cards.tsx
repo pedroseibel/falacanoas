@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { sanctionQueueQuery } from "@/lib/city";
+import { sanctionQueueQuery } from "@/features/moderation/queries";
 import { QueueRow, useLeave } from "./leave";
 import { decideSuspension, resolveSanctionContest, sanctionFromCase, type QueueSanction } from "@/server/sanctions";
 
@@ -34,7 +34,11 @@ export function SanctionActions({ caseId }: { caseId: string }) {
     mutationFn: (k: SanctionKind) => sanctionFromCase({ data: { caseId, kind: k, reason: reason.trim() } }),
     onSuccess: (r) => {
       if (!r.ok) return void toast(r.error);
-      toast(r.proposed ? "Suspensão proposta: outra pessoa da moderação confirma." : "Conta silenciada por 30 dias.");
+      toast(
+        r.proposed
+          ? "Suspensão proposta: outra pessoa da moderação confirma."
+          : `Conta silenciada por ${MUTE_DAYS} dias.`,
+      );
       setKind(null);
       setReason("");
       void queryClient.invalidateQueries({ queryKey: sanctionQueueQuery.queryKey });
@@ -66,9 +70,7 @@ export function SanctionActions({ caseId }: { caseId: string }) {
         onChange={(e) => setReason(e.target.value)}
         placeholder="Ex.: publicou fotos de pessoas depois de pedidos para não publicar."
       />
-      <p className="text-caption text-muted-foreground">
-        O motivo aparece só para a pessoa, que pode contestar. Nunca é público.
-      </p>
+      <p className="text-caption text-muted-foreground">O motivo aparece só para a pessoa, que pode contestar.</p>
       <div className="flex flex-wrap gap-2">
         <Button
           size="sm"
@@ -121,7 +123,8 @@ export function SanctionCard({ s }: { s: QueueSanction }) {
         <div className="grid gap-1">
           <p className="text-sm text-pretty">{s.reason}</p>
           <p className="text-xs text-muted-foreground">
-            Sanção {SOURCE_LABEL[s.source]} · {contest ? `até ${day(s.until)}` : "90 dias a partir da confirmação"}
+            Sanção {SOURCE_LABEL[s.source]} ·{" "}
+            {contest ? `até ${day(s.until)}` : `${SUSPEND_DAYS} dias a partir da confirmação`}
           </p>
         </div>
         {s.contest && (

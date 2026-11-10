@@ -33,7 +33,7 @@ export async function openStore(url: string): Promise<{
 
 const DAY_MS = 24 * 3_600_000;
 
-export function pgStore(db: Db): VaultStore {
+function pgStore(db: Db): VaultStore {
   return {
     async hitsSince(key, since) {
       const rows = await db

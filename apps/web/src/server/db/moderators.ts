@@ -1,8 +1,9 @@
+import { bairroName } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { and, arrayContains, asc, count, eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
-import { adminDatabaseUrl } from "./dev-env";
+import { adminDatabaseUrl } from "@fala/dev-vars";
 import * as schema from "./schema";
 
 /**
@@ -27,7 +28,7 @@ const client = new Client({ connectionString: adminDatabaseUrl() });
 await client.connect();
 const db = drizzle(client, { schema, casing: "snake_case" });
 const operator = process.env.USER ?? "operador";
-const name = (slug: string) => canoas.neighborhoods.find((n) => n.slug === slug)?.name ?? slug;
+const name = (slug: string) => bairroName(canoas, slug) ?? slug;
 
 async function account(n: string | undefined) {
   if (!n) throw new Error(USAGE);

@@ -1,26 +1,28 @@
+import { Header, type Head } from "@/components/sheet-head";
 import {
-  GUEST_PIN_ACTION,
-  ItemKindSchema,
-  REPORT,
-  ReachSchema,
-  VisibilitySchema,
   asksFlooding,
+  bairroName,
   communityLine,
   digestDay,
+  type Duplicate,
   findDuplicate,
+  GUEST_PIN_ACTION,
+  type Item,
+  ItemKindSchema,
+  type Municipality,
   needsLocation,
   neighborhoodAt,
   plural,
-  reportSchema,
-  type Duplicate,
-  type Item,
-  type Municipality,
+  ReachSchema,
+  REPORT,
   type ReportFields,
+  reportSchema,
+  VisibilitySchema,
 } from "@fala/core";
 import { useForm, useStore } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
 import { Camera, Check, EyeOff, Info, Loader2, MapPin, Users } from "lucide-react";
-import { useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { EmergencyLines } from "@/components/emergency";
 import { Icon, categoryIcon } from "@/components/Icons";
@@ -42,31 +44,18 @@ import { mapControls } from "@/features/map/map-engine";
 import { cn } from "@/lib/utils";
 import { createReport, joinReport, type JoinResult, type ReportResult } from "@/server/report";
 import { FloodQuestions } from "./flood-questions";
-import { LocationPicker } from "./location-picker";
+import { LocationPicker } from "@/features/map/location-picker";
 import { draftAnswered, draftFailed, keepDraft, sendDraft } from "./outbox";
 import { SEND_TIMEOUT_MS, type Draft } from "./outbox-model";
-import { Thumb } from "./photo-thumb";
-import { useTurnstile } from "@/features/auth/turnstile";
-import { preparePhoto } from "./photo";
-import {
-  listPt,
-  missingParts,
-  nearLabel,
-  pickerStart,
-  toJoinFormData,
-  toReportFormData,
-  type Join,
-} from "./report-model";
+import { Thumb } from "@/components/photo-thumb";
+import { useTurnstile } from "@/lib/turnstile";
+import { preparePhoto } from "@/lib/photo";
+import { missingParts, nearLabel, pickerStart, toJoinFormData, toReportFormData, type Join } from "./report-model";
+import { listPt } from "@fala/core";
 
 export interface Author {
   nick: string;
   neighborhood: string | null;
-}
-
-/** Title and description parts of the surrounding Dialog (desktop) or Drawer (phone). */
-export interface Head {
-  Title: ComponentType<{ children: ReactNode }>;
-  Description: ComponentType<{ children: ReactNode }>;
 }
 
 export type Created = Extract<ReportResult, { ok: true }>;
@@ -78,29 +67,6 @@ const ROBOT_CHECK_FAILED =
 const asKind = (v: unknown) => ItemKindSchema.safeParse(v).data;
 const asReach = (v: unknown) => ReachSchema.safeParse(v).data;
 const asVisibility = (v: unknown) => VisibilitySchema.safeParse(v).data;
-
-/** Stable, so React calls it once, when the title mounts, and never pulls focus back later. */
-const focusOnMount = (el: HTMLElement | null) => el?.focus({ preventScroll: true });
-
-export function Header({
-  head,
-  title,
-  focus,
-  children,
-}: {
-  head: Head;
-  title: string;
-  /** A result screen replacing the form: focus moves to its title, so it's announced. */
-  focus?: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div className="grid shrink-0 gap-1 border-b border-hairline px-5 pt-4.5 pr-12 pb-3.5">
-      <head.Title {...(focus && { ref: focusOnMount, tabIndex: -1, className: "outline-none" })}>{title}</head.Title>
-      <head.Description>{children}</head.Description>
-    </div>
-  );
-}
 
 function Part({ id, title, meta, children }: { id: string; title: string; meta?: ReactNode; children: ReactNode }) {
   return (
@@ -488,7 +454,7 @@ export function ReportForm({
             {(field) => {
               const errors = show(field.state.meta.errors);
               const slug = field.state.value ? neighborhoodAt(field.state.value, muni.geo.neighborhoods) : null;
-              const bairro = muni.neighborhoods.find((n) => n.slug === slug)?.name;
+              const bairro = bairroName(muni, slug);
               return (
                 <Part id="r-onde" title="Onde?" meta={bairro}>
                   <LocationPicker
@@ -612,8 +578,7 @@ export function ReportForm({
                 />
                 <p id="r-texto-nota" className="flex justify-between gap-3 text-caption text-muted-foreground">
                   <span>
-                    {issue ? "" : "A primeira frase vira o título. "}O Fala é sobre a cidade, não sobre pessoas: não
-                    identifique vizinhos, casas ou carros.
+                    {issue ? "" : "A primeira frase vira o título. "}Não identifique vizinhos, casas ou carros.
                   </span>
                   <span className="font-mono tabular-nums">
                     {field.state.value.length}/{REPORT.maxText}
@@ -629,8 +594,8 @@ export function ReportForm({
           <Part id="r-como" title="Publicar como">
             <p className="flex gap-2 text-caption text-ink-2">
               <EyeOff className="mt-0.5 size-3.5 shrink-0 text-muted-foreground" aria-hidden="true" />
-              Anônimo. Sem conta, o registro fica em análise até a moderação aprovar, e você recebe um link para
-              acompanhar. O Fala guarda o registro de acesso desta conexão, como pede a lei, e nada mais.
+              Anônimo. Você recebe um link para acompanhar o registro. O Fala guarda o registro de acesso desta conexão,
+              como pede a lei, e nada mais.
             </p>
           </Part>
         ) : (
@@ -653,9 +618,7 @@ export function ReportForm({
                         <FieldTitle className="max-w-full">
                           <span className="truncate">{author.nick}</span>
                         </FieldTitle>
-                        <FieldDescription>
-                          {muni.neighborhoods.find((n) => n.slug === author.neighborhood)?.name ?? "Seu apelido"}
-                        </FieldDescription>
+                        <FieldDescription>{bairroName(muni, author.neighborhood) ?? "Seu apelido"}</FieldDescription>
                       </FieldContent>
                     </Field>
                   </FieldLabel>

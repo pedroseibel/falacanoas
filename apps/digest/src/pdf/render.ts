@@ -71,14 +71,14 @@ export async function compileTypst(dir: string, template: string, data: unknown,
       join(dir, "doc.typ"),
       join(dir, "doc.pdf"),
     ],
-    { stdout: "pipe", stderr: "pipe" },
+    // A Typst run that hangs is killed: the digest holds its lock while this runs.
+    { stdout: "pipe", stderr: "pipe", timeout: 180_000 },
   );
   const [code, err] = await Promise.all([run.exited, new Response(run.stderr).text()]);
   if (code !== 0) throw new Error(`Typst não gerou o PDF:\n${err}`);
   return new Uint8Array(readFileSync(join(dir, "doc.pdf")));
 }
 
-/** Runs `f` over `items`, `n` at a time. */
 async function pool<T, R>(items: T[], n: number, f: (t: T) => Promise<R>): Promise<R[]> {
   const out: R[] = Array.from({ length: items.length });
   let next = 0;
@@ -127,7 +127,7 @@ function limitPoints(muni: Municipality): LngLat[] {
   );
 }
 
-export async function assemble(doc: DigestDocument, dir: string, opts: RenderOptions) {
+async function assemble(doc: DigestDocument, dir: string, opts: RenderOptions) {
   mkdirSync(join(dir, "maps"), { recursive: true });
   mkdirSync(join(dir, "photos"), { recursive: true });
   mkdirSync(join(dir, "qr"), { recursive: true });
@@ -137,7 +137,6 @@ export async function assemble(doc: DigestDocument, dir: string, opts: RenderOpt
     e.point ? [{ n: e.n, at: [e.point.lng, e.point.lat] satisfies LngLat }] : [],
   );
 
-  // The whole city, every report on it.
   const city = limitPoints(opts.muni);
   const cityTiles = city.map(toTile);
   const natural =
@@ -185,7 +184,6 @@ export async function assemble(doc: DigestDocument, dir: string, opts: RenderOpt
     }),
   );
 
-  // Per report: the street map, the QR code and the photos.
   const totalPhotos = entries.reduce((n, e) => n + e.photos.length, 0);
   const assets = new Map<string, EntryAssets>();
   await pool(entries, 6, async (e) => {

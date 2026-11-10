@@ -5,22 +5,13 @@ import { scaleBar, templateData, type EntryAssets } from "./template-data";
 
 const item = (id: string, over: Partial<DigestItem> = {}): DigestItem => ({
   id,
-  kind: "occurrence",
   category: "buraco",
   title: "Buraco fundo",
   text: "Buraco fundo. Carros desviam pela contramão.",
   neighborhood: "centro",
   scope: { type: "point", lng: -51.18205, lat: -29.91611 },
-  days: 0,
-  updatedMinutesAgo: 0,
   confirmations: 0,
-  followers: 0,
-  updates: 0,
   photos: [],
-  visibility: "anonymous",
-  author: null,
-  community: "reported",
-  official: null,
   createdAt: "2026-10-13T15:00:00Z",
   ...over,
 });
@@ -88,7 +79,7 @@ describe("templateData", () => {
 
   test("an entry's facts: street with distance, confirmations in words, photos only when something's missing", () => {
     const doc = digestDocument(
-      [item("AAAAA", { confirmations: 3, photos: [{ src: "/api/fotos/a.webp", takenAt: "", by: "" }] }), item("BBBBB")],
+      [item("AAAAA", { confirmations: 3, photos: [{ src: "/api/fotos/a.webp" }] }), item("BBBBB")],
       canoas,
       sentAt,
       1,

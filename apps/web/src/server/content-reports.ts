@@ -1,6 +1,8 @@
 import {
   CONTENT_REPORT_ACTION,
+  DAY_MS,
   hidesAtOnce,
+  ItemIdSchema,
   limitMessage,
   postingLimits,
   ReportReasonSchema,
@@ -13,8 +15,10 @@ import { z } from "zod";
 import { db } from "./db/client";
 import { contentReports, escalations, itemEvents, itemPhotos, items, moderationCases } from "./db/schema";
 import type { Failure } from "./member";
-import { applyDecision, escalateCase, moderatorOf, openCase, targetAccount } from "./moderation-store";
-import { dayOf, standingOf, strike } from "./sanctions-store";
+import { covers, decide, escalateCase, openCaseFor } from "./moderation-store";
+import { targetAccount } from "./case-target";
+import { sessionModerator } from "./moderator";
+import { dayOf, standingOf } from "./sanctions-store";
 import { getSession } from "./session";
 import { isHuman } from "./vault";
 
@@ -32,8 +36,6 @@ const TargetSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("update"), id: z.uuid() }),
 ]);
 type Target = z.infer<typeof TargetSchema>;
-
-const DAY = 86_400_000;
 
 /** The target, if it's something everyone can see right now on this published item. */
 async function visibleTarget(itemId: string, target: Target): Promise<boolean> {
@@ -61,19 +63,13 @@ async function visibleTarget(itemId: string, target: Target): Promise<boolean> {
   return Boolean(e);
 }
 
-/** Columns that pin a case to its target: the photo, the update, or neither (the item itself). */
-const onTarget = (target: Target) => [
-  target.type === "photo" ? eq(moderationCases.photoId, target.id) : isNull(moderationCases.photoId),
-  target.type === "update" ? eq(moderationCases.eventId, target.id) : isNull(moderationCases.eventId),
-];
-
 const refs = (target: Target) =>
   target.type === "photo" ? { photoId: target.id } : target.type === "update" ? { eventId: target.id } : {};
 
 export const reportContent = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      itemId: z.string().min(4).max(12),
+      itemId: ItemIdSchema,
       target: TargetSchema,
       reason: ReportReasonSchema,
       note: z.string().trim().max(280).nullable(),
@@ -93,22 +89,17 @@ export const reportContent = createServerFn({ method: "POST" })
         .select({ n: count() })
         .from(contentReports)
         .where(
-          and(eq(contentReports.reporterId, member.id), gte(contentReports.createdAt, new Date(Date.now() - DAY))),
+          and(eq(contentReports.reporterId, member.id), gte(contentReports.createdAt, new Date(Date.now() - DAY_MS))),
         );
       if ((sent?.n ?? 0) >= limits.reports) return { ok: false, error: limitMessage("reports", limits) };
     } else if (!(await isHuman(data.turnstile, CONTENT_REPORT_ACTION))) {
       return { ok: false, error: "Não deu para confirmar que a denúncia veio de uma pessoa. Tente de novo." };
     }
-    const itemId = data.itemId.toUpperCase();
+    const itemId = data.itemId;
     if (!(await visibleTarget(itemId, data.target))) return { ok: false, error: "Isso já não está mais no ar." };
 
     const hidden = await db.transaction(async (tx) => {
-      const [open] = await tx
-        .select({ id: moderationCases.id })
-        .from(moderationCases)
-        .where(and(eq(moderationCases.itemId, itemId), eq(moderationCases.status, "open"), ...onTarget(data.target)))
-        .limit(1);
-      const caseId = open?.id ?? (await openCase(tx, itemId, "report", [], refs(data.target)));
+      const { id: caseId } = await openCaseFor(tx, itemId, refs(data.target), "report");
       await tx
         .insert(contentReports)
         .values({ caseId, reason: data.reason, note: data.note || null, reporterId: member?.id ?? null })
@@ -140,20 +131,19 @@ export const reportContent = createServerFn({ method: "POST" })
 export const takeDown = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      itemId: z.string().min(4).max(12),
+      itemId: ItemIdSchema,
       target: TargetSchema,
       note: z.string().trim().min(3).max(280),
       weight: z.enum(["none", "strike", "grave"]).optional(),
     }),
   )
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
-    const user = (await getSession())?.user;
-    const mod = user ? await moderatorOf(user.id) : null;
-    if (!user || !mod) return { ok: false, error: "Só moderadores tiram conteúdo do ar." };
-    const itemId = data.itemId.toUpperCase();
+    const user = await sessionModerator();
+    if (!user) return { ok: false, error: "Só moderadores tiram conteúdo do ar." };
+    const itemId = data.itemId;
     const [item] = await db.select({ neighborhood: items.neighborhood }).from(items).where(eq(items.id, itemId));
     if (!item) return { ok: false, error: "Esse registro não existe." };
-    if (mod.neighborhoods && !mod.neighborhoods.includes(item.neighborhood ?? ""))
+    if (!covers(user.mod, item.neighborhood))
       return { ok: false, error: "Esse registro é de um bairro que você não modera." };
     if (!(await visibleTarget(itemId, data.target))) return { ok: false, error: "Isso já não está mais no ar." };
     const target = { itemId, photoId: null, eventId: null, ...refs(data.target) };
@@ -161,22 +151,14 @@ export const takeDown = createServerFn({ method: "POST" })
       return { ok: false, error: "Outra pessoa da moderação precisa decidir sobre o que você publicou." };
     const now = new Date();
     return db.transaction(async (tx): Promise<Failure | { ok: true }> => {
-      const [open] = await tx
-        .select()
-        .from(moderationCases)
-        .where(and(eq(moderationCases.itemId, itemId), eq(moderationCases.status, "open"), ...onTarget(data.target)))
-        .limit(1)
-        .for("update");
-      const caseId = open?.id ?? (await openCase(tx, itemId, "takedown", [], refs(data.target)));
-      const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, caseId));
-      if (!c) throw new Error("caso não encontrado");
-      const weight = data.weight ?? weightOf(data.note);
-      await tx
-        .update(moderationCases)
-        .set({ status: "rejected", note: data.note, weight, decidedBy: user.id, decidedAt: now })
-        .where(eq(moderationCases.id, caseId));
-      await applyDecision(tx, c, "reject", data.note, now);
-      if (weight !== "none") await strike(tx, await targetAccount(tx, c), now);
+      const c = await openCaseFor(tx, itemId, refs(data.target), "takedown");
+      await decide(tx, c, {
+        decision: "reject",
+        note: data.note,
+        weight: data.weight ?? weightOf(data.note),
+        by: user.id,
+        now,
+      });
       return { ok: true };
     });
   });
@@ -188,30 +170,16 @@ export const takeDown = createServerFn({ method: "POST" })
  * controller reports it (`bun --filter @fala/web escalation`) and deletes it once an authority has it.
  */
 export const escalateChildAbuse = createServerFn({ method: "POST" })
-  .validator(
-    z.union([z.object({ caseId: z.uuid() }), z.object({ itemId: z.string().min(4).max(12), target: TargetSchema })]),
-  )
+  .validator(z.union([z.object({ caseId: z.uuid() }), z.object({ itemId: ItemIdSchema, target: TargetSchema })]))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
-    const user = (await getSession())?.user;
-    if (!user || !(await moderatorOf(user.id))) return { ok: false, error: "Só moderadores encaminham." };
+    const user = await sessionModerator();
+    if (!user) return { ok: false, error: "Só moderadores encaminham." };
     const now = new Date();
     return db.transaction(async (tx): Promise<Failure | { ok: true }> => {
-      let c: typeof moderationCases.$inferSelect | undefined;
-      if ("caseId" in data) {
-        [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
-      } else {
-        const itemId = data.itemId.toUpperCase();
-        [c] = await tx
-          .select()
-          .from(moderationCases)
-          .where(and(eq(moderationCases.itemId, itemId), eq(moderationCases.status, "open"), ...onTarget(data.target)))
-          .limit(1)
-          .for("update");
-        if (!c) {
-          const id = await openCase(tx, itemId, "takedown", [], refs(data.target));
-          [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, id));
-        }
-      }
+      const [c] =
+        "caseId" in data
+          ? await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update")
+          : [await openCaseFor(tx, data.itemId, refs(data.target), "takedown")];
       if (!c) return { ok: false, error: "Esse caso não existe." };
       const [already] = await tx.select({ id: escalations.id }).from(escalations).where(eq(escalations.caseId, c.id));
       if (already) return { ok: true };

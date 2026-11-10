@@ -1,8 +1,8 @@
+import { StageBadge } from "@/components/wordmark";
 import { plural, type Item, type Municipality, type Viewer } from "@fala/core";
 import { useSelector } from "@tanstack/react-store";
 import { Locate, Minus, Plus, Search, SlidersHorizontal, X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { FilterChips, SortSelect, currentFilter, currentSort } from "./filters";
 import { mapControls } from "./map-engine";
 import { mapStore, setMapState, type PinMode } from "./map-store";
-import type { PinIntent } from "./pin-intent";
+import type { PinIntent } from "@/lib/pin-intent";
 import { MapView } from "./map-view";
 import { RainPanel, RainPill } from "./rain-panel";
 import { ListRail, SwipeRail } from "./rail";
@@ -304,7 +304,7 @@ export function MapPage({
                 placeholder={`O que está acontecendo em ${muni.name}?`}
               />
               <InputGroupAddon align="inline-end">
-                <Badge variant="outline">protótipo</Badge>
+                <StageBadge />
               </InputGroupAddon>
             </InputGroup>
             <FilterChips muni={muni} value={filter} onChange={setFilter} />

@@ -20,8 +20,8 @@ import { useCallback, useMemo } from "react";
 import { EmergencyLines } from "@/components/emergency";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { textLink } from "@/features/landing/bits";
-import { listPt } from "@/features/report/report-model";
+import { textLink } from "@/components/text-link";
+import { listPt } from "@fala/core";
 import { cn } from "@/lib/utils";
 import { mapStore, setMapState } from "./map-store";
 import { clock, rainNowQuery } from "./rain-query";
@@ -44,7 +44,6 @@ function SyncGauges({ gauges }: { gauges: GaugeNow[] }) {
   return <span hidden ref={sync} />;
 }
 
-/** Heaviest first; silent gauges last. */
 const byRain = (a: GaugeNow, b: GaugeNow) =>
   Number(a.stale) - Number(b.stale) || (b.lastHour ?? -1) - (a.lastHour ?? -1) || a.name.localeCompare(b.name);
 

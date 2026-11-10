@@ -1,7 +1,6 @@
 import { z } from "zod";
-import { distance, localTime, zonedDate } from "./format";
+import { distance, localTime, mmLabel, zonedDate } from "./format";
 import { haversine } from "./geo";
-import { mmLabel } from "./rain-now";
 import type { LngLat } from "./types";
 
 /**
@@ -134,7 +133,6 @@ export function readCemadenFeed(
   return { readings, skipped };
 }
 
-/** A station's own page at the source, where anyone can check a reading. */
 export const gaugePage = (source: RainSource, gauge: number) => source.page.replace("{id}", String(gauge));
 
 /**
@@ -177,7 +175,6 @@ export function dayRain(source: RainSource, at: LngLat, readings: readonly DayRe
   for (const { g, meters } of gauges) {
     const own = readings.filter((r) => r.gauge === g.id);
     if (!own.length) continue;
-    // The largest total; on a tie, the latest reading.
     const top = own.reduce((best, r) =>
       r.acc24 > best.acc24 || (r.acc24 === best.acc24 && r.observedAt > best.observedAt) ? r : best,
     );

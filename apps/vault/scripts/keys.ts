@@ -1,3 +1,4 @@
+import { VAULT_DEV_VARS, WEB_DEV_VARS } from "@fala/dev-vars";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 /**
@@ -5,8 +6,8 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
  * straight into the gitignored .dev.vars files. Existing values are kept; nothing secret is printed.
  * Production keys are made the same way and stored as Worker secrets (wrangler secret put).
  */
-const VAULT_VARS = ".dev.vars";
-const WEB_VARS = "../web/.dev.vars";
+const VAULT_VARS = VAULT_DEV_VARS;
+const WEB_VARS = WEB_DEV_VARS;
 
 const read = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : "");
 const has = (text: string, name: string) => new RegExp(`^${name}=`, "m").test(text);

@@ -34,7 +34,7 @@ export function openFreeMap(cacheDir: string, fetcher: Fetcher = fetch): TileSou
     };
     if (fresh) return cached();
     try {
-      const res = await fetcher(TILEJSON, { headers });
+      const res = await fetcher(TILEJSON, { headers, signal: AbortSignal.timeout(15_000) });
       if (!res.ok) return cached();
       const body = await res.text();
       const url = tilesOf(JSON.parse(body));
@@ -64,6 +64,7 @@ export function openFreeMap(cacheDir: string, fetcher: Fetcher = fetch): TileSou
           // oxlint-disable-next-line no-await-in-loop
           const res = await fetcher(url.replace("{z}", String(Z)).replace("{x}", String(x)).replace("{y}", String(y)), {
             headers,
+            signal: AbortSignal.timeout(15_000),
           });
           // No tile there (nothing mapped): an empty one, not a failure.
           if (res.status === 404) return new VectorTile(new PbfReader(new Uint8Array()));

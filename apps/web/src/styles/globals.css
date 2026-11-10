@@ -168,7 +168,7 @@
   }
 }
 
-/* shadcn roles mapped onto DESIGN.md tokens (defined in app.css, light and dark).
+/* shadcn roles mapped onto DESIGN.md tokens (defined in tokens.css, light and dark).
    Ink is primary. The accent (esmerald) is "signal": the main action, the clock, the selected place. */
 :root {
   --background: var(--paper);

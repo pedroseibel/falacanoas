@@ -1,7 +1,8 @@
-import { and, asc, eq, gt, inArray, isNull, or, sql } from "drizzle-orm";
-import type { Db } from "./db/client";
-import { escalations, itemPhotos, moderationCases, photoScreens } from "./db/schema";
-import { escalateCase, heldItem, openCase, type CaseRow } from "./moderation-store";
+import { DAY_MS } from "@fala/core";
+import { and, asc, eq, gt, isNull, or, sql } from "drizzle-orm";
+import type { Db, Q } from "./db/client";
+import { escalations, itemPhotos, photoScreens } from "./db/schema";
+import { escalateCase, heldItem, openCaseFor, type CaseRow } from "./moderation-store";
 import { getPhoto } from "./photos";
 
 /**
@@ -12,8 +13,6 @@ import { getPhoto } from "./photos";
  * the designated person, who decides from the match record (`escalation conferir`), never the image.
  * Server-only: browser code never imports this module.
  */
-
-type Q = Db | Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 /** Shield's answers that let a person see the photo. "unhashable": too flat to fingerprint (PDQ < 50). */
 const CLEARED = new Set(["no-known-match", "unhashable"]);
@@ -105,17 +104,7 @@ export async function escalateKnownMatches(q: Db, now: Date): Promise<number> {
   for (const p of due) {
     // oxlint-disable-next-line no-await-in-loop
     const done = await q.transaction(async (tx) => {
-      let [c] = await tx
-        .select()
-        .from(moderationCases)
-        .where(and(eq(moderationCases.photoId, p.photoId), eq(moderationCases.status, "open")))
-        .limit(1)
-        .for("update");
-      if (!c) {
-        const id = await openCase(tx, p.itemId, "takedown", [], { photoId: p.photoId });
-        [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, id));
-      }
-      if (!c) return false;
+      const c = await openCaseFor(tx, p.itemId, { photoId: p.photoId }, "takedown");
       return (
         (await escalateCase(
           tx,
@@ -130,7 +119,11 @@ export async function escalateKnownMatches(q: Db, now: Date): Promise<number> {
   return n;
 }
 
-/** Calls the screening service for one photo and reads its answer; null when it can't. */
+/** Where the screening service is and the token it asks for; null when none is configured (development). */
+export function triagem(env: Record<string, string | undefined> = process.env): { url: string; token?: string } | null {
+  return env.TRIAGEM_URL ? { url: env.TRIAGEM_URL, token: env.TRIAGEM_TOKEN } : null;
+}
+
 export async function screenBytes(
   bytes: Uint8Array<ArrayBuffer>,
   key: string,
@@ -195,8 +188,8 @@ export async function recheckPending(
   now: Date,
   env = process.env,
 ): Promise<{ checked: number; escalated: number }> {
-  const url = env.TRIAGEM_URL;
-  if (!url) return { checked: 0, escalated: await escalateKnownMatches(q, now) };
+  const service = triagem(env);
+  if (!service) return { checked: 0, escalated: await escalateKnownMatches(q, now) };
   const waiting = await q
     .select({ key: itemPhotos.storageKey })
     .from(itemPhotos)
@@ -205,7 +198,7 @@ export async function recheckPending(
       and(
         eq(itemPhotos.review, "pending"),
         isNull(itemPhotos.purgedAt),
-        gt(itemPhotos.takenAt, new Date(now.getTime() - 7 * 86_400_000)),
+        gt(itemPhotos.takenAt, new Date(now.getTime() - 7 * DAY_MS)),
         isNull(photoScreens.known),
       ),
     )
@@ -220,7 +213,7 @@ export async function recheckPending(
     // oxlint-disable-next-line no-await-in-loop
     const bytes = new Uint8Array(await photo.arrayBuffer());
     // oxlint-disable-next-line no-await-in-loop
-    const row = await screenBytes(bytes, key, { url, token: env.TRIAGEM_TOKEN }).catch(() => null);
+    const row = await screenBytes(bytes, key, service).catch(() => null);
     if (row) rows.push(row);
   }
   await recordScreens(q, rows, now);
@@ -237,16 +230,6 @@ export async function awaitingCheck(q: Db, now: Date): Promise<{ count: number; 
     .orderBy(asc(itemPhotos.takenAt));
   const oldest = rows[0]?.takenAt;
   return { count: rows.length, oldestMinutes: oldest ? Math.floor((now.getTime() - oldest.getTime()) / 60_000) : 0 };
-}
-
-/** The verdicts for some storage keys, for the queue's filter. */
-export async function screensFor(q: Db, keys: string[]): Promise<Map<string, KnownScreen>> {
-  if (!keys.length) return new Map();
-  const rows = await q
-    .select({ key: photoScreens.storageKey, known: photoScreens.known, knownReview: photoScreens.knownReview })
-    .from(photoScreens)
-    .where(inArray(photoScreens.storageKey, keys));
-  return new Map(rows.map((r) => [r.key, { known: r.known, knownReview: r.knownReview }]));
 }
 
 /**

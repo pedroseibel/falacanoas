@@ -2,15 +2,17 @@ import {
   connectionFromHeaders,
   ConnectionSchema,
   CONTENT_REPORT_ACTION,
-  EvidenceActionSchema,
   DATA_REQUEST_ACTION,
+  DEV_WHATSAPP_VAULT_TOKEN,
+  EvidenceActionSchema,
   GUEST_PIN_ACTION,
+  hasBearer,
   importVaultKey,
   isBrazilianMobileE164,
 } from "@fala/core";
 import { WorkerEntrypoint } from "cloudflare:workers";
 import { z } from "zod";
-import { importVaultKeys, same, type VaultKeys } from "./crypto";
+import { importVaultKeys, type VaultKeys } from "./crypto";
 import {
   closeAccount,
   sendCode,
@@ -42,9 +44,6 @@ export interface Env {
   /** Shared with apps/whatsapp, which asks here which account a WhatsApp number belongs to. 32+ characters. */
   WHATSAPP_VAULT_TOKEN?: string;
 }
-
-/** Development's token for the WhatsApp service, when .dev.vars sets none (apps/whatsapp has the same). */
-const DEV_WHATSAPP_VAULT_TOKEN = "desenvolvimento-whatsapp-cofre-0000000000";
 
 /** Keys are imported once per isolate. */
 let imported: Promise<{ keys: VaultKeys; signingKey: CryptoKey }> | null = null;
@@ -144,9 +143,8 @@ export default class Vault extends WorkerEntrypoint<Env> {
   /** The WhatsApp service's bearer token; a short or missing one shuts the route in production. */
   private fromWhatsapp(request: Request): boolean {
     const token =
-      this.env.WHATSAPP_VAULT_TOKEN ?? (this.env.VAULT_MODE === "development" ? DEV_WHATSAPP_VAULT_TOKEN : "");
-    const given = request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
-    return token.length >= 32 && same(given, token);
+      this.env.WHATSAPP_VAULT_TOKEN || (this.env.VAULT_MODE === "development" ? DEV_WHATSAPP_VAULT_TOKEN : "");
+    return token.length >= 32 && hasBearer(request.headers.get("authorization"), token);
   }
 
   private async gateway(store: Gateway["store"], delivery?: Outbox): Promise<Gateway> {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DAY_MS } from "./format";
 import { hasInsult } from "./moderation";
 
 /** Accounts: a phone to sign in (never shown), a public apelido, a bairro. See research/DECISIONS.md, rounds 2 and 15. */
@@ -12,6 +13,12 @@ export function toE164BR(value: string): string | null {
   if (d.startsWith("0")) return null;
   return `+55${d}`;
 }
+
+/**
+ * How long after its phone was verified an account counts as settled (DECISIONS round 18, Q17): its
+ * confirmations count as independent, and its daily limits rise (round 19).
+ */
+export const CONFIRMATION_MIN_HOURS = 72;
 
 /** Sign-in codes go to WhatsApp or SMS, so only mobiles: +55, area code, 9 and eight digits. */
 export const isBrazilianMobileE164 = (v: string) => /^\+55[1-9]{2}9\d{8}$/.test(v);
@@ -65,7 +72,6 @@ const OFFICIAL_WORDS = new Set([
 ]);
 const OFFICIAL_PHRASES = ["defesa-civil", "guarda-municipal"];
 
-/** Why an apelido can't be used, beyond its shape: an insult, or an official-sounding name. */
 export function nickProblem(nick: string): "offensive" | "official" | null {
   const plain = nick.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase();
   if (hasInsult(plain.replaceAll("-", " "))) return "offensive";
@@ -177,11 +183,10 @@ export interface NickReservation {
 /** Days a released apelido that never signed anything stays held before anyone else can take it. */
 export const NICK_HOLD_DAYS = 90;
 
-/** Can this account take an apelido whose key has this reservation? */
 export function nickAvailable(r: NickReservation | undefined, accountId: string, now: number): boolean {
   if (!r || r.ownerId === accountId) return true;
   if (r.ownerId) return false;
   if (r.lastOwnerId === accountId) return true;
   if (r.published || r.releasedAt === null) return false;
-  return now - r.releasedAt >= NICK_HOLD_DAYS * 864e5;
+  return now - r.releasedAt >= NICK_HOLD_DAYS * DAY_MS;
 }

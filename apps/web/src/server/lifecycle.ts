@@ -34,7 +34,6 @@ async function phoneAccount() {
 
 export type ReauthResult = Failure | { ok: true; hint: string; devCode: string | null };
 
-/** Sends the re-authentication code; returns the masked number it went to. */
 export const requestReauthCode = createServerFn({ method: "POST" }).handler(async (): Promise<ReauthResult> => {
   const user = await phoneAccount();
   if (!user) return { ok: false, error: "Entre com o seu celular primeiro." };

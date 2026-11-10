@@ -1,9 +1,10 @@
-import { moderationWaitingNotice } from "@fala/core";
+import { bairroName, HOUR_MS, moderationWaitingNotice } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { and, eq, isNull, lt, or } from "drizzle-orm";
 import type { Db } from "./db/client";
 import { itemPhotos, items, moderationCases, moderators, photoScreens } from "./db/schema";
 import { hashMatchingRequired, visibleToModerators } from "./known-material";
+import { covers } from "./moderation-store";
 import { deliverTo } from "./push-send";
 
 /**
@@ -12,12 +13,11 @@ import { deliverTo } from "./push-send";
  * ten-minute job. Photos still waiting for the known-material check don't count: no one can see them.
  * Server-only.
  */
-export const WAIT_HOURS = 3;
-export const QUIET_HOURS = 6;
-const HOUR = 3_600_000;
+const WAIT_HOURS = 3;
+const QUIET_HOURS = 6;
 
 /** Bairro slug → how many cases there have waited too long. */
-export async function waitingByBairro(q: Db, now: Date): Promise<Map<string, number>> {
+async function waitingByBairro(q: Db, now: Date): Promise<Map<string, number>> {
   const rows = await q
     .select({
       neighborhood: items.neighborhood,
@@ -33,7 +33,7 @@ export async function waitingByBairro(q: Db, now: Date): Promise<Map<string, num
     .where(
       and(
         or(eq(moderationCases.status, "open"), eq(moderationCases.contestStatus, "open")),
-        lt(moderationCases.createdAt, new Date(now.getTime() - WAIT_HOURS * HOUR)),
+        lt(moderationCases.createdAt, new Date(now.getTime() - WAIT_HOURS * HOUR_MS)),
       ),
     );
   const required = hashMatchingRequired();
@@ -53,14 +53,14 @@ export async function alertWaiting(q: Db, now: Date): Promise<number> {
   const due = await q
     .select()
     .from(moderators)
-    .where(or(isNull(moderators.alertedAt), lt(moderators.alertedAt, new Date(now.getTime() - QUIET_HOURS * HOUR))));
+    .where(or(isNull(moderators.alertedAt), lt(moderators.alertedAt, new Date(now.getTime() - QUIET_HOURS * HOUR_MS))));
   let sent = 0;
   for (const m of due) {
-    const theirs = [...waiting].filter(([slug]) => !m.neighborhoods || m.neighborhoods.includes(slug));
+    const theirs = [...waiting].filter(([slug]) => covers(m, slug));
     if (!theirs.length) continue;
     const notice = moderationWaitingNotice(
       theirs.map(([slug, count]) => ({
-        bairro: canoas.neighborhoods.find((n) => n.slug === slug)?.name ?? slug,
+        bairro: bairroName(canoas, slug) ?? slug,
         count,
       })),
       WAIT_HOURS,

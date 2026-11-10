@@ -76,7 +76,6 @@ function Column({ children }: { children: ReactNode }) {
   );
 }
 
-/** The right-hand tray, as on og.png: a ground frame holding a white card. */
 function Tray({ children }: { children: ReactNode }) {
   return (
     <div

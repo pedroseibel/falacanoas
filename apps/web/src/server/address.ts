@@ -1,4 +1,4 @@
-import { haversine, type LngLat } from "@fala/core";
+import { haversine, type LngLat, siteUrl } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { eq } from "drizzle-orm";
 import { db } from "./db/client";
@@ -51,14 +51,14 @@ export async function lookupAddress(point: LngLat, fetcher: typeof fetch = fetch
   }).toString();
   const res = await fetcher(url, {
     // The policy asks for an identifying User-Agent.
-    headers: { "user-agent": `${canoas.branding.name} (https://${canoas.branding.domain})` },
+    headers: { "user-agent": `${canoas.branding.name} (${siteUrl(canoas)})` },
     signal: AbortSignal.timeout(5000),
   });
   if (!res.ok) throw new Error(`geocodificador: ${res.status}`);
   return formatAddress(await res.json(), point);
 }
 
-/** Looks the address up and keeps it on the item. Run in the background: the person isn't kept waiting. */
+/** Run in the background: the person isn't kept waiting. */
 export async function storeAddress(id: string, point: LngLat): Promise<void> {
   const address = await lookupAddress(point);
   if (address) await db.update(items).set({ address }).where(eq(items.id, id));

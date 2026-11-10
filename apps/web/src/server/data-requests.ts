@@ -1,4 +1,11 @@
-import { DATA_REQUEST_ACTION, DataRequestSchema, newProtocol, parseItemRef, type DataRequest } from "@fala/core";
+import {
+  DATA_REQUEST_ACTION,
+  type DataRequest,
+  DataRequestSchema,
+  DAY_MS,
+  newProtocol,
+  parseItemRef,
+} from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, count, eq, gte } from "drizzle-orm";
 import { z } from "zod";
@@ -20,7 +27,6 @@ const DAILY_PER_ACCOUNT = 5;
 
 type Row = Omit<typeof dataRequests.$inferInsert, "protocol">;
 
-/** Inserts under a fresh protocol, drawing again on the rare collision. */
 async function insertWithProtocol(row: Row, tries = 3): Promise<string> {
   const protocol = newProtocol(crypto.getRandomValues(new Uint32Array(6)));
   const [saved] = await db
@@ -50,9 +56,7 @@ export const submitDataRequest = createServerFn({ method: "POST" })
       const [sent] = await db
         .select({ n: count() })
         .from(dataRequests)
-        .where(
-          and(eq(dataRequests.accountId, member.id), gte(dataRequests.createdAt, new Date(Date.now() - 86_400_000))),
-        );
+        .where(and(eq(dataRequests.accountId, member.id), gte(dataRequests.createdAt, new Date(Date.now() - DAY_MS))));
       if ((sent?.n ?? 0) >= DAILY_PER_ACCOUNT)
         return { ok: false, error: "Você já mandou vários pedidos hoje. Aguarde a resposta ou escreva amanhã." };
     } else if (!(await isHuman(data.turnstile, DATA_REQUEST_ACTION))) {

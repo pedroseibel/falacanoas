@@ -5,7 +5,6 @@
  * panel asks for the pin, the request is usually done or already on its way.
  */
 export interface PinIntent {
-  /** The pointer (or focus) rests on a pin. */
   rest(id: string): void;
   /** It moved off before the delay ran out. */
   leave(): void;
@@ -13,7 +12,7 @@ export interface PinIntent {
   press(id: string): void;
 }
 
-export const INTENT_DELAY_MS = 80;
+const INTENT_DELAY_MS = 80;
 
 export function pinIntent(load: (id: string) => void, delay = INTENT_DELAY_MS): PinIntent {
   let timer: ReturnType<typeof setTimeout> | undefined;

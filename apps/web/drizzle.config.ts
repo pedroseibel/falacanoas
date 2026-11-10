@@ -1,5 +1,5 @@
 import { defineConfig } from "drizzle-kit";
-import { adminDatabaseUrl } from "./src/server/db/dev-env";
+import { adminDatabaseUrl } from "@fala/dev-vars";
 
 /** Migrations for the app schema only: Supabase's own schemas (auth, storage, vault…) are never touched. */
 export default defineConfig({

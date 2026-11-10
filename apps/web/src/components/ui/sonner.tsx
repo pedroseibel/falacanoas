@@ -10,7 +10,7 @@ const toasterStyle: ToasterStyle = {
   "--border-radius": "var(--radius)",
 };
 
-/** Theme follows the system; app.css swaps the tokens when <html data-theme> is set. */
+/** Theme follows the system; tokens.css swaps the tokens when <html data-theme> is set. */
 function Toaster(props: ToasterProps) {
   return (
     <Sonner theme="system" style={toasterStyle} position="bottom-center" containerAriaLabel="Notificações" {...props} />

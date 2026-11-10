@@ -27,7 +27,7 @@ export function sitePhotos(site: string, base: string = site, fetcher: Fetcher =
     const u = new URL(url);
     if (u.origin !== origin) return null;
     try {
-      const res = await fetcher(new URL(u.pathname, base));
+      const res = await fetcher(new URL(u.pathname, base), { signal: AbortSignal.timeout(20_000) });
       return res.ok ? new Uint8Array(await res.arrayBuffer()) : null;
     } catch {
       return null;

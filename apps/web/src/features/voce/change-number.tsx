@@ -1,4 +1,4 @@
-import { isBrazilianMobileE164, maskedPhone, maskPhoneBR, toE164BR } from "@fala/core";
+import { CONFIRMATION_MIN_HOURS, isBrazilianMobileE164, maskedPhone, maskPhoneBR, toE164BR } from "@fala/core";
 import { useMutation, useQuery, type UseMutationResult } from "@tanstack/react-query";
 import { KeyRound, Loader2 } from "lucide-react";
 import { useState, type FormEvent } from "react";
@@ -250,7 +250,7 @@ function NewNumber({
           <DialogTitle>Qual é o número novo?</DialogTitle>
           <DialogDescription>
             Vamos mandar um código para ele. Depois da troca, você sai dos outros aparelhos, e as suas confirmações
-            voltam a contar 72 horas depois, como para qualquer número novo.
+            voltam a contar {CONFIRMATION_MIN_HOURS} horas depois, como para qualquer número novo.
           </DialogDescription>
         </DialogHeader>
         <Field data-invalid={invalid || send.isError}>

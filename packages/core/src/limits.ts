@@ -7,7 +7,6 @@ export interface Window {
   max: number;
 }
 
-/** Timestamps still inside the longest window, and whether one more hit fits in every window. */
 export function admit(hits: number[], now: number, windows: Window[]): { ok: boolean; hits: number[] } {
   const longest = Math.max(...windows.map((w) => w.ms));
   const recent = hits.filter((t) => now - t < longest);

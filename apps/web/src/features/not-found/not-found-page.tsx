@@ -1,10 +1,12 @@
+import { itemPath } from "@fala/core";
 import type { Municipality } from "@fala/core";
 import { Map as MapIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { HintList } from "./hint-list";
 import { pathHints, shownPath } from "./not-found-model";
-import { OffMap, type Go } from "./off-map";
-import { StandaloneFrame } from "./standalone-frame";
+import type { Go } from "@/components/app-link";
+import { OffMap } from "./off-map";
+import { StandaloneFrame } from "@/components/page-frame";
 
 /**
  * An address that leads nowhere: the city's map with a dashed pin just outside it, carrying the
@@ -13,7 +15,7 @@ import { StandaloneFrame } from "./standalone-frame";
 export function NotFoundPage({ muni, pathname, go }: { muni: Municipality; pathname: string; go: Go }) {
   const hints = pathHints(pathname, muni.neighborhoods).map((h) =>
     h.kind === "pin"
-      ? { href: `/o/${h.id}`, label: h.id, kind: "registro", mono: true }
+      ? { href: itemPath(h.id), label: h.id, kind: "registro", mono: true }
       : { href: `/bairro/${h.slug}`, label: h.name, kind: "bairro" },
   );
   const map = go("/mapa");

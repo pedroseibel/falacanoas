@@ -28,7 +28,8 @@ const listRows = async (accountId: string, now: Date) => {
       .select({ item: items })
       .from(itemFollows)
       .innerJoin(items, eq(items.id, itemFollows.itemId))
-      .where(eq(itemFollows.accountId, accountId))
+      // A pin held or taken down by moderation is no longer the follower's to read.
+      .where(and(eq(itemFollows.accountId, accountId), eq(items.moderation, "published")))
       .orderBy(desc(itemFollows.createdAt)),
     db
       .select({ item: items })

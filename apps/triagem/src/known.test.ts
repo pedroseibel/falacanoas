@@ -28,6 +28,7 @@ describe("readVerdict", () => {
   });
   test("anything unexpected is an error, never a clean bill", () => {
     expect(() => readVerdict({})).toThrow();
+    expect(() => readVerdict({ scanned_hashes: {} })).toThrow();
     expect(() => readVerdict({ scanned_hashes: { a: { classification: "maybe" } } })).toThrow();
   });
 });

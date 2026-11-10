@@ -4,9 +4,10 @@ import type { ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { AuthFrame, type BackLink } from "@/features/auth/auth-frame";
-import { textLink } from "@/features/landing/bits";
-import { moderationStandingQuery } from "@/lib/city";
+import { AuthFrame } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
+import { textLink } from "@/components/text-link";
+import { moderationStandingQuery } from "@/features/moderation/queries";
 import { acceptModerationGuide } from "@/server/volunteers";
 import { MODERATION_GUIDE_VERSION } from "./guide-version";
 
@@ -29,7 +30,7 @@ function Part({ id, title, children }: { id: string; title: string; children: Re
 
 const list = "grid list-disc gap-1.5 pl-5 text-ui text-pretty text-ink-2";
 
-export function ModerationGuide() {
+function ModerationGuide() {
   return (
     <div className="grid gap-6">
       <Part id="g-ve" title="O que você vê, e o que não vê">
@@ -143,7 +144,7 @@ export function ModerationGuide() {
 }
 
 /** /moderacao: the guide, public. */
-export function GuidePage({ back }: { back: BackLink }) {
+export function GuidePage({ back }: { back: AppLink }) {
   return (
     <AuthFrame back={back} width="read">
       <header className="grid gap-2">

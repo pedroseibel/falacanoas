@@ -20,7 +20,6 @@ function storage(path: string): { url: string; headers: Record<string, string> }
 const KEY = /^[0-9a-f-]{36}\.(webp|jpg)$/;
 export const isPhotoKey = (key: string) => KEY.test(key);
 
-/** Stores a cleaned photo and returns its key and public path. */
 export async function putPhoto(bytes: Uint8Array<ArrayBuffer>, type: ImageType): Promise<{ key: string; src: string }> {
   const key = `${crypto.randomUUID()}.${type === "image/webp" ? "webp" : "jpg"}`;
   const { url, headers } = storage(`${BUCKET}/${key}`);
@@ -33,18 +32,23 @@ export async function putPhoto(bytes: Uint8Array<ArrayBuffer>, type: ImageType):
   return { key, src: `/api/fotos/${key}` };
 }
 
-/** Best effort: photos stored for a report that then failed to save. */
-export async function removePhotos(keys: string[]): Promise<void> {
-  if (!keys.length) return;
+/**
+ * Deletes stored photos and says whether Storage did it. Never throws: after a report that failed to
+ * save it is best effort; the retention job reads the answer, so it only records what really went.
+ */
+export async function removePhotos(keys: string[]): Promise<boolean> {
+  if (!keys.length) return true;
   const { url, headers } = storage(BUCKET);
-  await fetch(url, {
+  return fetch(url, {
     method: "DELETE",
     headers: { ...headers, "content-type": "application/json" },
     body: JSON.stringify({ prefixes: keys }),
-  }).catch(() => undefined);
+  }).then(
+    (res) => res.ok,
+    () => false,
+  );
 }
 
-/** The stored bytes, streamed; null when there is no such photo. */
 export async function getPhoto(key: string): Promise<Response | null> {
   if (!isPhotoKey(key)) return null;
   const { url, headers } = storage(`authenticated/${BUCKET}/${key}`);

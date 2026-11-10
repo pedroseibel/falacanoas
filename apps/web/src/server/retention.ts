@@ -1,3 +1,4 @@
+import { DAY_MS } from "@fala/core";
 import { inArray, sql } from "drizzle-orm";
 import type { Db } from "./db/client";
 import { itemPhotos } from "./db/schema";
@@ -8,7 +9,7 @@ import { removePhotos } from "./photos";
  * the Marco Civil (art. 15) and the ECA Digital (Lei 15.211/2025, art. 27 §3) ask for, so a contest,
  * a court or a preservation request can still reach it. Then the bytes go; the row and the history stay.
  */
-export const REMOVED_PHOTO_DAYS = 180;
+const REMOVED_PHOTO_DAYS = 180;
 
 /**
  * The daily job: removed photos (and photos of pins taken off the map) whose removal is more than six
@@ -16,7 +17,7 @@ export const REMOVED_PHOTO_DAYS = 180;
  * those wait for the controller, who deletes them once an authority confirms it has them.
  */
 export async function purgeRemovedPhotos(d: Db, now: Date): Promise<number> {
-  const before = new Date(now.getTime() - REMOVED_PHOTO_DAYS * 86_400_000);
+  const before = new Date(now.getTime() - REMOVED_PHOTO_DAYS * DAY_MS);
   const due = await d.execute<{ id: string; storage_key: string }>(sql`
     select p.id, p.storage_key
       from fala.item_photos p
@@ -40,7 +41,9 @@ export async function purgeRemovedPhotos(d: Db, now: Date): Promise<number> {
        ) < ${before}
      limit 500`);
   if (!due.rows.length) return 0;
-  await removePhotos(due.rows.map((r) => r.storage_key));
+  // Storage said no (or didn't answer): nothing is marked, and tomorrow's run tries again.
+  if (!(await removePhotos(due.rows.map((r) => r.storage_key))))
+    throw new Error("Storage não apagou as fotos removidas há 6 meses.");
   await d
     .update(itemPhotos)
     .set({ purgedAt: now })

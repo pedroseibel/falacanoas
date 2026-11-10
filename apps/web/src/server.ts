@@ -1,3 +1,4 @@
+import { DAY_MS, QUIET_CLOSE_DAYS } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createStartHandler, defaultStreamHandler } from "@tanstack/react-start/server";
 import { lt } from "drizzle-orm";
@@ -24,14 +25,26 @@ const handler = createStartHandler(defaultStreamHandler);
 const fetch = (request: Request, _env: unknown, ctx: { waitUntil: (p: Promise<unknown>) => void }) =>
   runWith(ctx, () => handler(request));
 
+/** One step of a scheduled job: a step that fails is logged and the ones after it still run. */
+async function step<T>(name: string, run: () => Promise<T>): Promise<T | null> {
+  try {
+    return await run();
+  } catch (e) {
+    console.error(`${name}: falhou`, e);
+    return null;
+  }
+}
+
 async function daily(now: Date): Promise<void> {
   const { db, close } = await openDb();
   try {
-    const closed = await closeQuietItems(db, now, canoas.branding.name);
-    const limits = await db.delete(rateLimits).where(lt(rateLimits.lastRequest, now.getTime() - 86_400_000));
-    const purged = await purgeRemovedPhotos(db, now);
+    const closed = await step("diário: fechar registros", () => closeQuietItems(db, now, canoas.branding.name));
+    const limits = await step("diário: limites antigos", () =>
+      db.delete(rateLimits).where(lt(rateLimits.lastRequest, now.getTime() - DAY_MS)),
+    );
+    const purged = await step("diário: fotos removidas", () => purgeRemovedPhotos(db, now));
     console.info(
-      `diário: ${closed} registros fechados por 15 dias sem contestação; ${limits.rowCount ?? 0} limites antigos apagados; ${purged} fotos removidas há 6 meses apagadas`,
+      `diário: ${closed ?? "?"} registros fechados por ${QUIET_CLOSE_DAYS} dias sem contestação; ${limits?.rowCount ?? "?"} limites antigos apagados; ${purged ?? "?"} fotos removidas há 6 meses apagadas`,
     );
   } finally {
     await close();
@@ -41,10 +54,10 @@ async function daily(now: Date): Promise<void> {
 async function everyTenMinutes(now: Date): Promise<void> {
   const { db, close } = await openDb();
   try {
-    const { checked, escalated } = await recheckPending(db, now);
-    if (checked || escalated)
-      console.info(`verificação: ${checked} fotos verificadas de novo; ${escalated} encaminhadas`);
-    const alerted = await alertWaiting(db, now);
+    const screened = await step("verificação", () => recheckPending(db, now));
+    if (screened && (screened.checked || screened.escalated))
+      console.info(`verificação: ${screened.checked} fotos verificadas de novo; ${screened.escalated} encaminhadas`);
+    const alerted = await step("moderação: avisos", () => alertWaiting(db, now));
     if (alerted) console.info(`moderação: ${alerted} moderadores avisados de casos esperando`);
   } finally {
     await close();

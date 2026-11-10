@@ -1,10 +1,10 @@
 import { Map as MapIcon, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Go } from "./off-map";
-import { StandaloneFrame } from "./standalone-frame";
+import type { Go } from "@/components/app-link";
+import { StandaloneFrame } from "@/components/page-frame";
 
 const TITLE = "Algo falhou do nosso lado.";
-const BODY = "Não foi nada que você fez. Tente de novo; se continuar, volte daqui a pouco.";
+const BODY = "Tente de novo; se continuar, volte daqui a pouco.";
 
 /** In development, what broke; never in production, where the message may carry internals. */
 function Detail({ error }: { error: unknown }) {

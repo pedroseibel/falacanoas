@@ -3,7 +3,7 @@ import { fixtures } from "@fala/instance-canoas/fixtures";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
-import { adminDatabaseUrl } from "./dev-env";
+import { adminDatabaseUrl } from "@fala/dev-vars";
 import * as schema from "./schema";
 import { parseAgo, seedRows } from "./seed-model";
 
@@ -29,7 +29,6 @@ await db.transaction(async (tx) => {
   const photos = rows.flatMap((r) => r.photos);
   if (photos.length) await tx.insert(schema.itemPhotos).values(photos);
 
-  // Bairro boards: each fixture thread and its replies, dated against the fixtures' clock.
   const boards = Object.entries(fixtures.threads).flatMap(([neighborhood, list]) =>
     list.map((t) => ({ neighborhood, t })),
   );

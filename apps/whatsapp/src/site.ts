@@ -1,6 +1,12 @@
-import type { ReportDraft } from "@fala/core";
+import {
+  type ReportDraft,
+  type Visibility,
+  type WhatsappIntakeFields,
+  type WhatsappRefusal,
+  WhatsappReply,
+} from "@fala/core";
 import { z } from "zod";
-import type { AccountCheck, ReportResult, Reports, Visibility } from "./conversation";
+import type { AccountCheck, ReportResult, Reports } from "./conversation";
 
 /**
  * The site, for registering by WhatsApp (core whatsapp-report.ts). For each step the vault first
@@ -11,17 +17,6 @@ import type { AccountCheck, ReportResult, Reports, Visibility } from "./conversa
  */
 
 const Assertion = z.object({ ok: z.literal(true), assertion: z.string() });
-const Refusal = z.object({ ok: z.literal(false), error: z.string(), missing: z.enum(["account", "nick"]).optional() });
-const Account = z.union([z.object({ ok: z.literal(true), nick: z.string() }), Refusal]);
-const Similar = z.object({
-  ok: z.literal(true),
-  duplicate: z.object({ id: z.string(), meters: z.number(), title: z.string() }).nullable(),
-});
-const Published = z.union([
-  z.object({ ok: z.literal(true), id: z.string(), digest: z.enum(["hoje", "amanhã"]), held: z.boolean() }),
-  Refusal,
-]);
-const Joined = z.union([z.object({ ok: z.literal(true), id: z.string() }), Refusal]);
 
 class Unlinked extends Error {}
 
@@ -29,7 +24,7 @@ const point = (d: ReportDraft) => {
   if (!d.location || !d.category) throw new Error("rascunho incompleto");
   return { categoria: d.category, lng: String(d.location[0]), lat: String(d.location[1]) };
 };
-const refused = (r: z.infer<typeof Refusal>): ReportResult => ({ kind: "refused", error: r.error });
+const refused = (r: WhatsappRefusal): ReportResult => ({ kind: "refused", error: r.error });
 
 export function site(config: { url: string; vaultToken: string; appToken: string }, fetcher: typeof fetch = fetch) {
   async function assertion(from: string): Promise<string> {
@@ -43,7 +38,12 @@ export function site(config: { url: string; vaultToken: string; appToken: string
     return Assertion.parse(await r.json()).assertion;
   }
 
-  async function ask<T>(schema: z.ZodType<T>, from: string, fields: Record<string, string>, photos: Uint8Array[] = []) {
+  /** One action, sent as the app reads it (core's whatsapp-wire); the caller parses the answer with the action's reply. */
+  async function ask<A extends keyof typeof WhatsappReply>(
+    from: string,
+    fields: WhatsappIntakeFields<A> & { acao: A },
+    photos: Uint8Array[] = [],
+  ): Promise<unknown> {
     const form = new FormData();
     form.set("assertion", await assertion(from));
     for (const [k, v] of Object.entries(fields)) form.set(k, v);
@@ -56,42 +56,47 @@ export function site(config: { url: string; vaultToken: string; appToken: string
       body: form,
     });
     if (!r.ok) throw new Error(`site: ${r.status}`);
-    return schema.parse(await r.json());
+    return r.json();
   }
 
   const reports: Reports = {
     async account(from) {
-      const r = await ask(Account, from, { acao: "conta" }).catch((e: unknown) => {
-        if (e instanceof Unlinked)
-          return { ok: false, error: "", missing: "account" } satisfies z.infer<typeof Refusal>;
-        throw e;
-      });
+      const r = await ask(from, { acao: "conta" }).then(
+        (body) => WhatsappReply.conta.parse(body),
+        (e: unknown) => {
+          if (e instanceof Unlinked) return { ok: false, error: "", missing: "account" } satisfies WhatsappRefusal;
+          throw e;
+        },
+      );
       if (r.ok) return { ok: true, nick: r.nick };
       const reason: Extract<AccountCheck, { ok: false }>["reason"] =
         r.missing === "account" ? "unlinked" : r.missing === "nick" ? "nick" : { refused: r.error };
       return { ok: false, reason };
     },
     async similar(from, draft) {
-      return (await ask(Similar, from, { acao: "parecido", ...point(draft) })).duplicate;
+      return WhatsappReply.parecido.parse(await ask(from, { acao: "parecido", ...point(draft) })).duplicate;
     },
     async publish(from, draft, visibility: Visibility, photos) {
-      const r = await ask(
-        Published,
-        from,
-        {
-          acao: "publicar",
-          ...point(draft),
-          texto: draft.text,
-          referencia: draft.reference,
-          alagamento: JSON.stringify(draft.flooding),
-          visibilidade: visibility,
-        },
-        photos,
+      const r = WhatsappReply.publicar.parse(
+        await ask(
+          from,
+          {
+            acao: "publicar",
+            ...point(draft),
+            texto: draft.text,
+            referencia: draft.reference,
+            alagamento: JSON.stringify(draft.flooding),
+            visibilidade: visibility,
+          },
+          photos,
+        ),
       );
       return r.ok ? { kind: "published", id: r.id, digest: r.digest, held: r.held } : refused(r);
     },
     async join(from, itemId, visibility, photos) {
-      const r = await ask(Joined, from, { acao: "somar", item: itemId, visibilidade: visibility }, photos);
+      const r = WhatsappReply.somar.parse(
+        await ask(from, { acao: "somar", item: itemId, visibilidade: visibility }, photos),
+      );
       return r.ok ? { kind: "joined", id: r.id } : refused(r);
     },
   };

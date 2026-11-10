@@ -4,7 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { mySanctionsQuery } from "@/lib/city";
+import { mySanctionsQuery } from "@/features/voce/queries";
 import { contestSanction, type MySanction } from "@/server/sanctions";
 
 const until = (iso: string | null, timezone: string) =>

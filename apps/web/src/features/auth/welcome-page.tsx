@@ -9,13 +9,14 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldContent, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { textLink } from "@/features/landing/bits";
+import { textLink } from "@/components/text-link";
 import { PRIVACY_NOTICE_PATH } from "@/features/legal/privacy";
-import { accountQuery } from "@/lib/city";
+import { accountQuery } from "@/lib/account";
 import { useHydrated } from "@/lib/use-hydrated";
 import { cn } from "@/lib/utils";
 import { getAccount, saveProfile, type Account } from "@/server/account";
-import { AuthFrame, AuthHead, type BackLink } from "./auth-frame";
+import { AuthFrame, AuthHead } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
 import { ProfileSchema, type Profile } from "./profile-schema";
 import { StepRuler } from "./step-ruler";
 
@@ -28,7 +29,7 @@ export function WelcomePage({
   onDone,
 }: {
   account: Account;
-  back: BackLink;
+  back: AppLink;
   onDone: (nick: string) => void;
 }) {
   const queryClient = useQueryClient();

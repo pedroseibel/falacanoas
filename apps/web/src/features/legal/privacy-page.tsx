@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { AuthFrame, type BackLink } from "@/features/auth/auth-frame";
-import { textLink } from "@/features/landing/bits";
+import { AuthFrame } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
+import { textLink } from "@/components/text-link";
 
 function Part({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -16,7 +17,7 @@ function Part({ title, children }: { title: string; children: ReactNode }) {
  * research/DECISIONS.md round 18. Preliminary: the legal bases and the text await legal review, which
  * is a launch condition. The waitlist keeps its own notice on the landing page.
  */
-export function PrivacyPage({ back, version }: { back: BackLink; version: string }) {
+export function PrivacyPage({ back, version }: { back: AppLink; version: string }) {
   return (
     <AuthFrame back={back} width="read">
       <header className="grid gap-2">

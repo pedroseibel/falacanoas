@@ -43,7 +43,6 @@ export const afterFailure = (d: Draft, now: number): Draft => ({
 export const due = (drafts: Draft[], now: number) =>
   drafts.filter((d) => !d.refused && d.nextAt <= now).toSorted((a, b) => a.createdAt - b.createdAt);
 
-/** When the next automatic try is, if any. */
 export const nextTry = (drafts: Draft[]) => {
   const times = drafts.filter((d) => !d.refused).map((d) => d.nextAt);
   return times.length ? Math.min(...times) : null;

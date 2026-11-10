@@ -88,7 +88,7 @@ Success means sign-ups confirmed by WhatsApp or e-mail, spread across all 18 bai
   - light and dark themes both designed, following the system setting.
 - **Colour:**
   - neutral ink, graphite and paper;
-  - **one signal colour, orange** (the bus-shelter orange), for "needs attention";
+  - **one signal colour, esmerald** (`#0A6F4C`, DECISIONS round 21; it replaced the bus-shelter orange), for "needs attention";
   - red, yellow and green only as small data marks, never as decoration.
 - **Type:** Geist for everything, plus Geist Mono for counters, dates and footnotes (both OFL).
 - **Photography:** the UI and map lead. A few credited Canoas photos appear as proof inside pin cards and in one full-bleed moment.

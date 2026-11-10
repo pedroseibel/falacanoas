@@ -1,4 +1,4 @@
-import type { Category, Item, ItemEvent, LngLat, Municipality } from "./types";
+import type { Category, CommunityStatus, Item, ItemEvent, LngLat, Municipality } from "./types";
 
 export function defineMunicipality(m: Municipality): Municipality {
   const keys = new Set<string>();
@@ -21,7 +21,17 @@ export const onPlacar = (it: Pick<Item, "kind" | "confirmations" | "guest">) =>
   it.kind === "occurrence" && it.confirmations >= placarThreshold(it);
 export const isOverDeadline = (it: Item, deadline: number) => isOpen(it) && it.days > deadline;
 
-export function itemLngLat(it: Item): LngLat | null {
+/** Where a confirmation takes each community state: the one table every "eu também" goes through. */
+export const AFTER_CONFIRMATION: Record<CommunityStatus, CommunityStatus> = {
+  reported: "confirmed",
+  confirmed: "confirmed",
+  ongoing: "ongoing",
+  apparently_resolved: "ongoing",
+  resolved: "resolved",
+};
+
+/** The point an item sits on; null for one about a whole bairro or the whole city. */
+export function itemLngLat(it: Pick<Item, "scope">): LngLat | null {
   if (it.scope.type === "point") return [it.scope.lng, it.scope.lat];
   if (it.scope.type === "place" && it.scope.lng != null && it.scope.lat != null) return [it.scope.lng, it.scope.lat];
   return null;
@@ -56,6 +66,9 @@ export function communityLine(it: Item, confirmations = it.confirmations): strin
   }
 }
 
+/** Fixes a group needs before its median is shown: below that, one record would be the statistic. */
+export const MIN_SAMPLE = 3;
+
 export interface GroupStat {
   key: string;
   open: number;
@@ -66,12 +79,7 @@ export interface GroupStat {
   fixedWithinDeadlinePct: number;
 }
 
-export function groupStats(
-  items: Item[],
-  keyOf: (it: Item) => string | null,
-  deadline: number,
-  minSample = 3,
-): GroupStat[] {
+export function groupStats(items: Item[], keyOf: (it: Item) => string | null, deadline: number): GroupStat[] {
   const g = new Map<string, { open: number; over: number; fixed: number[]; total: number }>();
   for (const it of items) {
     if (!onPlacar(it)) continue;
@@ -79,10 +87,9 @@ export function groupStats(
     if (!k) continue;
     const x = g.get(k) ?? { open: 0, over: 0, fixed: [], total: 0 };
     x.total++;
-    if (isOpen(it)) {
-      x.open++;
-      if (it.days > deadline) x.over++;
-    } else x.fixed.push(it.days);
+    if (isOpen(it)) x.open++;
+    else x.fixed.push(it.days);
+    if (isOverDeadline(it, deadline)) x.over++;
     g.set(k, x);
   }
   return [...g].map(([key, x]) => ({
@@ -90,16 +97,48 @@ export function groupStats(
     open: x.open,
     overDeadline: x.over,
     total: x.total,
-    medianToFix: x.fixed.length >= minSample ? median(x.fixed) : null,
+    medianToFix: medianIfSampled(x.fixed),
     fixedWithinDeadlinePct: x.total ? Math.round((x.fixed.filter((d) => d <= deadline).length / x.total) * 100) : 0,
   }));
 }
 
-export function categoryOf(m: Municipality, key: string): Category {
+type Categories = Pick<Municipality, "categories">;
+type Bairros = Pick<Municipality, "neighborhoods">;
+
+/** The instance's category for a key; an unknown key reads as itself, routed nowhere. */
+export function categoryOf(m: Categories, key: string): Category {
   return (
     m.categories.find((c) => c.key === key) ?? { key, label: key, group: "outros", agency: null, kind: "occurrence" }
   );
 }
+export const categoryLabel = (m: Categories, key: string) => categoryOf(m, key).label;
+
+/** The bucket for a category the instance doesn't route anywhere: last, so it stands out. */
+export const NO_AGENCY = "Sem órgão definido pelo Fala";
+export const agencyOf = (m: Categories, key: string) => categoryOf(m, key).agency ?? NO_AGENCY;
+/** Bodies in alphabetical order, the unrouted bucket last: an order, not a ranking. */
+export const byAgency = (a: string, b: string) =>
+  a === NO_AGENCY ? 1 : b === NO_AGENCY ? -1 : a.localeCompare(b, "pt-BR");
+
+export function whereOf(it: Pick<Item, "scope" | "neighborhood">, muni: Bairros & Pick<Municipality, "name">): string {
+  const bairro = bairroName(muni, it.neighborhood) ?? muni.name;
+  if (it.scope.type === "municipality") return "Toda a cidade";
+  if (it.scope.type === "place") return `${it.scope.label} · ${bairro}`;
+  return bairro;
+}
+
+/** The instance's site: "https://falacanoas.com.br". */
+export const siteUrl = (m: Pick<Municipality, "branding">) => `https://${m.branding.domain}`;
+/** An item's page inside the site, and its full address. */
+export const itemPath = (id: string) => `/o/${id}`;
+export const itemUrl = (m: Pick<Municipality, "branding">, id: string) => `${siteUrl(m)}${itemPath(id)}`;
+
+/** A group's median, once it has enough fixes to be one; null below that. */
+export const medianIfSampled = (values: number[]) => (values.length >= MIN_SAMPLE ? median(values) : null);
+
+/** A bairro's name from its slug; null for an unknown slug or none. */
+export const bairroName = (m: Bairros, slug: string | null | undefined) =>
+  m.neighborhoods.find((n) => n.slug === slug)?.name ?? null;
 
 /** Derive a readable history when an item has no stored events (fixtures, legacy). */
 export function deriveEvents(it: Item, dateAgo: (days: number) => string): ItemEvent[] {

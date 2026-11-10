@@ -2,10 +2,11 @@ import type { Item } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { accountQuery, cityQuery, itemQuery, itemViewerQuery } from "@/lib/city";
+import { itemViewerQuery } from "@/features/item/queries";
+import { accountQuery } from "@/lib/account";
+import { cityQuery, itemQuery, useShowItem } from "@/lib/city";
 import { actOnItemFn, followItem } from "@/server/item-actions";
-import type { ViewerState } from "@/server/items";
-import { DONE_MESSAGE, predictAction, toActionFormData, type Act } from "./item-actions-model";
+import { type Act, DONE_MESSAGE, predictAction, toActionFormData, type ViewerState } from "./item-actions-model";
 
 /**
  * The item page's actions against the server. Signed out (or without an apelido), every action
@@ -20,20 +21,13 @@ export function useItemActions(it: Item, member: boolean, onSignIn: () => void) 
   const itemKey = itemQuery(it.id).queryKey;
   const viewerKey = itemViewerQuery(it.id).queryKey;
 
-  /** An item everywhere it shows: the page, the rail and the map (the list's copy has no history). */
-  const show = (item: Item) => {
-    // Still loading its history, the page shows the list's copy: writing a history-less item here
-    // would stand in for the real one.
-    if (queryClient.getQueryData(itemKey)) queryClient.setQueryData(itemKey, item);
-    queryClient.setQueryData(cityQuery.queryKey, (city) =>
-      city ? { ...city, items: city.items.map((i) => (i.id === item.id ? { ...item, events: undefined } : i)) } : city,
-    );
-  };
+  const showItem = useShowItem();
+  /** A guess, or the list's own copy put back: neither has the item's history. */
+  const show = (item: Item) => showItem(item, { full: false });
 
   /** The server's copy of the item and of what this neighbour did with it. */
   const remember = (item: Item, state: ViewerState) => {
-    queryClient.setQueryData(itemKey, item);
-    show(item);
+    showItem(item);
     queryClient.setQueryData(viewerKey, state);
   };
 
@@ -115,6 +109,10 @@ export function useItemActions(it: Item, member: boolean, onSignIn: () => void) 
       if (!member) return onSignIn();
       act.mutate(input, { onSuccess: (r) => r.ok && then?.() });
     },
-    toggleFollow: () => (member ? follow.mutate(!viewer.data?.following) : onSignIn()),
+    toggleFollow: () => {
+      if (!member) return onSignIn();
+      // Shown at once, so the button stays live; a second tap waits for the first to land.
+      if (!follow.isPending) follow.mutate(!viewer.data?.following);
+    },
   };
 }

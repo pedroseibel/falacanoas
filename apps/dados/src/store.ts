@@ -24,11 +24,12 @@ function where(f: Filters) {
   if (f.bairro) add((p) => `bairro = ${p}`, f.bairro);
   if (f.categoria) add((p) => `categoria = ${p}`, f.categoria);
   if (f.estado) add((p) => `estado_comunidade = ${p}`, f.estado);
-  if (f.desde) add((p) => `atualizado_em >= ${p}`, f.desde);
+  // As an instant: JavaScript accepted the text (app.ts), Postgres might not ("1" is a year to one, nothing to the other).
+  if (f.desde) add((p) => `atualizado_em >= ${p}`, new Date(f.desde).toISOString());
   if (f.apos)
     add(
       (p) => `(registrado_em, codigo) > (select registrado_em, codigo from dados.registros where codigo = ${p})`,
-      f.apos,
+      f.apos.toUpperCase(),
     );
   return { sql: conds.length ? `where ${conds.join(" and ")}` : "", params };
 }

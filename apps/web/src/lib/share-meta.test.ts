@@ -39,7 +39,7 @@ test("bairroShareMeta: the counts in the title, the overdue only when there are 
   const meta = bairroShareMeta({ name: "Niterói", slug: "niteroi", open: 29, overdue: 12, demo: true }, canoas).meta;
   expect(content(meta, "og:title")).toEqual({
     property: "og:title",
-    content: `Niterói: 29 registros abertos, 12 há mais de ${canoas.deadlineDays} dias`,
+    content: `Niterói: 29 registros abertos, 12 há mais de 30 dias`,
   });
   const calm = bairroShareMeta({ name: "Niterói", slug: "niteroi", open: 1, overdue: 0, demo: false }, canoas).meta;
   expect(content(calm, "og:title")).toEqual({ property: "og:title", content: "Niterói: 1 registro aberto" });

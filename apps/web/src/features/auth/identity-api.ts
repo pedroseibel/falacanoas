@@ -21,7 +21,7 @@ const post = (path: string, body: unknown) =>
     body: JSON.stringify(body),
   });
 
-/** Asks the vault to send a code. Throws a SendError naming why it wasn't sent. */
+/** Throws a SendError naming why it wasn't sent. */
 export async function requestCode(phone: string, token: string): Promise<void> {
   const res = await post("/api/identidade/codigo", { telefone: phone, token }).catch(() => null);
   if (!res?.ok) throw new SendError(sendFailure(res?.status));
@@ -29,7 +29,7 @@ export async function requestCode(phone: string, token: string): Promise<void> {
 
 const VerifiedSchema = z.object({ ok: z.literal(true), assertion: z.string() });
 
-/** Checks the code with the vault, then signs in with its assertion. Throws when the code isn't right. */
+/** Throws when the code isn't right. */
 export async function signInWithCode(phone: string, code: string): Promise<void> {
   const res = await post("/api/identidade/verificar", { telefone: phone, codigo: code });
   const verified = VerifiedSchema.safeParse(await res.json().catch(() => null));

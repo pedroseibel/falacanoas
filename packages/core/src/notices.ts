@@ -1,3 +1,4 @@
+import { itemPath } from "./logic";
 import type { Item } from "./types";
 
 /**
@@ -24,7 +25,7 @@ export function itemNotice(it: Item, change: ItemChange): Notice {
       : change.kind === "photo"
         ? "Chegou uma foto nova."
         : "Os vizinhos confirmaram que foi resolvido.";
-  return { title: clip(it.title, 80), body, url: `/o/${it.id}`, tag: `o-${it.id}` };
+  return { title: clip(it.title, 80), body, url: itemPath(it.id), tag: `o-${it.id}` };
 }
 
 /**
@@ -37,7 +38,7 @@ export function newItemNotice(it: Item, labels: { where: string; category: strin
     title: `Novo registro · ${where}`,
     // A report with no text is titled by its category: say it once.
     body: it.title === category ? category : `${category}: ${clip(it.title, 120)}`,
-    url: `/o/${it.id}`,
+    url: itemPath(it.id),
     tag: `o-${it.id}`,
   };
 }
@@ -55,7 +56,7 @@ export function moderationWaitingNotice(waiting: { bairro: string; count: number
     places.length <= 2 ? places.join(" e ") : `${places.slice(0, 2).join(", ")} e mais ${places.length - 2}`;
   return {
     title: `Moderação: ${total === 1 ? "1 caso espera" : `${total} casos esperam`} há mais de ${hours} horas`,
-    body: `Em ${where}. Abra a fila quando puder.`,
+    body: `Em ${where}.`,
     url: "/moderar",
     tag: "moderacao",
   };

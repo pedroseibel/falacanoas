@@ -12,7 +12,6 @@ export interface MarkerIn {
 }
 
 export interface MarkerOut extends MarkerIn {
-  /** Where the numbered disc goes. */
   label: Point;
   /** It had to move: draw a line from `at` to `label`. */
   moved: boolean;

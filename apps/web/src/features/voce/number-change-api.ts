@@ -12,7 +12,7 @@ const FailureSchema = z.object({ error: z.enum(["invalid", "expired", "same", "t
 /** What went wrong, from the vault's answer; anything unreadable counts as not sent. */
 export const changeFailure = (body: unknown): ChangeFailure => FailureSchema.safeParse(body).data?.error ?? "send";
 
-export const CHANGE_FAILURE_MESSAGE: Record<ChangeFailure, string> = {
+const CHANGE_FAILURE_MESSAGE: Record<ChangeFailure, string> = {
   invalid: "Confira: use um celular com DDD, como (51) 99999-9999, e o código de 6 números.",
   expired: "O tempo para trocar acabou. Feche e comece de novo.",
   same: "Esse já é o número da sua conta.",
@@ -21,7 +21,7 @@ export const CHANGE_FAILURE_MESSAGE: Record<ChangeFailure, string> = {
   send: "Não deu para mandar o código agora. Tente de novo em alguns minutos.",
 };
 
-export class ChangeError extends Error {
+class ChangeError extends Error {
   constructor(readonly failure: ChangeFailure) {
     super(CHANGE_FAILURE_MESSAGE[failure]);
   }
@@ -38,7 +38,6 @@ async function post(path: string, body: unknown): Promise<void> {
   throw new ChangeError(changeFailure(await res?.json().catch(() => null)));
 }
 
-/** A code to the new number, under the ticket. */
 export const sendChangeCode = (ticket: string, phone: string) =>
   post("/api/identidade/troca/codigo", { ticket, telefone: phone });
 

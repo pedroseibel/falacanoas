@@ -1,24 +1,28 @@
+import { type ViewerState } from "@/features/item/item-actions-model";
 import {
+  type ActionRefusal,
   applyAction,
   confirmationStatus,
-  confirmItem,
-  dateAgo,
-  isOpen,
-  localTime,
-  QUIET_CLOSE_DAYS,
-  quietClose,
-  type ActionRefusal,
   type ConfirmationStatus,
+  confirmItem,
+  countsFrom,
+  dateAgo,
+  DAY_MS,
+  isOpen,
   type Item,
   type ItemAction,
+  localTime,
+  type ModerationFlag,
+  QUIET_CLOSE_DAYS,
+  quietClose,
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { and, asc, count, desc, eq, gt, lte, ne, sql } from "drizzle-orm";
 import type { AnyPgColumn } from "drizzle-orm/pg-core";
-import { db, type Db } from "./db/client";
+import { db, type Db, type Tx } from "./db/client";
 import { itemAuthors, itemConfirmations, itemEvents, itemFollows, itemPhotos, items, itemVotes } from "./db/schema";
 import { itemFromRows, newPhotoRows, rowsForNewItem, type PhotoRow } from "./items-model";
-import { openPhotoCases } from "./moderation-store";
+import { openCase, openPhotoCases, type CaseReason } from "./moderation-store";
 import { floodHistoryForItem } from "./flood-history";
 import { rainForItem } from "./rain-day";
 
@@ -30,7 +34,6 @@ import { rainForItem } from "./rain-day";
 const tz = canoas.timezone;
 
 const has = async (q: Promise<unknown[]>) => (await q).length > 0;
-type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
 const photoColumns = {
   id: itemPhotos.id,
@@ -134,7 +137,6 @@ export async function itemExists(id: string): Promise<boolean> {
   return Boolean(row);
 }
 
-/** How many items this account created in the last `ms`. */
 export async function createdSince(accountId: string, ms: number, now = new Date()): Promise<number> {
   const [row] = await db
     .select({ n: count() })
@@ -183,7 +185,6 @@ export async function photosSince(accountId: string, ms: number, now = new Date(
   return row?.n ?? 0;
 }
 
-/** How many updates this account wrote in the last `ms`. */
 export async function updatesSince(accountId: string, ms: number, now = new Date()): Promise<number> {
   const [row] = await db
     .select({ n: count() })
@@ -198,25 +199,34 @@ export async function updatesSince(accountId: string, ms: number, now = new Date
   return row?.n ?? 0;
 }
 
+/** Why a new report waits for a moderator before it shows, with what the pre-screen flagged. */
+export interface Hold {
+  reason: CaseReason;
+  flags: ModerationFlag[];
+}
+
 /**
- * A new report, its first event and photos, and who is behind it, all or nothing. A published one
- * opens a first-look case per photo; a held one is judged whole, photos included.
+ * A new report, its first event and photos, who is behind it and its moderation case, all or nothing.
+ * A published one opens a first-look case per photo; one with a `hold` goes in pending and is judged
+ * whole, photos included.
  */
 export async function insertItem(
   item: Item,
-  accountId: string,
-  now: Date,
-  trackingKeyHash: string | null = null,
-  clientKey: string | null = null,
+  by: { accountId: string; now: Date; hold?: Hold | null; trackingKeyHash?: string | null; clientKey?: string | null },
 ): Promise<void> {
-  const rows = rowsForNewItem(item, now, accountId);
+  const held: Item = by.hold ? { ...item, moderation: "pending" } : item;
+  const rows = rowsForNewItem(held, by.now, by.accountId);
   await db.transaction(async (tx) => {
-    await tx.insert(items).values({ ...rows.row, trackingKeyHash, clientKey });
-    await tx.insert(itemAuthors).values({ itemId: item.id, accountId });
+    await tx
+      .insert(items)
+      .values({ ...rows.row, trackingKeyHash: by.trackingKeyHash ?? null, clientKey: by.clientKey ?? null });
+    await tx.insert(itemAuthors).values({ itemId: item.id, accountId: by.accountId });
     if (rows.events.length) await tx.insert(itemEvents).values(rows.events);
-    if (!rows.photos.length) return;
-    const added = await tx.insert(itemPhotos).values(rows.photos).returning({ id: itemPhotos.id });
-    if (!item.moderation)
+    const added = rows.photos.length
+      ? await tx.insert(itemPhotos).values(rows.photos).returning({ id: itemPhotos.id })
+      : [];
+    if (by.hold) await openCase(tx, item.id, by.hold.reason, by.hold.flags);
+    else
       await openPhotoCases(
         tx,
         item.id,
@@ -283,7 +293,7 @@ export async function joinItem({
       photos,
       now,
       counts: confirmation === "counts",
-      dateAgo: (days) => dateAgo(now, days),
+      dateAgo: (days) => dateAgo(now, days, canoas.timezone),
     });
     if (next === item) return { confirmation };
     if (confirmation === "counts") await tx.insert(itemConfirmations).values({ itemId: id, accountId });
@@ -312,17 +322,6 @@ const today = (now: Date) => {
   const t = localTime(now, tz);
   return `${t.year}-${String(t.month).padStart(2, "0")}-${String(t.day).padStart(2, "0")}`;
 };
-
-/** What this account has already done with this item, and whether its word moves the status yet. */
-export interface ViewerState {
-  author: boolean;
-  confirmed: boolean;
-  saidStillToday: boolean;
-  saidResolved: boolean;
-  following: boolean;
-  /** When a phone verified less than 72 h ago starts to count (ISO); null when it already does. */
-  countsFrom: string | null;
-}
 
 async function viewerIn(
   q: Db | Tx,
@@ -358,8 +357,7 @@ async function viewerIn(
     saidStillToday: still,
     saidResolved: resolved,
     following,
-    countsFrom:
-      independent || !phoneVerifiedAt ? null : new Date(phoneVerifiedAt.getTime() + 72 * 3_600_000).toISOString(),
+    countsFrom: independent || !phoneVerifiedAt ? null : countsFrom(phoneVerifiedAt).toISOString(),
   };
 }
 
@@ -443,7 +441,6 @@ export async function actOnItem(input: {
   return item && viewer ? { ok: true, item, viewer } : { ok: false, reason: "gone" };
 }
 
-/** "Acompanhar": on or off. Returns whether the account now follows the item. */
 export async function setFollowing(id: string, accountId: string, on: boolean): Promise<boolean> {
   return db.transaction(async (tx) => {
     if (on) {
@@ -479,7 +476,7 @@ export async function closeQuietItems(d: Db, now: Date, by: string): Promise<num
     .where(
       and(
         eq(items.community, "apparently_resolved"),
-        lte(items.resolvingSince, new Date(now.getTime() - QUIET_CLOSE_DAYS * 864e5)),
+        lte(items.resolvingSince, new Date(now.getTime() - QUIET_CLOSE_DAYS * DAY_MS)),
       ),
     );
   let closed = 0;

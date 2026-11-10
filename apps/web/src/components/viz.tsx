@@ -1,3 +1,4 @@
+import { polygonsOf } from "@fala/core";
 import type { NeighborhoodCollection, NeighborhoodFeature } from "@fala/core";
 import { useMemo, useRef, useState, type PointerEvent, type FocusEvent } from "react";
 
@@ -85,15 +86,11 @@ export function StatTile({
   );
 }
 
-type Ring = number[][];
-const polygonsOf = (f: NeighborhoodFeature): Ring[][] =>
-  f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
-
 export function project(features: NeighborhoodFeature[], width = 1000) {
   const xs: number[] = [];
   const ys: number[] = [];
   for (const f of features)
-    for (const p of polygonsOf(f))
+    for (const p of polygonsOf(f.geometry))
       for (const c of p[0] ?? []) {
         xs.push(c[0] ?? 0);
         ys.push(c[1] ?? 0);
@@ -108,7 +105,7 @@ export function project(features: NeighborhoodFeature[], width = 1000) {
   const pt = (c: number[]) =>
     `${((((c[0] ?? 0) - x0) / (x1 - x0)) * W).toFixed(1)} ${(((y1 - (c[1] ?? 0)) / (y1 - y0)) * H).toFixed(1)}`;
   const path = (f: NeighborhoodFeature) =>
-    polygonsOf(f)
+    polygonsOf(f.geometry)
       .map((p) => p.map((r) => `M${r.map(pt).join("L")}Z`).join(""))
       .join("");
   return { W, H, path };

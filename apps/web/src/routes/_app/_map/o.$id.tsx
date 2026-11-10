@@ -1,3 +1,4 @@
+import { ITEM_ID, itemPath } from "@fala/core";
 import { createFileRoute, notFound, useNavigate } from "@tanstack/react-router";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { canoas } from "@fala/instance-canoas";
@@ -5,16 +6,18 @@ import { z } from "zod";
 import { ItemDetail } from "@/features/item/item-detail";
 import { PinNotFound } from "@/features/not-found/pin-not-found";
 import { setMapState } from "@/features/map/map-store";
-import { accountQuery, cityQuery, itemQuery, memberGate, prefetchPin } from "@/lib/city";
+import { prefetchPin } from "@/features/item/queries";
+import { accountQuery, memberGate } from "@/lib/account";
+import { cityQuery, itemQuery } from "@/lib/city";
 import { itemShareMeta } from "@/lib/share-meta";
 
 export const Route = createFileRoute("/_app/_map/o/$id")({
   // A guest pin's tracking link: /o/ID?chave=… opens it while it waits for moderation.
-  validateSearch: z.object({ chave: z.string().max(64).optional() }),
+  validateSearch: z.object({ chave: z.string().max(64).optional().catch(undefined) }),
   loaderDeps: ({ search }) => ({ chave: search.chave ?? null }),
   loader: async ({ context, params, deps }) => {
     // Not shaped like a code ("/o/ab", "/o/../x"): nothing to look up.
-    if (!/^[A-Za-z0-9]{4,12}$/.test(params.id)) throw notFound();
+    if (!ITEM_ID.test(params.id)) throw notFound();
     // Opened from the map or a list, the pin is already in the city's list: the panel draws from that
     // copy at once while the full item (history, conversation) loads beside it. A first load renders
     // on the server, complete, and a pin outside the list (one in moderation) waits for its own.
@@ -81,7 +84,7 @@ function ItemRoute() {
       viewer={city.viewer}
       now={new Date(city.now)}
       member={gate === null}
-      onSignIn={() => void navigate({ to: gate ?? "/entrar", search: { volta: `/o/${item.id}` } })}
+      onSignIn={() => void navigate({ to: gate ?? "/entrar", search: { volta: itemPath(item.id) } })}
       trackingKey={chave ?? null}
       historyPending={isPlaceholderData}
     />

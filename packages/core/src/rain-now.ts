@@ -56,7 +56,6 @@ export function hourlyBars(readings: readonly NowReading[], latest: Date, hours 
   return out;
 }
 
-/** Every gauge of the instance, as the map shows it now. */
 export function gaugesNow(source: RainSource, readings: readonly NowReading[], now: Date): GaugeNow[] {
   return source.gauges.map((g) => {
     const own = readings.filter((r) => r.gauge === g.id);
@@ -75,16 +74,11 @@ export function gaugesNow(source: RainSource, readings: readonly NowReading[], n
   });
 }
 
-/** "2,4 mm", "0 mm". */
-export const mmLabel = (v: number) => `${v.toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mm`;
-
 /** Flooding records this close to a gauge are "under" its rain. */
 export const DOWNPOUR_RADIUS_METERS = 2000;
 
-/** A gauge raining now: reported recently and measured some rain in its last hour. */
 export const rainingNow = (g: GaugeNow) => !g.stale && (g.lastHour ?? 0) > 0;
 
-/** A gauge past the downpour mark now. */
 export const downpourNow = (g: GaugeNow, heavyMmPerHour: number) =>
   rainingNow(g) && (g.lastHour ?? 0) >= heavyMmPerHour;
 

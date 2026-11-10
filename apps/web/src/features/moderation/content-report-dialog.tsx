@@ -11,9 +11,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Field, FieldContent, FieldDescription, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { RadioGroup, RadioGroupItem, RadioGroupSegment, RadioGroupSegmented } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { useTurnstile } from "@/features/auth/turnstile";
-import { textLink } from "@/features/landing/bits";
-import { Header, type Head } from "@/features/report/report-form";
+import { useTurnstile } from "@/lib/turnstile";
+import { textLink } from "@/components/text-link";
+import { Header, type Head } from "@/components/sheet-head";
 import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
 import { escalateChildAbuse, reportContent, takeDown } from "@/server/content-reports";
@@ -123,10 +123,10 @@ function ReportFlow({
       <div className="flex min-h-0 flex-1 flex-col">
         <Header head={head} title={mode === "remove" ? "Removido" : "Denúncia enviada"}>
           {mode === "remove"
-            ? "Saiu do ar agora. O histórico do registro mostra o motivo, e quem publicou pode contestar."
+            ? "Saiu do ar agora."
             : send.data.hidden
               ? "A foto saiu do ar agora, até alguém da moderação olhar."
-              : "A moderação do bairro vai olhar. Se sair do ar, o histórico do registro mostra o motivo."}
+              : "A moderação do bairro vai olhar."}
         </Header>
         <div className="grid place-items-center px-5 py-8">
           <SuccessMark size="lg" />
@@ -152,7 +152,7 @@ function ReportFlow({
       <Header head={head} title={mode === "remove" ? `Remover ${noun}` : `Denunciar ${noun}`}>
         {mode === "remove"
           ? "Sai do ar na hora. O motivo aparece no histórico do registro e para quem publicou, que pode contestar."
-          : "A moderação do bairro olha cada denúncia. Quem publicou não fica sabendo quem denunciou."}
+          : "Quem publicou não fica sabendo quem denunciou."}
       </Header>
       <div className="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto px-5 py-5">
         {moderator && (

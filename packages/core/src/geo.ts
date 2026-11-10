@@ -9,7 +9,7 @@ export function haversine(a: LngLat, b: LngLat): number {
   return 2 * R * Math.asin(Math.sqrt(x));
 }
 
-function polygonsOf(geom: AreaGeometry): number[][][][] {
+export function polygonsOf(geom: AreaGeometry): number[][][][] {
   return geom.type === "Polygon" ? [geom.coordinates] : geom.coordinates;
 }
 

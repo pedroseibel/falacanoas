@@ -1,16 +1,17 @@
 import {
-  PhotoFileSchema,
-  REPORT,
-  VisibilitySchema,
+  CONFIRMATION_MIN_HOURS,
+  ItemIdSchema,
   type LngLat,
   type Municipality,
+  PhotoFileSchema,
+  REPORT,
   type ReportFields,
+  VisibilitySchema,
 } from "@fala/core";
 import { z } from "zod";
 
 /** Pure pieces of the report flow: transport, hints and the map's starting view. Tested without the DOM. */
 
-/** Form values → FormData: the fields as JSON, each photo as its own file part. */
 export function toReportFormData(v: ReportFields): FormData {
   const { photos, ...fields } = v;
   const fd = new FormData();
@@ -33,7 +34,7 @@ export function readReportFormData(fd: FormData): unknown {
 
 /** "Confirmar e adicionar sua foto": the existing item, how to sign, and the photos already picked. */
 export const JoinSchema = z.object({
-  itemId: z.string().min(4).max(12),
+  itemId: ItemIdSchema,
   visibility: VisibilitySchema,
   photos: z.array(PhotoFileSchema).max(REPORT.maxPhotos),
 });
@@ -53,12 +54,6 @@ export const readJoinFormData = (fd: FormData): unknown => ({
   photos: fd.getAll("photo"),
 });
 
-/** "foto, tipo e lugar" */
-export function listPt(parts: string[]): string {
-  if (parts.length < 2) return parts.join("");
-  return `${parts.slice(0, -1).join(", ")} e ${parts.at(-1)}`;
-}
-
 /** What still stops this report from being published, in the words of the footer hint. */
 export function missingParts(v: ReportFields): string[] {
   const out: string[] = [];
@@ -72,12 +67,6 @@ export function missingParts(v: ReportFields): string[] {
   if (v.reach === "place" && !v.location) out.push("lugar");
   if (v.reach === "neighborhood" && !v.neighborhood) out.push("bairro");
   return out;
-}
-
-/** Scales an image to fit a square of `max` px, never enlarging it. */
-export function fitWithin(width: number, height: number, max: number): { width: number; height: number } {
-  const scale = Math.min(1, max / Math.max(width, height));
-  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
 }
 
 /**
@@ -107,7 +96,7 @@ export function joinMessage(confirmation: "counts" | "already" | "too-new", with
   if (confirmation === "counts") return "Somado ao registro que já existia. Obrigado.";
   const photo = withPhoto ? "Sua foto foi para o registro que já existia e aparece depois que a moderação olhar. " : "";
   if (confirmation === "already") return withPhoto ? photo.trim() : "Você já tinha confirmado este registro.";
-  return `${photo}Sua confirmação passa a contar 72 horas depois de você confirmar o celular.`;
+  return `${photo}Sua confirmação passa a contar ${CONFIRMATION_MIN_HOURS} horas depois de você confirmar o celular.`;
 }
 
 /** "a 35 m": duplicates are close by definition, so round to 5 m and never say 0. */

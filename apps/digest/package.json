@@ -17,6 +17,7 @@
     "chuva": "bun src/chuva.ts"
   },
   "dependencies": {
+    "@fala/dev-vars": "workspace:*",
     "@elysiajs/cron": "1.4.2",
     "@fala/core": "workspace:*",
     "@fala/instance-canoas": "workspace:*",

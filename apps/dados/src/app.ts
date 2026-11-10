@@ -1,13 +1,14 @@
 import {
   EVENT_COLUMNS,
+  ITEM_ID,
+  type Municipality,
   OPEN_DATA_DICTIONARY,
   OPEN_DATA_LICENCES,
-  RECORD_COLUMNS,
   openEvent,
   openRecord,
+  RECORD_COLUMNS,
   toCsv,
   toFeatureCollection,
-  type Municipality,
 } from "@fala/core";
 import { Elysia, t } from "elysia";
 import type { Filters, Store } from "./store";
@@ -31,7 +32,6 @@ const filters = t.Object({
   limite: t.Optional(t.Numeric({ minimum: 1, maximum: PAGE_MAX })),
 });
 
-/** Exports take every match: no page size, no cursor. */
 const everything = ({ limite: _size, apos: _cursor, ...f }: Filters & { limite?: number }): Filters => f;
 
 const badSince = (f: Filters) => f.desde !== undefined && Number.isNaN(Date.parse(f.desde));
@@ -151,6 +151,6 @@ export function openDataApp(
           historico: events.map(openEvent),
         };
       },
-      { params: t.Object({ codigo: t.String({ pattern: "^[A-Za-z0-9]{4,12}$" }) }) },
+      { params: t.Object({ codigo: t.String({ pattern: ITEM_ID.source }) }) },
     );
 }

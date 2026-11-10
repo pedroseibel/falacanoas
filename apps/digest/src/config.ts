@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { siteUrl } from "@fala/core";
+import { fromDevVars, serviceMode, WEB_DEV_VARS } from "@fala/dev-vars";
 import { fileURLToPath } from "node:url";
 import { canoas } from "@fala/instance-canoas";
 
@@ -7,17 +8,6 @@ import { canoas } from "@fala/instance-canoas";
  * app's gitignored .dev.vars (the same `fala_app` connection) and the addresses to placeholders that
  * can't receive mail.
  */
-
-const WEB_DEV_VARS = fileURLToPath(new URL("../../web/.dev.vars", import.meta.url));
-
-function webDevVar(name: string): string {
-  if (!existsSync(WEB_DEV_VARS)) return "";
-  return (
-    readFileSync(WEB_DEV_VARS, "utf8")
-      .match(new RegExp(`^${name}=(.+)$`, "m"))?.[1]
-      ?.trim() ?? ""
-  );
-}
 
 const list = (s: string | undefined) =>
   (s ?? "")
@@ -49,7 +39,6 @@ export interface Config {
   outboxDir: string;
   /** Where the photos in the resumo are fetched from (their addresses name the public site). */
   photoBase: string;
-  /** The map tiles' cache, kept between runs. */
   cacheDir: string;
   /** Bearer token for POST /respostas (the inbound e-mail's relay); without one, the route is closed. */
   repliesToken: string;
@@ -66,11 +55,11 @@ export interface Config {
 }
 
 export function loadConfig(env: Record<string, string | undefined> = process.env): Config {
-  const mode = env.DIGEST_MODE === "production" || env.NODE_ENV === "production" ? "production" : "development";
+  const mode = serviceMode(env, "DIGEST_MODE");
   const dev = mode === "development";
   const config: Config = {
     mode,
-    databaseUrl: env.DIGEST_DATABASE_URL || env.DATABASE_URL || (dev ? webDevVar("DATABASE_URL") : ""),
+    databaseUrl: env.DIGEST_DATABASE_URL || env.DATABASE_URL || (dev ? fromDevVars(WEB_DEV_VARS, "DATABASE_URL") : ""),
     from: env.DIGEST_FROM || (dev ? "Fala, Canoas <resumo@fala.invalid>" : ""),
     to: list(env.DIGEST_TO).length ? list(env.DIGEST_TO) : dev ? ["ouvidoria@prefeitura.invalid"] : [],
     cc: list(env.DIGEST_CC).length ? list(env.DIGEST_CC) : dev ? ["cac@prefeitura.invalid"] : [],
@@ -78,7 +67,7 @@ export function loadConfig(env: Record<string, string | undefined> = process.env
     port: Number(env.PORT) || 3200,
     hostname: env.DIGEST_HOST || undefined,
     outboxDir: env.DIGEST_OUTBOX || fileURLToPath(new URL("../outbox", import.meta.url)),
-    photoBase: env.DIGEST_PHOTO_BASE || (dev ? "http://127.0.0.1:3100" : `https://${canoas.branding.domain}`),
+    photoBase: env.DIGEST_PHOTO_BASE || (dev ? "http://127.0.0.1:3100" : siteUrl(canoas)),
     cacheDir: env.DIGEST_CACHE || fileURLToPath(new URL("../cache", import.meta.url)),
     repliesToken: env.DIGEST_REPLIES_TOKEN ?? "",
     authserv: env.DIGEST_AUTHSERV || null,

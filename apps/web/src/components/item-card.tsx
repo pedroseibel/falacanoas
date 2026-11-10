@@ -1,17 +1,19 @@
-import { communityLine, isOpen, relativeTime, type Item, type Municipality } from "@fala/core";
+import {
+  communityLine,
+  daysLabel,
+  isOpen,
+  isOverDeadline,
+  type Item,
+  type Municipality,
+  relativeTime,
+  whereOf,
+} from "@fala/core";
 import { Check, VenetianMask } from "lucide-react";
 import { CategoryLine } from "@/components/category";
 import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { PinIntent } from "./pin-intent";
-
-export function whereOf(it: Item, muni: Municipality): string {
-  const bairro = muni.neighborhoods.find((n) => n.slug === it.neighborhood)?.name ?? muni.name;
-  if (it.scope.type === "municipality") return "Toda a cidade";
-  if (it.scope.type === "place") return `${it.scope.label} · ${bairro}`;
-  return bairro;
-}
+import type { PinIntent } from "@/lib/pin-intent";
 
 export function ItemCard({
   it,
@@ -97,19 +99,19 @@ export function ItemCard({
               <b
                 className={cn(
                   "text-base font-semibold text-foreground",
-                  it.days > muni.deadlineDays && "text-signal-text",
+                  isOverDeadline(it, muni.deadlineDays) && "text-signal-text",
                 )}
               >
                 {it.days}
               </b>
-              {it.days === 1 ? "dia" : "dias"}
-              {it.days > muni.deadlineDays && <span className="sr-only">, acima do prazo de referência</span>}
+              {daysLabel(it.days)}
+              {isOverDeadline(it, muni.deadlineDays) && <span className="sr-only">, acima do prazo de referência</span>}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1">
               <Check className="size-3.5" />
               <b className="text-base font-semibold">{it.days}</b>
-              {it.days === 1 ? "dia" : "dias"}
+              {daysLabel(it.days)}
             </span>
           )}
           <span className="text-hairline-strong">·</span>

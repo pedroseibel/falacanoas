@@ -2,7 +2,7 @@ import { canoas } from "@fala/instance-canoas";
 import { useLocation, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { ErrorPage, ErrorState } from "@/features/not-found/error-state";
 import { NotFoundPage } from "@/features/not-found/not-found-page";
-import { useGo } from "./-auth-links";
+import { useGo } from "./-links";
 
 /** Retrying a failed load: clear the boundary and load the route again. */
 function useRetry(reset: () => void) {

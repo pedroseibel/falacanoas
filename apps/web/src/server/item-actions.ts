@@ -1,22 +1,25 @@
 import {
+  DAY_MS,
+  type EvidenceAction,
+  type Item,
+  ItemIdSchema,
   limitMessage,
   postingLimits,
   prescreen,
   refusalFor,
   refusedInUpdates,
-  type EvidenceAction,
-  type Item,
 } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
+  type ActionInput,
   ActionInputSchema,
   readActionFormData,
   refusalMessage,
   toItemAction,
-  type ActionInput,
+  type ViewerState,
 } from "@/features/item/item-actions-model";
-import { actOnItem, photosSince, setFollowing, updatesSince, viewerOf, type ViewerState } from "./items";
+import { actOnItem, photosSince, setFollowing, updatesSince, viewerOf } from "./items";
 import { member, mutedRefusal, type Failure } from "./member";
 import { markNickPublished } from "./nicks";
 import { formData, keepPhotos, PHOTO_ERROR } from "./photo-intake";
@@ -32,8 +35,6 @@ import { recordEvidence } from "./vault";
 
 export type ActResult = Failure | { ok: true; item: Item; viewer: ViewerState };
 
-const DAY = 86_400_000;
-
 const EVIDENCE: Record<ActionInput["type"], EvidenceAction> = {
   confirm: "confirmation",
   still: "confirmation",
@@ -44,7 +45,7 @@ const EVIDENCE: Record<ActionInput["type"], EvidenceAction> = {
 
 /** What the signed-in neighbour has already done here; null when nobody is signed in at nível 1. */
 export const getItemViewer = createServerFn({ method: "GET" })
-  .validator((id: string) => z.string().min(4).max(12).parse(id.toUpperCase()))
+  .validator(ItemIdSchema)
   .handler(async ({ data }): Promise<ViewerState | null> => {
     const user = (await getSession())?.user;
     if (!user || user.isAnonymous || !user.phoneVerifiedAt) return null;
@@ -64,13 +65,13 @@ export const actOnItemFn = createServerFn({ method: "POST" })
       // A muted account doesn't write updates (round 19); everyone has a daily limit.
       const muted = mutedRefusal(who);
       if (muted) return muted;
-      if ((await updatesSince(who.id, DAY)) >= limits.updates)
+      if ((await updatesSince(who.id, DAY_MS)) >= limits.updates)
         return { ok: false, error: limitMessage("updates", limits) };
       const refused = refusedInUpdates(prescreen(input.text, { electoral: false }));
       if (refused.length) return { ok: false, error: refusalFor(refused) };
     }
     const files = input.type === "resolved" || input.type === "photo" ? input.photos : [];
-    if (files.length && (await photosSince(who.id, DAY)) + files.length > limits.photos)
+    if (files.length && (await photosSince(who.id, DAY_MS)) + files.length > limits.photos)
       return { ok: false, error: limitMessage("photos", limits) };
     const photos = files.length ? await keepPhotos(files) : { keys: [], srcs: [] };
     if (!photos) return { ok: false, error: PHOTO_ERROR };
@@ -102,7 +103,7 @@ export const actOnItemFn = createServerFn({ method: "POST" })
   });
 
 export const followItem = createServerFn({ method: "POST" })
-  .validator(z.object({ id: z.string().min(4).max(12), on: z.boolean() }))
+  .validator(z.object({ id: ItemIdSchema, on: z.boolean() }))
   .handler(async ({ data }): Promise<Failure | { ok: true; following: boolean }> => {
     const who = await member("acompanhar");
     if ("error" in who) return who;

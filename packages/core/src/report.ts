@@ -1,14 +1,14 @@
 import { z } from "zod";
 import { FloodNotesSchema, floodNotesFor } from "./flooding";
-import { localHour, localStamp } from "./format";
+import { DAY_MS, HOUR_MS, localHour, localStamp } from "./format";
+import { CONFIRMATION_MIN_HOURS } from "./identity";
 import { haversine, neighborhoodAt } from "./geo";
-import { categoryOf, deriveEvents, isOpen, itemLngLat } from "./logic";
+import { AFTER_CONFIRMATION, categoryOf, deriveEvents, isOpen, itemLngLat } from "./logic";
 import { readableCode } from "./signup";
 import {
   ItemKindSchema,
   LngLatSchema,
   VisibilitySchema,
-  type CommunityStatus,
   type Item,
   type LngLat,
   type Municipality,
@@ -70,7 +70,6 @@ export const ReportFieldsSchema = z.object({
 });
 export type ReportFields = z.infer<typeof ReportFieldsSchema>;
 
-/** Does this report need a point on the map? Problems always; a questão only when it is about one place. */
 export const needsLocation = (v: Pick<ReportFields, "kind" | "reach">) =>
   v.kind === "occurrence" || v.reach === "place";
 
@@ -123,7 +122,6 @@ export function findDuplicate(
 /** Five readable characters, like the fixtures' "7K3QF": short enough to say on the phone. */
 export const newItemId = (random: ArrayLike<number>) => readableCode(random, 5);
 
-/** A problem's title: the first sentence of what the person wrote, or the category's name. */
 export function reportTitle(text: string, fallback: string, max = 80): string {
   const first =
     text
@@ -144,8 +142,6 @@ export const digestDay = (now: Date, muni: Pick<Municipality, "timezone" | "dige
 export const awaitingDigest = (it: Item) =>
   it.sentAt === null || (Boolean(it.events?.length) && !it.events?.some((e) => e.kind === "sent_to_authority"));
 
-const DAY_MS = 864e5;
-
 /**
  * The Ouvidoria's legal deadline (Lei 13.460, art. 16): 30 days from receipt, extendable once by
  * another 30 with justification. Counted from the protocol, separately from the public clock.
@@ -154,11 +150,8 @@ export function legalDeadline(protocolAt: Date, now: Date, days = 30) {
   const due = new Date(protocolAt.getTime() + days * DAY_MS);
   const extendedDue = new Date(protocolAt.getTime() + 2 * days * DAY_MS);
   const daysLeft = Math.ceil((due.getTime() - now.getTime()) / DAY_MS);
-  return { due, extendedDue, daysLeft, overdue: daysLeft < 0 };
+  return { due, extendedDue, daysLeft, overdue: now.getTime() > due.getTime() };
 }
-
-/** A confirmation must come from a phone verified at least this long ago (DECISIONS round 18, Q17). */
-export const CONFIRMATION_MIN_HOURS = 72;
 
 export type ConfirmationStatus = "counts" | "already" | "too-new";
 
@@ -177,9 +170,13 @@ export function confirmationStatus({
   now: Date;
 }): ConfirmationStatus {
   if (alreadyConfirmed) return "already";
-  if (!phoneVerifiedAt || now.getTime() - phoneVerifiedAt.getTime() < CONFIRMATION_MIN_HOURS * 36e5) return "too-new";
+  if (!phoneVerifiedAt || now < countsFrom(phoneVerifiedAt)) return "too-new";
   return "counts";
 }
+
+/** When a phone verified at `phoneVerifiedAt` starts to count as an independent voice. */
+export const countsFrom = (phoneVerifiedAt: Date) =>
+  new Date(phoneVerifiedAt.getTime() + CONFIRMATION_MIN_HOURS * HOUR_MS);
 
 function scopeOf(v: ReportFields, at: LngLat | null): Scope {
   if (v.kind === "public_issue" && v.reach === "municipality") return { type: "municipality" };
@@ -246,14 +243,6 @@ export function itemFromReport(v: ReportFields, muni: Municipality, ctx: ReportC
     ],
   };
 }
-
-const AFTER_CONFIRMATION: Record<CommunityStatus, CommunityStatus> = {
-  reported: "confirmed",
-  confirmed: "confirmed",
-  ongoing: "ongoing",
-  apparently_resolved: "ongoing",
-  resolved: "resolved",
-};
 
 export interface ConfirmationContext {
   /** Apelido, or "Anônimo". */

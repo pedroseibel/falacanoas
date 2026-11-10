@@ -35,7 +35,7 @@ const domainOf = (address: string) => /@([^>\s]+)>?\s*$/.exec(address)?.[1]?.toL
 const addressOf = (address: string) => /<([^>]+)>/.exec(address)?.[1]?.toLowerCase() ?? address.trim().toLowerCase();
 
 /** An HTML-only reply, as text: enough for the reading (lines kept, tags and entities gone). */
-export function htmlText(html: string): string {
+function htmlText(html: string): string {
   return html
     .replace(/<(script|style)[\s\S]*?<\/\1>/gi, "")
     .replace(/<br\s*\/?>|<\/(p|div|tr|li|h\d|blockquote)>/gi, "\n")
@@ -85,7 +85,7 @@ export async function readMail(raw: string | Uint8Array, authserv: string | null
   };
 }
 
-export interface SentResumo {
+interface SentResumo {
   id: string;
   itemIds: string[];
 }
@@ -94,7 +94,6 @@ export type StoredReading = Omit<ReplyReading, "readings"> & { readings: (Protoc
 
 export interface ReplyStore {
   seen(messageId: string): Promise<boolean>;
-  /** The resumo these message ids or this number name. */
   resumoFor(refs: string[], number: { number: number; year: number } | null): Promise<SentResumo | null>;
   /** Codes of reports sent lately, to suggest readings for a reply that names no resumo. */
   recentCodes(): Promise<string[]>;

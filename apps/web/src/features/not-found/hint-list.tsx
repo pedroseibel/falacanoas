@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Go } from "./off-map";
+import type { Go } from "@/components/app-link";
 
 export interface HintLink {
   href: string;

@@ -1,3 +1,4 @@
+import { bairroName } from "@fala/core";
 import type { Municipality } from "@fala/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -5,8 +6,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { textLink } from "@/features/landing/bits";
-import { moderationStandingQuery } from "@/lib/city";
+import { textLink } from "@/components/text-link";
+import { moderationStandingQuery } from "@/features/moderation/queries";
 import { applyToModerate } from "@/server/volunteers";
 
 const NOTE_MAX = 280;
@@ -33,8 +34,7 @@ export function VolunteerCard({ muni, home }: { muni: Municipality; home: string
   });
   if (!standing || standing.moderator) return null;
   const app = standing.application;
-  const names = (slugs: string[]) =>
-    slugs.map((s) => muni.neighborhoods.find((n) => n.slug === s)?.name ?? s).join(", ");
+  const names = (slugs: string[]) => slugs.map((s) => bairroName(muni, s) ?? s).join(", ");
 
   return (
     <section className="grid gap-3 rounded-2xl border border-hairline bg-card p-5 shadow-soft" aria-labelledby="vol-t">

@@ -9,7 +9,7 @@ import {
   moderationStandingQuery,
   reportedPostsQuery,
   sanctionQueueQuery,
-} from "@/lib/city";
+} from "@/features/moderation/queries";
 
 export const Route = createFileRoute("/_app/moderar")({
   // Only moderators: anyone else lands on the map, as if the page didn't exist.

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { readableCode } from "./signup";
+import { ITEM_ID } from "./types";
 
 /**
  * The data-subject channel (DECISIONS round 18, "Data-subject rights"; LGPD art. 18). Anyone can ask,
@@ -36,8 +37,6 @@ export const REQUEST_KIND_LABEL: Record<RequestKind, string> = {
 /** Days to answer in full (LGPD art. 19, II). */
 export const DATA_REQUEST_DAYS = 15;
 
-const ITEM_CODE = /^[A-Za-z0-9]{4,12}$/;
-
 /**
  * A pin's code, or a link to it: "7K3QF", "falacanoas.com.br/o/7K3QF", or a guest's secret link
  * "…/o/7K3QF?chave=…", whose key is the guest's proof that the pin is theirs. Null when it's neither.
@@ -45,15 +44,15 @@ const ITEM_CODE = /^[A-Za-z0-9]{4,12}$/;
 export function parseItemRef(input: string): { id: string; key: string | null } | null {
   const s = input.trim();
   if (!s) return null;
-  if (ITEM_CODE.test(s)) return { id: s.toUpperCase(), key: null };
+  if (ITEM_ID.test(s)) return { id: s.toUpperCase(), key: null };
   let url: URL;
   try {
     url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(s) ? s : `https://x.invalid/${s.replace(/^\/+/, "")}`);
   } catch {
     return null;
   }
-  const m = /\/o\/([A-Za-z0-9]{4,12})\/?$/.exec(url.pathname);
-  if (!m?.[1]) return null;
+  const m = /\/o\/([^/]+)\/?$/.exec(url.pathname);
+  if (!m?.[1] || !ITEM_ID.test(m[1])) return null;
   const key = url.searchParams.get("chave");
   return { id: m[1].toUpperCase(), key: key && key.length <= 64 ? key : null };
 }

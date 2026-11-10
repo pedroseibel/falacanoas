@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { polygonsOf } from "./geo";
 import type { NeighborhoodFeature } from "./types";
 
 /**
@@ -57,25 +58,6 @@ export type ShareCard = z.infer<typeof ShareCardSchema>;
 /** The size every network expects for a large preview. */
 export const SHARE_CARD_SIZE = { width: 1200, height: 630 };
 
-/** "1 dia", "43 dias". */
-export const daysLabel = (days: number) => (days === 1 ? "dia" : "dias");
-
-/** The card's alt text and the preview's title line, in the same words. */
-export function shareCardText(card: ShareCard): string {
-  if (card.kind === "bairro") {
-    const overdue = card.overdue ? `, ${card.overdue} há mais de ${card.deadlineDays} dias` : "";
-    return `${card.name}: ${card.open} ${card.open === 1 ? "registro aberto" : "registros abertos"}${overdue}.`;
-  }
-  const clock = card.open
-    ? `${card.days} ${daysLabel(card.days)} em aberto`
-    : `resolvido em ${card.days} ${daysLabel(card.days)}`;
-  return `${card.title}: ${clock}. ${card.category}${card.place ? `, ${card.place}` : ""}.`;
-}
-
-type Ring = number[][];
-const polygonsOf = (f: NeighborhoodFeature): Ring[][] =>
-  f.geometry.type === "Polygon" ? [f.geometry.coordinates] : f.geometry.coordinates;
-
 /**
  * A bairro's outline as an SVG path, `width` wide, in an equirectangular projection corrected for
  * latitude (a bairro is small enough). North up.
@@ -85,7 +67,7 @@ export function outlineOf(
   width = 400,
   at: { lng: number; lat: number } | null = null,
 ): Outline {
-  const points = polygonsOf(feature).flatMap((p) => p[0] ?? []);
+  const points = polygonsOf(feature.geometry).flatMap((p) => p[0] ?? []);
   const xs = points.map((c) => c[0] ?? 0);
   const ys = points.map((c) => c[1] ?? 0);
   const x0 = Math.min(...xs);
@@ -97,7 +79,7 @@ export function outlineOf(
   const x = (lng: number) => ((lng - x0) / (x1 - x0)) * width;
   const y = (lat: number) => ((y1 - lat) / (y1 - y0)) * height;
   const pt = (c: number[]) => `${x(c[0] ?? 0).toFixed(1)} ${y(c[1] ?? 0).toFixed(1)}`;
-  const d = polygonsOf(feature)
+  const d = polygonsOf(feature.geometry)
     .map((p) => p.map((r) => `M${r.map(pt).join("L")}Z`).join(""))
     .join("");
   return { d, width, height, pin: at ? { x: x(at.lng), y: y(at.lat) } : null };

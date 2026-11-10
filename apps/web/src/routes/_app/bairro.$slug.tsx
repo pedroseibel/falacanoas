@@ -4,9 +4,11 @@ import { canoas } from "@fala/instance-canoas";
 import { BairroPage } from "@/features/bairro/bairro-page";
 import { BairroNotFound } from "@/features/not-found/bairro-not-found";
 import { findBairro } from "@/features/not-found/not-found-model";
-import { useGo } from "../-auth-links";
-import { isOpen } from "@fala/core";
-import { accountQuery, cityQuery, memberGate, threadsQuery } from "@/lib/city";
+import { useGo } from "../-links";
+import { isOpen, isOverDeadline } from "@fala/core";
+import { threadsQuery } from "@/features/forum/queries";
+import { accountQuery, memberGate } from "@/lib/account";
+import { cityQuery } from "@/lib/city";
 import { bairroShareMeta } from "@/lib/share-meta";
 
 export const Route = createFileRoute("/_app/bairro/$slug")({
@@ -29,7 +31,7 @@ export const Route = createFileRoute("/_app/bairro/$slug")({
       name: bairro.name,
       slug: params.slug,
       open: open.length,
-      overdue: open.filter((i) => i.days > canoas.deadlineDays).length,
+      overdue: open.filter((i) => isOverDeadline(i, canoas.deadlineDays)).length,
       demo: mine.some((i) => i.demo),
     };
   },

@@ -22,7 +22,6 @@ export function normalizeSlug(input: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
-/** Edits between two short strings (Levenshtein). */
 function distance(a: string, b: string): number {
   let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) {

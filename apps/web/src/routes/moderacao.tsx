@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AuthSearchSchema, returnPath } from "@/features/auth/auth-search";
 import { GuidePage } from "@/features/moderation/moderation-guide";
-import { useBackLink } from "./-auth-links";
+import { useBackLink } from "./-links";
 
 export const Route = createFileRoute("/moderacao")({
   validateSearch: AuthSearchSchema,

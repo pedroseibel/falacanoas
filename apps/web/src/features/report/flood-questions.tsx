@@ -88,10 +88,7 @@ export function FloodQuestions({
         value={value.duration}
         onChange={(duration) => set({ duration })}
       />
-      <p className="text-caption text-muted-foreground">
-        Ajuda a entender por que a rua alaga: um bueiro, a valeta, a casa de bombas ou o rio. Marque só o que você viu;
-        toque de novo para desmarcar.
-      </p>
+      <p className="text-caption text-muted-foreground">Marque só o que você viu; toque de novo para desmarcar.</p>
     </div>
   );
 }

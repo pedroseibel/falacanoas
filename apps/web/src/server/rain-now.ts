@@ -1,4 +1,4 @@
-import { gaugesNow, type GaugeNow } from "@fala/core";
+import { type GaugeNow, gaugesNow, HOUR_MS } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { gte } from "drizzle-orm";
@@ -17,7 +17,7 @@ export const getRainNow = createServerFn({ method: "GET" }).handler(
     const source = canoas.rain;
     if (!source) return null;
     const now = new Date();
-    const since = new Date(now.getTime() - 25 * 3600_000);
+    const since = new Date(now.getTime() - 25 * HOUR_MS);
     const rows = await db
       .select({
         gauge: rainReadings.gauge,

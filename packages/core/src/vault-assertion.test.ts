@@ -62,6 +62,6 @@ describe("vault assertion", () => {
   test("the public half can't sign", async () => {
     const pair = await crypto.subtle.generateKey({ name: "Ed25519" }, true, ["sign", "verify"]);
     const { d: _d, ...pub } = await crypto.subtle.exportKey("jwk", pair.privateKey);
-    expect(importVaultKey(JSON.stringify(pub), "sign")).rejects.toThrow();
+    await expect(importVaultKey(JSON.stringify(pub), "sign")).rejects.toThrow();
   });
 });

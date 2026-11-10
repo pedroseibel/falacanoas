@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AuthSearchSchema, returnPath } from "@/features/auth/auth-search";
 import { PRIVACY_NOTICE_VERSION } from "@/features/legal/privacy";
 import { PrivacyPage } from "@/features/legal/privacy-page";
-import { useBackLink } from "./-auth-links";
+import { useBackLink } from "./-links";
 
 export const Route = createFileRoute("/privacidade")({
   validateSearch: AuthSearchSchema,

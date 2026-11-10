@@ -1,11 +1,13 @@
 import {
+  base64url,
   CODE_WINDOWS,
   CODE_WINDOWS_PER_IP,
   isBrazilianMobileE164,
   maskedPhone,
+  sameText,
   VERIFY_WINDOWS_PER_IP,
 } from "@fala/core";
-import { codeHash, newCode, phoneMacs, same, sealPhone, unsealPhone } from "./crypto";
+import { codeHash, newCode, phoneMacs, sealPhone, unsealPhone } from "./crypto";
 import { allowed, checkReauthCode, CODE_TRIES, CODE_TTL_MS, DORMANT_MS, type Gateway } from "./gateway";
 
 /**
@@ -16,22 +18,13 @@ import { allowed, checkReauthCode, CODE_TRIES, CODE_TTL_MS, DORMANT_MS, type Gat
  * one, and the app picks up the new hint to end the other sessions.
  */
 
-/** How long a ticket lasts. */
 export const CHANGE_TTL_MS = 15 * 60_000;
-/** Codes one ticket may send. */
-export const CHANGE_SENDS = 3;
-/** How long a finished change waits for the app to pick it up. */
+const CHANGE_SENDS = 3;
 export const CHANGE_PICKUP_MS = 10 * 60_000;
 
 /** What the old number receives: that the change happened, nothing about the new number. */
 export const CHANGE_NOTICE =
   "Fala: o número ligado à sua conta acabou de ser trocado. Se não foi você, procure o canal de privacidade do Fala.";
-
-const base64url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
 
 /** A ticket has 256 random bits, so a plain SHA-256 is enough to keep it unusable at rest. */
 const hashTicket = async (ticket: string) =>
@@ -52,7 +45,6 @@ export async function beginChange(
   return { ok: true, ticket };
 }
 
-/** The change a ticket opens, if it's still open. */
 async function openChange(g: Gateway, ticket: unknown, now: Date) {
   if (typeof ticket !== "string" || !ticket || ticket.length > 100) return null;
   const change = await g.store.findChange(await hashTicket(ticket));
@@ -109,7 +101,7 @@ export async function verifyChangeCode(
   if (!current) throw new Error("sem chave");
   const waiting = await g.store.getCode(current.mac);
   if (!waiting || waiting.expiresAt <= now || waiting.attempts >= CODE_TRIES) return { ok: false, error: "invalid" };
-  if (!same(waiting.codeHash, await codeHash(g.keys, current.mac, code))) {
+  if (!sameText(waiting.codeHash, await codeHash(g.keys, current.mac, code))) {
     await g.store.failCode(current.mac);
     return { ok: false, error: "invalid" };
   }

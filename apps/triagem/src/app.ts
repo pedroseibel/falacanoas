@@ -16,7 +16,7 @@ export interface Engine {
 }
 
 /** What `/triagem` answers: the screening, the photo's PDQ fingerprint, and the known-material check. */
-export interface TriagemResult extends Screening {
+interface TriagemResult extends Screening {
   pdq: PdqHash;
   /** Null when not checked: no Shield account configured, or Shield didn't answer (`knownError`). */
   known: KnownVerdict | null;

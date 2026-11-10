@@ -6,6 +6,7 @@ import { MODERATION_GUIDE_VERSION } from "@/features/moderation/guide-version";
 import { db } from "./db/client";
 import { moderatorApplications, moderators } from "./db/schema";
 import { member, mutedRefusal, type Failure } from "./member";
+import { guideCurrent } from "./moderator";
 import { getSession } from "./session";
 
 /**
@@ -30,7 +31,7 @@ export const getModerationStanding = createServerFn({ method: "GET" }).handler(
     const [mod] = await db.select().from(moderators).where(eq(moderators.accountId, user.id));
     if (mod)
       return {
-        moderator: { neighborhoods: mod.neighborhoods, guideCurrent: mod.guideVersion === MODERATION_GUIDE_VERSION },
+        moderator: { neighborhoods: mod.neighborhoods, guideCurrent: guideCurrent(mod) },
         application: null,
       };
     const [app] = await db

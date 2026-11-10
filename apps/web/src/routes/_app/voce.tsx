@@ -5,8 +5,9 @@ import { toast } from "sonner";
 import { turnOffPush } from "@/features/voce/push-device";
 import { VocePage } from "@/features/voce/voce-page";
 import { authClient } from "@/lib/auth-client";
-import { accountQuery, cityQuery } from "@/lib/city";
-import { useBackLink } from "../-auth-links";
+import { accountQuery } from "@/lib/account";
+import { cityQuery } from "@/lib/city";
+import { useBackLink } from "../-links";
 
 export const Route = createFileRoute("/_app/voce")({
   loader: ({ context }) =>
@@ -32,7 +33,7 @@ function VoceRoute() {
       onPickNick={() => void navigate({ to: "/bem-vindo", search: { volta: "/voce" } })}
       onModerate={() => void navigate({ to: "/moderar" })}
       requestPath={request.href}
-      onRequest={request.onNavigate}
+      onRequest={request.onClick}
       onNumberChanged={(hint) => {
         void queryClient.invalidateQueries({ queryKey: accountQuery.queryKey });
         toast(`Número trocado para ${hint}. Você saiu dos outros aparelhos.`);

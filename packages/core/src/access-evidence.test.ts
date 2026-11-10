@@ -33,6 +33,11 @@ describe("retention", () => {
   test("six calendar months", () => {
     expect(evidenceCutoff(new Date("2026-10-12T15:00:00Z")).toISOString()).toBe("2026-04-12T15:00:00.000Z");
   });
+  test("a month end stays in the sixth month back, never later", () => {
+    expect(evidenceCutoff(new Date("2026-08-31T15:00:00Z")).toISOString()).toBe("2026-02-28T15:00:00.000Z");
+    expect(evidenceCutoff(new Date("2026-03-31T15:00:00Z")).toISOString()).toBe("2025-09-30T15:00:00.000Z");
+    expect(evidenceCutoff(new Date("2026-01-15T15:00:00Z")).toISOString()).toBe("2025-07-15T15:00:00.000Z");
+  });
 
   const base: PreservationHold = {
     requestedAt: new Date("2026-05-01T00:00:00Z"),

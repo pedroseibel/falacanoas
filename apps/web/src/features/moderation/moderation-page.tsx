@@ -1,4 +1,12 @@
-import { FLAG_LABEL, LIKELY_NUDE, REPORT_REASON, shieldsModerator, type Municipality } from "@fala/core";
+import {
+  FLAG_LABEL,
+  itemPath,
+  LIKELY_NUDE,
+  type Municipality,
+  REPORT_REASON,
+  shieldsModerator,
+  whereOf,
+} from "@fala/core";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -7,9 +15,8 @@ import { CategoryLine } from "@/components/category";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { textLink } from "@/features/landing/bits";
-import { whereOf } from "@/features/map/item-card";
-import { moderationQueueQuery, reportedPostsQuery } from "@/lib/city";
+import { textLink } from "@/components/text-link";
+import { MODERATION_KEY, reportedPostsQuery } from "@/features/moderation/queries";
 import { cn } from "@/lib/utils";
 import { decidePost, type ReportedPost } from "@/server/forum";
 import { decideCase, resolveContest, type QueueCase, type QueuePhoto, type ReportSummary } from "@/server/moderation";
@@ -239,7 +246,6 @@ const REASON_LABEL: Record<QueueCase["reason"], string> = {
   muted: "Conta silenciada",
 };
 
-/** The pin a case belongs to, for context: category, place, title, code, byline, and a link. */
 function PinContext({ c, muni, full }: { c: QueueCase; muni: Municipality; full: boolean }) {
   return (
     <div className="grid min-w-0 content-start gap-1">
@@ -259,7 +265,7 @@ function PinContext({ c, muni, full }: { c: QueueCase; muni: Municipality; full:
         {!c.item.moderation && (
           <>
             {" · "}
-            <a href={`/o/${c.item.id}`} className={textLink}>
+            <a href={itemPath(c.item.id)} className={textLink}>
               Abrir o registro
             </a>
           </>
@@ -271,7 +277,6 @@ function PinContext({ c, muni, full }: { c: QueueCase; muni: Municipality; full:
 
 type Step = null | "reject" | "republish" | "uphold" | "overturn";
 
-/** One case: what it's about, why it's here, and the decision. */
 function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
   const queryClient = useQueryClient();
   const [step, setStep] = useState<Step>(null);
@@ -279,7 +284,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
   const [removal, setRemoval] = useState<Removal>(emptyRemoval);
   const { leaving, leave } = useLeave();
   // Decided: the card leaves its place first, then the queue refetches without it.
-  const done = () => leave(() => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey }));
+  const done = () => leave(() => void queryClient.invalidateQueries({ queryKey: MODERATION_KEY }));
   const decide = useMutation({
     mutationFn: (d: Parameters<typeof decideCase>[0]["data"]) => decideCase({ data: d }),
     onSuccess: (r) => {
@@ -301,7 +306,7 @@ function CaseCard({ c, muni }: { c: QueueCase; muni: Municipality }) {
 
   const submitNote = () => {
     const text = (step === "reject" ? removal.note : note).trim();
-    if (text.length < 3) return void toast("Escreva o motivo: ele aparece para quem publicou.");
+    if (text.length < 3) return void toast("Escreva o motivo.");
     if (step === "reject") decide.mutate({ caseId: c.id, decision: "reject", note: text, weight: removal.weight });
     if (step === "republish") decide.mutate({ caseId: c.id, decision: "republish", note: text });
     if (step === "uphold" || step === "overturn") contest.mutate(step === "overturn");
@@ -462,7 +467,7 @@ function FirstLook({ cases, muni }: { cases: PhotoCase[]; muni: Municipality }) 
   const [removed, setRemoved] = useState<ReadonlySet<string>>(new Set());
   const [removal, setRemoval] = useState<Removal>(emptyRemoval);
   const { leaving, leave } = useLeave();
-  const refetch = () => void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
+  const refetch = () => void queryClient.invalidateQueries({ queryKey: MODERATION_KEY });
   const first = cases[0];
   const decide = useMutation({
     mutationFn: async () => {

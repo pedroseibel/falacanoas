@@ -1,12 +1,14 @@
 import {
+  bairroName,
   categoryOf,
+  type GroupStat,
   groupStats,
   isOpen,
-  median,
-  onPlacar,
-  type GroupStat,
+  isOverDeadline,
   type Item,
+  median,
   type Municipality,
+  onPlacar,
 } from "@fala/core";
 import { z } from "zod";
 
@@ -28,11 +30,7 @@ export function placarRows(items: Item[], muni: Municipality, view: PlacarView):
   return groupStats(items, key, muni.deadlineDays).map((g) => ({
     ...g,
     name:
-      view === "tipo"
-        ? categoryOf(muni, g.key).label
-        : view === "bairro"
-          ? (muni.neighborhoods.find((n) => n.slug === g.key)?.name ?? g.key)
-          : g.key,
+      view === "tipo" ? categoryOf(muni, g.key).label : view === "bairro" ? (bairroName(muni, g.key) ?? g.key) : g.key,
     bairro: view === "bairro" ? g.key : null,
   }));
 }
@@ -43,7 +41,7 @@ export function placarKpis(items: Item[], deadline: number) {
   const fixed = occ.filter((i) => !isOpen(i)).map((i) => i.days);
   return {
     open: open.length,
-    overDeadline: open.filter((i) => i.days > deadline).length,
+    overDeadline: open.filter((i) => isOverDeadline(i, deadline)).length,
     medianToFix: median(fixed),
     fixed: fixed.length,
   };
@@ -53,7 +51,7 @@ export function placarKpis(items: Item[], deadline: number) {
 export function overDeadlineByBairro(items: Item[], deadline: number): Record<string, number> {
   const out: Record<string, number> = {};
   for (const it of items)
-    if (onPlacar(it) && isOpen(it) && it.days > deadline && it.neighborhood)
+    if (onPlacar(it) && isOverDeadline(it, deadline) && it.neighborhood)
       out[it.neighborhood] = (out[it.neighborhood] ?? 0) + 1;
   return out;
 }

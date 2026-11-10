@@ -1,4 +1,4 @@
-import { DATA_REQUEST_DAYS, followLabel, FollowPlaceSchema } from "@fala/core";
+import { bairroName, categoryLabel, DATA_REQUEST_DAYS, followLabel, FollowPlaceSchema } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db/client";
@@ -94,7 +94,7 @@ export async function collectMyData(accountId: string, now = new Date()) {
     conta: {
       id: user.id,
       apelido: user.nick,
-      bairro: canoas.neighborhoods.find((n) => n.slug === user.neighborhood)?.name ?? null,
+      bairro: bairroName(canoas, user.neighborhood),
       criadaEm: iso(user.createdAt),
       celular: user.phoneHint,
       celularConfirmadoEm: iso(user.phoneVerifiedAt),
@@ -104,7 +104,7 @@ export async function collectMyData(accountId: string, now = new Date()) {
     registros: authored.map((r) => ({
       codigo: r.id,
       titulo: r.title,
-      categoria: canoas.categories.find((c) => c.key === r.category)?.label ?? r.category,
+      categoria: categoryLabel(canoas, r.category),
       emPublico: r.visibility === "anonymous" ? "Anônimo em público" : "com o apelido",
       moderacao: r.moderation,
       criadoEm: iso(r.createdAt),

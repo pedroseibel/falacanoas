@@ -3,7 +3,7 @@ import { Loader2, ShieldAlert } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { moderationQueueQuery } from "@/lib/city";
+import { MODERATION_KEY } from "@/features/moderation/queries";
 import { escalateChildAbuse } from "@/server/content-reports";
 
 /** What a moderator reads before handing child abuse material on (round 20). */
@@ -35,7 +35,7 @@ export function EscalateAction({
       toast(r.ok ? "Removido e encaminhado à equipe responsável." : r.error);
       if (!r.ok) return;
       if (onDone) onDone();
-      else void queryClient.invalidateQueries({ queryKey: moderationQueueQuery.queryKey });
+      else void queryClient.invalidateQueries({ queryKey: MODERATION_KEY });
     },
   });
   if (!open)

@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { Client } from "pg";
-import { devVar } from "./dev-env";
+import { devVar, VAULT_DEV_VARS, WEB_DEV_VARS } from "@fala/dev-vars";
 
 /**
  * `bun run db:roles`, after the migrations: lets the app (fala_app), the vault (fala_cofre) and the
@@ -9,8 +9,8 @@ import { devVar } from "./dev-env";
  * are created first, with fresh random passwords, in the gitignored .dev.vars files: the old
  * `postgres` URL becomes DATABASE_ADMIN_URL. Nothing secret is printed.
  */
-const WEB = ".dev.vars";
-const VAULT = "../vault/.dev.vars";
+const WEB = WEB_DEV_VARS;
+const VAULT = VAULT_DEV_VARS;
 
 const read = (path: string) => (existsSync(path) ? readFileSync(path, "utf8") : "");
 const setVar = (text: string, name: string, value: string) =>

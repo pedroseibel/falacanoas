@@ -1,14 +1,16 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 import {
   asksFlooding,
+  daysLabel,
   freshFlood,
   freshTag,
-  itemLngLat,
-  isOpen,
-  mmLabel,
-  rainNear,
   type GaugeNow,
+  isOpen,
   type Item,
+  itemLngLat,
+  mmLabel,
   type Municipality,
+  rainNear,
   type Viewer,
 } from "@fala/core";
 import type {
@@ -20,7 +22,7 @@ import type {
   Marker,
 } from "maplibre-gl";
 import { mapStore, type MapState } from "./map-store";
-import type { PinIntent } from "./pin-intent";
+import type { PinIntent } from "@/lib/pin-intent";
 
 type MapLibre = typeof import("maplibre-gl");
 
@@ -34,13 +36,6 @@ export const styleUrl = (dark: boolean) => STYLE_URL[dark ? "dark" : "light"];
 
 export const cssVar = (name: string) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-/** The saved theme, or the system's. */
-export function prefersDark(): boolean {
-  const theme = document.documentElement.getAttribute("data-theme");
-  return theme ? theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
-/** Paints the basemap's background with our ground and hides points of interest, transit and house numbers. */
 export function quietBasemap(map: MapLibreMap) {
   for (const l of map.getStyle().layers) {
     if (l.type === "background") map.setPaintProperty(l.id, "background-color", cssVar("--ground"));
@@ -94,7 +89,6 @@ export interface MapEngineOptions {
   railHeight: () => number;
 }
 
-/** Mounts MapLibre in `host`, keeps it in sync with mapStore, and returns a disposer. */
 export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions): () => void {
   const { muni, viewer } = opts;
   let state = mapStore.state;
@@ -321,7 +315,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
         map.setFeatureState({ source: "bairros", id: n.slug }, { sel: Boolean(it && it.neighborhood === n.slug) });
     const p = it ? itemLngLat(it) : null;
     if (!it || !p) return;
-    const label = isOpen(it) ? `${it.days} ${it.days === 1 ? "dia" : "dias"}` : "resolvido";
+    const label = isOpen(it) ? `${it.days} ${daysLabel(it.days)}` : "resolvido";
     selMarker = marker("fc-selpin", `<span></span><span>${label}</span>`, p, "left");
     if (fly) {
       const pad = opts.isPhone()
@@ -331,7 +325,7 @@ export function mountMap(ml: MapLibre, host: HTMLElement, opts: MapEngineOptions
         center: p,
         zoom: Math.max(map.getZoom(), 14.4),
         padding: pad,
-        duration: matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 750,
+        duration: prefersReducedMotion() ? 0 : 750,
       });
     }
   }
@@ -475,7 +469,7 @@ const RAIN_GLYPH =
   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>';
 
 /** What a screen reader hears on a gauge: its name, its last hour and when, or that it's silent. */
-export function gaugeLabel(g: GaugeNow): string {
+function gaugeLabel(g: GaugeNow): string {
   if (g.stale || g.lastHour === null) return `Pluviômetro ${g.name}: sem leitura recente`;
   return `Pluviômetro ${g.name}: ${mmLabel(g.lastHour)} na última hora`;
 }

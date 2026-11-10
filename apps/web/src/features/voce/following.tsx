@@ -1,10 +1,11 @@
 import {
   covers,
+  daysLabel,
+  distance,
   followLabel,
+  type FollowPlace,
   HOME_RADII,
   isOpen,
-  distance,
-  type FollowPlace,
   type Item,
   type LngLat,
   type Municipality,
@@ -16,8 +17,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { LocationPicker } from "@/features/report/location-picker";
-import { followingQuery } from "@/lib/city";
+import { LocationPicker } from "@/features/map/location-picker";
+import { followingQuery } from "@/features/voce/queries";
 import { followItem } from "@/server/item-actions";
 import { followPlace, unfollowPlace, type Following as FollowingData } from "@/server/follows";
 import { PushToggle } from "./push-toggle";
@@ -110,7 +111,7 @@ export function Following({
               icon={MapPin}
               title={it.title}
               detail={`Registro ${it.id}`}
-              count={isOpen(it) ? `${it.days} ${it.days === 1 ? "dia" : "dias"}` : "resolvido"}
+              count={isOpen(it) ? `${it.days} ${daysLabel(it.days)}` : "resolvido"}
               onOpen={() => onOpen(it.id)}
               busy={unpin.isPending && unpin.variables === it.id}
               onRemove={() => unpin.mutate(it.id)}
@@ -168,9 +169,7 @@ export function Following({
       )}
 
       <PushToggle />
-      <p className="text-xs text-muted-foreground">
-        Por WhatsApp, os avisos entram depois. Para acompanhar um registro, use “Acompanhar” na página dele.
-      </p>
+      <p className="text-xs text-muted-foreground">Para acompanhar um registro, use “Acompanhar” na página dele.</p>
     </div>
   );
 }

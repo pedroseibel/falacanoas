@@ -16,7 +16,9 @@ import { OutboxRunner } from "@/features/report/outbox-runner";
 import { ReportDialog } from "@/features/report/report-dialog";
 import { openReport } from "@/features/report/report-store";
 import { AppShell, type Section } from "@/features/shell/app-shell";
-import { accountQuery, authConfigQuery, cityQuery, isModeratorQuery, memberGate } from "@/lib/city";
+import { isModeratorQuery, MODERATION_KEY } from "@/features/moderation/queries";
+import { accountQuery, authConfigQuery, memberGate } from "@/lib/account";
+import { cityQuery, itemKey } from "@/lib/city";
 
 export const Route = createFileRoute("/_app")({
   loader: ({ context }) =>
@@ -97,7 +99,6 @@ function AppLayout() {
               : null
         }
         turnstileSiteKey={authConfig?.turnstileSiteKey ?? null}
-        onChanged={() => void router.invalidate()}
         onView={(id, key) => void navigate({ to: "/o/$id", params: { id }, search: key ? { chave: key } : {} })}
       />
       {/* A member's reports kept on the phone after a dropped connection go on their own (outbox.ts). */}
@@ -107,8 +108,8 @@ function AppLayout() {
         moderator={Boolean(moderator)}
         turnstileSiteKey={authConfig?.turnstileSiteKey ?? null}
         onChanged={(id) => {
-          void queryClient.invalidateQueries({ queryKey: ["item", id] });
-          void queryClient.invalidateQueries({ queryKey: ["moderation"] });
+          void queryClient.invalidateQueries({ queryKey: itemKey(id) });
+          void queryClient.invalidateQueries({ queryKey: MODERATION_KEY });
           void queryClient.invalidateQueries({ queryKey: cityQuery.queryKey });
           void router.invalidate();
         }}

@@ -1,3 +1,4 @@
+import { base64url } from "@fala/core";
 import { z } from "zod";
 
 /**
@@ -19,11 +20,6 @@ export interface VaultKeys {
 
 const fromBase64 = (s: string) =>
   Uint8Array.from(atob(s.replaceAll("-", "+").replaceAll("_", "/")), (c) => c.charCodeAt(0));
-const toBase64url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
 
 async function importVersions(json: string, make: (raw: Uint8Array<ArrayBuffer>) => Promise<CryptoKey>) {
   const entries = Object.entries(VersionedKeysSchema.parse(JSON.parse(json)));
@@ -54,7 +50,7 @@ export async function importVaultKeys(env: {
 }
 
 async function hmac(key: CryptoKey, text: string): Promise<string> {
-  return toBase64url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text))));
+  return base64url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(text))));
 }
 
 /** The lookup HMAC of a number under every key version held, current first. */
@@ -78,7 +74,7 @@ export async function sealPhone(keys: VaultKeys, phone: string): Promise<string>
   const out = new Uint8Array(iv.length + ct.length);
   out.set(iv);
   out.set(ct, iv.length);
-  return toBase64url(out);
+  return base64url(out);
 }
 
 export async function unsealPhone(keys: VaultKeys, version: number, sealed: string): Promise<string> {
@@ -94,14 +90,6 @@ export async function codeHash(keys: VaultKeys, phoneMac: string, code: string):
   const key = keys.mac.get(keys.current);
   if (!key) throw new Error("chave ausente");
   return hmac(key, `codigo:${phoneMac}:${code}`);
-}
-
-/** Compares two strings without leaking where they differ. */
-export function same(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 /** A 6-digit code from the CSPRNG, without modulo bias. */

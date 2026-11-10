@@ -1,4 +1,4 @@
-import { REMOVAL_REASONS, type RemovalWeight } from "@fala/core";
+import { MUTE_DAYS, REMOVAL_REASONS, type RemovalWeight, STRIKE_WINDOW_DAYS } from "@fala/core";
 import { Button } from "@/components/ui/button";
 import { RadioGroupSegment, RadioGroupSegmented } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
@@ -81,8 +81,8 @@ export function RemovalNote({
           {value.weight === "none"
             ? "Engano de boa-fé, como um rosto ou uma placa legível: não pesa contra a conta."
             : value.weight === "grave"
-              ? "Nudez ou conteúdo sexual: a conta fica silenciada na hora, por 30 dias."
-              : "Três remoções que contam em 30 dias silenciam a conta por 30 dias."}
+              ? `Nudez ou conteúdo sexual: a conta fica silenciada na hora, por ${MUTE_DAYS} dias.`
+              : `Três remoções que contam em ${STRIKE_WINDOW_DAYS} dias silenciam a conta por ${MUTE_DAYS} dias.`}
         </p>
       </div>
     </div>

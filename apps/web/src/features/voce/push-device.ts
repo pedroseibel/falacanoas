@@ -38,7 +38,6 @@ export async function readPushFacts(): Promise<PushFacts> {
   };
 }
 
-/** Asks permission, subscribes this browser, and stores the subscription for the account. */
 export async function turnOnPush(): Promise<void> {
   const key = await getPushKey();
   if (!key) throw new Error("Os avisos ainda não estão ligados nesta versão.");
@@ -62,7 +61,7 @@ export async function turnOnPush(): Promise<void> {
   }
 }
 
-/** Stops this browser's notifications, here and on the server. Also run on signing out. */
+/** Also run on signing out. */
 export async function turnOffPush(): Promise<void> {
   const sub = await currentSubscription();
   if (!sub) return;

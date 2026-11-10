@@ -93,6 +93,11 @@ export const ItemEventSchema = z.object({
 });
 export type ItemEvent = z.infer<typeof ItemEventSchema>;
 
+/** A pin's code as someone types or links it: letters and digits, either case. */
+export const ITEM_ID = /^[A-Za-z0-9]{4,12}$/;
+/** A pin's code arriving from outside (a form, a URL, a message): checked, then upper-cased as codes are stored. */
+export const ItemIdSchema = z.string().regex(ITEM_ID).toUpperCase();
+
 export const ItemSchema = z.object({
   id: z.string().min(4).max(12),
   kind: ItemKindSchema,
@@ -258,7 +263,6 @@ export interface Municipality {
   bounds: [LngLat, LngLat];
   /** Reference deadline shown on rulers (Lei 13.460/2017, art. 16). */
   deadlineDays: number;
-  /** Hour of the daily digest sent to the public authority. */
   digestHour: number;
   categories: Category[];
   filterGroups: FilterGroup[];
@@ -290,7 +294,6 @@ export interface Municipality {
   emergency: {
     /** The civil defence's lines, the short number first ("199", then its 24-hour line). */
     civilDefense: EmergencyLine[];
-    /** The fire brigade. */
     fire: EmergencyLine;
     /** Official alerts by SMS (the national 40199 service: send the CEP). */
     alertsSms?: { number: string; how: string };

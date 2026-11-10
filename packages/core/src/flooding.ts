@@ -16,11 +16,9 @@ export const FloodDurationSchema = z.enum(["menos_1h", "1_3h", "mais_3h", "ainda
 export type FloodDuration = z.infer<typeof FloodDurationSchema>;
 
 export const FloodNotesSchema = z.object({
-  /** The cause seen. */
   cause: FloodCauseSchema.optional(),
   /** Whether it was raining when they registered. */
   raining: z.boolean().optional(),
-  /** How long the water stayed. */
   duration: FloodDurationSchema.optional(),
 });
 export type FloodNotes = z.infer<typeof FloodNotesSchema>;
@@ -41,11 +39,9 @@ export const FLOOD_DURATIONS: { key: FloodDuration; label: string }[] = [
   { key: "ainda", label: "Ainda não baixou" },
 ];
 
-/** Does this type ask the flooding questions? */
 export const asksFlooding = (muni: Pick<Municipality, "categories">, category: string) =>
   muni.categories.some((c) => c.key === category && c.asks === "flooding");
 
-/** The answers worth keeping: none for other types, and nothing when none was given. */
 export function floodNotesFor(
   muni: Pick<Municipality, "categories">,
   category: string,

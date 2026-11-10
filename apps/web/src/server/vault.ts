@@ -29,7 +29,7 @@ export function readAssertion(
   audience: VaultAssertion["aud"] = VAULT_AUDIENCE,
 ): Promise<VaultAssertion | null> {
   const jwk = process.env.VAULT_VERIFY_KEY;
-  if (!jwk) throw new Error("VAULT_VERIFY_KEY não configurada: rode `bun run keys` em apps/vault.");
+  if (!jwk) throw new Error("VAULT_VERIFY_KEY não configurada: rode `bun run vault:keys`.");
   verifyKey ??= importVaultKey(jwk, "verify");
   return verifyKey.then((key) => readVaultAssertion(token, key, Math.floor(now / 1000), audience));
 }

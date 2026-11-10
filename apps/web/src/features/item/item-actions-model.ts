@@ -1,23 +1,36 @@
 import {
-  applyAction,
-  localStamp,
-  PhotoFileSchema,
-  REPORT,
-  UPDATE_MAX,
   type ActionRefusal,
+  applyAction,
+  CONFIRMATION_MIN_HOURS,
   type Item,
   type ItemAction,
+  ItemIdSchema,
+  localDay,
+  PhotoFileSchema,
+  QUIET_CLOSE_DAYS,
+  REPORT,
+  UPDATE_MAX,
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { z } from "zod";
-import type { ViewerState } from "@/server/items";
 
 /**
  * The item page's actions as they travel (FormData, because photos ride along) and the sentences
  * that answer them. Pure, so it's tested without the DOM.
  */
 
-const Id = z.string().min(4).max(12);
+/** What this account has already done with this item, and whether its word moves the status yet. */
+export interface ViewerState {
+  author: boolean;
+  confirmed: boolean;
+  saidStillToday: boolean;
+  saidResolved: boolean;
+  following: boolean;
+  /** When a phone verified less than 72 h ago starts to count (ISO); null when it already does. */
+  countsFrom: string | null;
+}
+
+const Id = ItemIdSchema;
 
 export const ActionInputSchema = z.discriminatedUnion("type", [
   z.object({ id: Id, type: z.literal("confirm") }),
@@ -105,7 +118,7 @@ export function toItemAction(input: ActionInput, photos: string[]): ItemAction {
 }
 
 /** "15 out", on the municipality's calendar. */
-const day = (iso: string) => localStamp(new Date(iso), canoas.timezone).split(" · ")[0] ?? "";
+const day = (iso: string) => localDay(new Date(iso), canoas.timezone);
 
 /** Why an action did nothing, in a sentence that says what to do instead. */
 export function refusalMessage(
@@ -120,13 +133,13 @@ export function refusalMessage(
       return "Você registrou este problema; a confirmação precisa vir de outro vizinho.";
     case "too-new":
       return countsFrom
-        ? `Sua palavra passa a contar em ${day(countsFrom)}, 72 horas depois de você confirmar o celular.`
-        : "Sua palavra passa a contar 72 horas depois de você confirmar o celular.";
+        ? `Sua palavra passa a contar em ${day(countsFrom)}, ${CONFIRMATION_MIN_HOURS} horas depois de você confirmar o celular.`
+        : `Sua palavra passa a contar ${CONFIRMATION_MIN_HOURS} horas depois de você confirmar o celular.`;
     case "already":
       return type === "still"
         ? "Você já disse hoje que continua. Volte amanhã, se continuar."
         : type === "resolved"
-          ? "Você já disse que foi resolvido. Falta mais um vizinho, ou 15 dias sem contestação."
+          ? `Você já disse que foi resolvido. Falta mais um vizinho, ou ${QUIET_CLOSE_DAYS} dias sem contestação.`
           : "Você já confirmou este registro.";
     case "kind":
       return "Essa ação não vale para este tipo de registro.";

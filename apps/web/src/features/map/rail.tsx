@@ -4,9 +4,9 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { useRef, useState } from "react";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { Button } from "@/components/ui/button";
-import { ItemCard } from "./item-card";
+import { ItemCard } from "@/components/item-card";
 import { mapStore, setMapState } from "./map-store";
-import type { PinIntent } from "./pin-intent";
+import type { PinIntent } from "@/lib/pin-intent";
 import { distanceTo } from "./selectors";
 
 interface RailProps {

@@ -18,7 +18,7 @@ export const keysAt = (current: number, versions: Record<number, { seal: string;
   });
 
 /** The store in memory, with the same contract as Postgres. */
-export function memoryStore() {
+function memoryStore() {
   const hits: { key: string; at: Date }[] = [];
   const codes = new Map<string, { codeHash: string; attempts: number; expiresAt: Date }>();
   const links: (Link & { unlinkedAt: Date | null; phoneSealed: string })[] = [];

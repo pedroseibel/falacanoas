@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { distance } from "./format";
 import { haversine, neighborhoodAt } from "./geo";
-import { itemLngLat } from "./logic";
+import { bairroName, itemLngLat } from "./logic";
 import { LngLatSchema, type Item, type LngLat, type Municipality } from "./types";
 
 /**
@@ -35,7 +35,6 @@ export function toSegment(p: LngLat, a: LngLat, b: LngLat): number {
   return haversine(p, [(ax + t * dx) / k, ay + t * dy]);
 }
 
-/** Whether an item falls inside what's followed. */
 export function covers(f: FollowPlace, it: Item): boolean {
   if (f.kind === "neighborhood") return it.neighborhood === f.neighborhood;
   const at = itemLngLat(it);
@@ -43,9 +42,6 @@ export function covers(f: FollowPlace, it: Item): boolean {
   if (f.kind === "home") return haversine(at, f.at) <= f.radius;
   return toSegment(at, f.from, f.to) <= ROUTE_CORRIDOR_M;
 }
-
-const bairroName = (muni: Municipality, slug: string | null) =>
-  muni.neighborhoods.find((n) => n.slug === slug)?.name ?? null;
 
 /** "Casa · raio de 500 m", "Bairro Niterói", "Trajeto Niterói → Centro". */
 export function followLabel(f: FollowPlace, muni: Municipality): { title: string; detail: string } {

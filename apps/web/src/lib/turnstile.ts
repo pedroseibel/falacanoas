@@ -70,7 +70,7 @@ export function useTurnstile(siteKey: string, action: string) {
     (el: HTMLDivElement | null) => {
       if (!el) return;
       let removed = false;
-      ready.current = loadTurnstile().then((api) => {
+      const loaded = loadTurnstile().then((api) => {
         if (removed) return;
         const id = api.render(el, {
           sitekey: siteKey,
@@ -86,6 +86,9 @@ export function useTurnstile(siteKey: string, action: string) {
         });
         widget.current = { api, id };
       });
+      // A blocked script is reported when a token is asked for, not as an unhandled rejection here.
+      loaded.catch(() => undefined);
+      ready.current = loaded;
       return () => {
         removed = true;
         if (widget.current) widget.current.api.remove(widget.current.id);

@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils";
 
 const SLOTS = [0, 1, 2, 3, 4, 5];
 
-/** Six digits from WhatsApp, with the line under it: an error, or a note. */
 export function CodeField({
   id,
   value,

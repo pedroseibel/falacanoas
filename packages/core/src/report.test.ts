@@ -269,6 +269,10 @@ describe("legalDeadline", () => {
     expect(d.overdue).toBeTrue();
     expect(d.daysLeft).toBe(-2);
   });
+  test("overdue from the first hour past the date, not a day later", () => {
+    expect(legalDeadline(at, new Date("2026-10-11T14:02:00Z")).overdue).toBeTrue();
+    expect(legalDeadline(at, new Date("2026-10-11T13:02:00Z")).overdue).toBeFalse();
+  });
 });
 
 describe("confirmationStatus", () => {

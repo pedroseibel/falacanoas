@@ -1,15 +1,17 @@
 import {
-  FloodNotesSchema,
+  DEV_WHATSAPP_APP_TOKEN,
   findDuplicate,
-  REPORT,
+  hasBearer,
+  type ReportFields,
   reportSchema,
-  VisibilitySchema,
   WHATSAPP_AUDIENCE,
   WHATSAPP_CONNECTION,
-  type ReportFields,
+  WhatsappIntakeSchema,
+  type WhatsappRefusal,
+  WhatsappReply,
+  type WhatsappReplyOf,
 } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
-import { z } from "zod";
 import { listItems } from "./items";
 import { memberOf } from "./member";
 import { joinReport, publishReport } from "./report-store";
@@ -23,54 +25,15 @@ import { readAssertion } from "./vault";
  * pre-screen, the photos' moderation and known-material check, the access evidence. Server-only.
  */
 
-/** Development's token when .dev.vars sets none; apps/whatsapp has the same. */
-const DEV_TOKEN = "desenvolvimento-whatsapp-app-00000000000000";
-
-const Point = { lat: z.coerce.number().min(-90).max(90), lng: z.coerce.number().min(-180).max(180) };
-const IntakeSchema = z.discriminatedUnion("acao", [
-  z.object({ acao: z.literal("conta") }),
-  z.object({ acao: z.literal("parecido"), categoria: z.string().max(40), ...Point }),
-  z.object({
-    acao: z.literal("publicar"),
-    categoria: z.string().max(40),
-    texto: z.string().max(REPORT.maxText).default(""),
-    referencia: z.string().max(REPORT.maxReference).default(""),
-    /** The flooding answers, as JSON (form fields are strings). */
-    alagamento: z
-      .string()
-      .default("{}")
-      .transform((s, ctx) => {
-        try {
-          return JSON.parse(s);
-        } catch {
-          ctx.addIssue({ code: "custom", message: "alagamento" });
-          return z.NEVER;
-        }
-      })
-      .pipe(FloodNotesSchema),
-    visibilidade: VisibilitySchema,
-    ...Point,
-  }),
-  z.object({ acao: z.literal("somar"), item: z.string().min(4).max(12), visibilidade: VisibilitySchema }),
-]);
-
 const schema = reportSchema(canoas);
 
 const json = (body: unknown, status = 200) =>
   Response.json(body, { status, headers: { "cache-control": "no-store", "x-content-type-options": "nosniff" } });
 
-function sameText(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
 /** The WhatsApp service's bearer token; without one (32+ characters) production keeps the door shut. */
 function fromService(request: Request): boolean {
-  const token = process.env.WHATSAPP_APP_TOKEN || (import.meta.env.DEV ? DEV_TOKEN : "");
-  const given = request.headers.get("authorization")?.replace(/^Bearer /, "") ?? "";
-  return token.length >= 32 && sameText(given, token);
+  const token = process.env.WHATSAPP_APP_TOKEN || (import.meta.env.DEV ? DEV_WHATSAPP_APP_TOKEN : "");
+  return token.length >= 32 && hasBearer(request.headers.get("authorization"), token);
 }
 
 export async function whatsappIntake(request: Request): Promise<Response> {
@@ -81,19 +44,21 @@ export async function whatsappIntake(request: Request): Promise<Response> {
   const a = typeof token === "string" ? await readAssertion(token, Date.now(), WHATSAPP_AUDIENCE) : null;
   if (!a) return json({ ok: false }, 401);
   const fields = Object.fromEntries([...form].filter((e): e is [string, string] => typeof e[1] === "string"));
-  const input = IntakeSchema.safeParse(fields);
+  const input = WhatsappIntakeSchema.safeParse(fields);
   if (!input.success) return json({ ok: false, error: "Envio inválido." }, 400);
 
+  /** The answer to one action, in the shape the service parses it with. */
+  const reply = <A extends keyof typeof WhatsappReply>(_acao: A, body: WhatsappReplyOf<A>) => json(body);
   const who = await memberOf(a.sub);
-  if ("error" in who) return json(who);
+  if ("error" in who) return json(who satisfies WhatsappRefusal);
   const photos = form.getAll("foto").filter((f) => f instanceof File);
   const v = input.data;
   switch (v.acao) {
     case "conta":
-      return json({ ok: true, nick: who.nick });
+      return reply("conta", { ok: true, nick: who.nick });
     case "parecido": {
       const dup = findDuplicate(await listItems(), v.categoria, [v.lng, v.lat]);
-      return json({
+      return reply("parecido", {
         ok: true,
         duplicate: dup && { id: dup.item.id, meters: dup.meters, title: dup.item.title },
       });
@@ -114,13 +79,17 @@ export async function whatsappIntake(request: Request): Promise<Response> {
         visibility: v.visibilidade,
       };
       const parsed = schema.safeParse(report);
-      if (!parsed.success) return json({ ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." });
+      if (!parsed.success)
+        return reply("publicar", { ok: false, error: parsed.error.issues[0]?.message ?? "Confira o registro." });
       const r = await publishReport(who, parsed.data, WHATSAPP_CONNECTION);
-      return json(r.ok ? { ok: true, id: r.item.id, digest: r.digest, held: r.item.moderation === "pending" } : r);
+      return reply(
+        "publicar",
+        r.ok ? { ok: true, id: r.item.id, digest: r.digest, held: r.item.moderation === "pending" } : r,
+      );
     }
     case "somar": {
       const r = await joinReport(who, { itemId: v.item, visibility: v.visibilidade, photos }, WHATSAPP_CONNECTION);
-      return json(r.ok ? { ok: true, id: r.item.id, confirmation: r.confirmation } : r);
+      return reply("somar", r.ok ? { ok: true, id: r.item.id } : r);
     }
   }
 }

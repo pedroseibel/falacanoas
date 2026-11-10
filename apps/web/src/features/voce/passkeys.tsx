@@ -1,4 +1,4 @@
-import { localStamp } from "@fala/core";
+import { localDay } from "@fala/core";
 import { queryOptions, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
@@ -66,14 +66,14 @@ export function Passkeys({ nick, timezone }: { nick: string | null; timezone: st
               <span className="flex-1">
                 Passkey
                 <small className="block text-xs text-muted-foreground tabular-nums">
-                  criada em {localStamp(new Date(p.createdAt), timezone).split(" · ")[0]}
+                  criada em {localDay(new Date(p.createdAt), timezone)}
                   {p.backedUp && " · sincronizada entre os seus aparelhos"}
                 </small>
               </span>
               <Button
                 variant="ghost"
                 size="icon-sm"
-                aria-label={`Remover a passkey criada em ${localStamp(new Date(p.createdAt), timezone).split(" · ")[0]}`}
+                aria-label={`Remover a passkey criada em ${localDay(new Date(p.createdAt), timezone)}`}
                 disabled={remove.isPending}
                 onClick={() => remove.mutate(p.id)}
               >

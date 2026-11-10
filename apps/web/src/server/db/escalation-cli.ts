@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Client } from "pg";
 import { escalateKnownMatches } from "../known-material";
-import { adminDatabaseUrl, devVar } from "./dev-env";
+import { adminDatabaseUrl, devVar } from "@fala/dev-vars";
 import * as schema from "./schema";
 
 /**

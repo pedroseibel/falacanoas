@@ -1,8 +1,9 @@
 import { MONTHS_PT } from "@fala/core";
 import type { ReactNode } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { AuthFrame, type BackLink } from "@/features/auth/auth-frame";
-import { textLink } from "@/features/landing/bits";
+import { AuthFrame } from "@/components/page-frame";
+import type { AppLink } from "@/components/app-link";
+import { textLink } from "@/components/text-link";
 import type { MonthCounts, Transparency } from "@/server/transparency";
 
 const monthLabel = (m: string) => {
@@ -35,7 +36,7 @@ const COLUMNS: { key: keyof Omit<MonthCounts, "month">; label: string }[] = [
  * /transparencia (DECISIONS round 20; the STF tese on Marco Civil art. 19): what moderation did in the
  * last 12 months, counted live. Only counts, never people or content.
  */
-export function TransparencyPage({ back, data }: { back: BackLink; data: Transparency }) {
+export function TransparencyPage({ back, data }: { back: AppLink; data: Transparency }) {
   const t = data.totals;
   return (
     <AuthFrame back={back} width="read">

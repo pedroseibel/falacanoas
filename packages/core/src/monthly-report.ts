@@ -1,6 +1,5 @@
-import { NO_AGENCY } from "./digest";
 import { calendarDays, localTime, MONTHS_FULL_PT } from "./format";
-import { median, onPlacar } from "./logic";
+import { agencyOf, bairroName, byAgency, categoryLabel, medianIfSampled, onPlacar } from "./logic";
 import type { Municipality } from "./types";
 
 /**
@@ -59,7 +58,6 @@ export interface MonthlyReport {
   totals: MonthlyFigures;
 }
 
-const MIN_SAMPLE = 3;
 const OLDEST = 5;
 const BAIRROS = 8;
 
@@ -91,7 +89,6 @@ export function monthlyReport(
   const target = period.year * 12 + period.month;
   // Noon UTC on the month's last day: the same calendar day in any timezone of the Americas or Europe.
   const lastDay = new Date(Date.UTC(period.year, period.month, 0, 12));
-  const agencyOf = (r: MonthlyRow) => muni.categories.find((c) => c.key === r.category)?.agency ?? NO_AGENCY;
   const counted = (r: MonthlyRow) => onPlacar({ kind: "occurrence", confirmations: r.confirmations, guest: r.guest });
 
   const figures = (group: MonthlyRow[]): MonthlyFigures & { open: { r: MonthlyRow; days: number }[] } => {
@@ -106,7 +103,7 @@ export function monthlyReport(
       protocols: sentNow.filter((r) => r.protocolAt).length,
       resolved: fixed.length,
       resolvedWithinDeadline: days.filter((d) => d <= muni.deadlineDays).length,
-      medianDaysToFix: days.length >= MIN_SAMPLE ? median(days) : null,
+      medianDaysToFix: medianIfSampled(days),
       openAtEnd: open.length,
       overDeadlineAtEnd: open.filter((o) => o.days > muni.deadlineDays).length,
       open,
@@ -115,13 +112,18 @@ export function monthlyReport(
 
   const relevant = rows.filter((r) => ym(r.sentAt) <= target);
   const groups = new Map<string, MonthlyRow[]>();
-  for (const r of relevant) groups.set(agencyOf(r), [...(groups.get(agencyOf(r)) ?? []), r]);
+  for (const r of relevant) {
+    const agency = agencyOf(muni, r.category);
+    const group = groups.get(agency);
+    if (group) group.push(r);
+    else groups.set(agency, [r]);
+  }
   const bodies = [...groups]
     .map(([agency, group]): MonthlyBody => {
       const { open, ...f } = figures(group);
       const bairros = new Map<string, { open: number; overDeadline: number }>();
       for (const o of open) {
-        const name = muni.neighborhoods.find((nb) => nb.slug === o.r.neighborhood)?.name ?? "Bairro não identificado";
+        const name = bairroName(muni, o.r.neighborhood) ?? "Bairro não identificado";
         const x = bairros.get(name) ?? { open: 0, overDeadline: 0 };
         x.open++;
         if (o.days > muni.deadlineDays) x.overDeadline++;
@@ -141,18 +143,15 @@ export function monthlyReport(
           .slice(0, OLDEST)
           .map(({ r, days }) => ({
             id: r.id,
-            category: muni.categories.find((c) => c.key === r.category)?.label ?? r.category,
-            bairro: muni.neighborhoods.find((n) => n.slug === r.neighborhood)?.name ?? null,
+            category: categoryLabel(muni, r.category),
+            bairro: bairroName(muni, r.neighborhood),
             days,
           })),
       };
     })
-    // A body with nothing in the month or open at its end has nothing to say.
     .filter((b) => b.sent || b.resolved || b.openAtEnd)
     // Alphabetical, the unrouted bucket last: an order, not a ranking.
-    .toSorted((a, b) =>
-      a.agency === NO_AGENCY ? 1 : b.agency === NO_AGENCY ? -1 : a.agency.localeCompare(b.agency, "pt-BR"),
-    );
+    .toSorted((a, b) => byAgency(a.agency, b.agency));
   const { open: _open, ...totals } = figures(relevant);
   return {
     month: monthKey(period),

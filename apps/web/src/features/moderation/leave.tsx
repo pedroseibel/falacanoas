@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 import { useState, type ReactNode } from "react";
 
 /** How long a decided case takes to leave: its fade and its row closing (globals.css, .queue-row). */
@@ -12,7 +13,7 @@ export function useLeave() {
   const [leaving, setLeaving] = useState(false);
   const leave = (then: () => void) => {
     setLeaving(true);
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     setTimeout(then, reduced ? LEAVE_REDUCED_MS : LEAVE_MS);
   };
   return { leaving, leave };

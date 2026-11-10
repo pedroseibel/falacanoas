@@ -1,4 +1,4 @@
-import { isOpen, median, type Item, type Municipality, type Thread } from "@fala/core";
+import { isOpen, isOverDeadline, type Item, median, type Municipality, type Thread } from "@fala/core";
 import { MessageSquare } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -11,8 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StatTile, project } from "@/components/viz";
 import { ThreadView } from "@/features/forum/thread-view";
-import { ItemCard } from "@/features/map/item-card";
-import { threadsQuery } from "@/lib/city";
+import { ItemCard } from "@/components/item-card";
+import { threadsQuery } from "@/features/forum/queries";
 import { replyToThread, startThread } from "@/server/forum";
 
 export function BairroPage({
@@ -120,7 +120,7 @@ export function BairroPage({
           <div className="grid grid-cols-4 divide-x divide-hairline border-y border-hairline max-phone:grid-cols-2">
             <StatTile value={open.length} label="abertos" />
             <StatTile
-              value={open.filter((i) => i.days > muni.deadlineDays).length}
+              value={open.filter((i) => isOverDeadline(i, muni.deadlineDays)).length}
               label={`há mais de ${muni.deadlineDays} dias`}
               attention
             />

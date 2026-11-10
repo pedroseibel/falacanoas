@@ -1,3 +1,4 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 import { isOpen, itemLngLat, type Item, type LngLat, type Municipality } from "@fala/core";
 import type { Feature, FeatureCollection, Point } from "geojson";
 import { cssVar, quietBasemap, styleUrl } from "@/features/map/map-engine";
@@ -31,7 +32,7 @@ function openPoints(items: Item[]): FeatureCollection<Point> {
 
 /** A second, small MapLibre for the report flow: the person moves the map under a fixed crosshair. */
 export function mountPicker(ml: MapLibre, host: HTMLElement, opts: PickerOptions): Picker {
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = prefersReducedMotion();
   const map = new ml.Map({
     container: host,
     style: styleUrl(opts.dark),

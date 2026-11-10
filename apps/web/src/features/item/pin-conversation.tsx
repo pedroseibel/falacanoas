@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 import { ThreadView } from "@/features/forum/thread-view";
-import { pinThreadQuery } from "@/lib/city";
+import { pinThreadQuery } from "@/features/item/queries";
 import { replyToThread } from "@/server/forum";
 
 /**

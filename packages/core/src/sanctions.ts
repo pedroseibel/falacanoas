@@ -1,4 +1,6 @@
-import { CONFIRMATION_MIN_HOURS } from "./report";
+import { DAY_MS } from "./format";
+import { CONFIRMATION_MIN_HOURS } from "./identity";
+import { countsFrom } from "./report";
 
 /**
  * Sanctions and posting limits (DECISIONS round 19). A removal weighs against whoever sent the thing
@@ -20,12 +22,6 @@ export const REMOVAL_REASONS: { text: string; weight: RemovalWeight }[] = [
   { text: "Nudez ou conteúdo sexual.", weight: "grave" },
 ];
 
-export const WEIGHT_LABEL: Record<RemovalWeight, string> = {
-  none: "Não conta contra quem enviou",
-  strike: "Conta contra quem enviou",
-  grave: "Grave: silencia na hora",
-};
-
 /** What a reason weighs when a moderator picked it as is; anything typed by hand counts as a strike. */
 export const weightOf = (note: string): RemovalWeight =>
   REMOVAL_REASONS.find((r) => r.text === note.trim())?.weight ?? "strike";
@@ -35,11 +31,9 @@ export const STRIKES_TO_MUTE = 3;
 export const MUTE_DAYS = 30;
 export const SUSPEND_DAYS = 90;
 
-const DAY = 86_400_000;
-
 /** Whether these removals (of one person's posts) mute them: one grave, or three strikes in 30 days. */
 export function dueForMute(removals: { weight: RemovalWeight; at: Date }[], now: Date): boolean {
-  const recent = removals.filter((r) => now.getTime() - r.at.getTime() < STRIKE_WINDOW_DAYS * DAY);
+  const recent = removals.filter((r) => now.getTime() - r.at.getTime() < STRIKE_WINDOW_DAYS * DAY_MS);
   return (
     recent.some((r) => r.weight === "grave") || recent.filter((r) => r.weight !== "none").length >= STRIKES_TO_MUTE
   );
@@ -85,7 +79,7 @@ export const NEW_ACCOUNT_LIMITS: PostingLimits = { pins: 3, photos: 5, updates: 
 export const ACCOUNT_LIMITS: PostingLimits = { pins: 20, photos: 40, updates: 60, reports: 30 };
 
 export function postingLimits(phoneVerifiedAt: Date | null, now: Date): PostingLimits {
-  const settled = phoneVerifiedAt && now.getTime() - phoneVerifiedAt.getTime() >= CONFIRMATION_MIN_HOURS * 3_600_000;
+  const settled = phoneVerifiedAt && now >= countsFrom(phoneVerifiedAt);
   return settled ? ACCOUNT_LIMITS : NEW_ACCOUNT_LIMITS;
 }
 
@@ -109,6 +103,6 @@ export function limitMessage(kind: keyof PostingLimits, limits: PostingLimits): 
   const n = limits[kind];
   const noun = LIMIT_NOUN[kind][n === 1 ? 0 : 1];
   return limits === NEW_ACCOUNT_LIMITS
-    ? `Nos primeiros 3 dias, uma conta nova envia até ${n} ${noun} por dia. Tente de novo amanhã.`
+    ? `Nos primeiros ${CONFIRMATION_MIN_HOURS / 24} dias, uma conta nova envia até ${n} ${noun} por dia. Tente de novo amanhã.`
     : `Você chegou a ${n} ${noun} hoje, o limite diário. Tente de novo amanhã.`;
 }

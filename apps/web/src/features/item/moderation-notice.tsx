@@ -1,3 +1,4 @@
+import { decisionQuery, removalsQuery } from "./queries";
 import type { Item } from "@fala/core";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
@@ -5,7 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { contestDecision, getDecision, getMyRemovals, type Removal } from "@/server/moderation";
+import { contestDecision, type Removal } from "@/server/moderation";
 
 const SENT = "Contestação enviada. Outra pessoa da moderação vai olhar.";
 /** The text stays in the field, so trying again costs nothing. */
@@ -75,16 +76,12 @@ function ContestState({ contest }: { contest: Removal["contest"] }) {
  */
 export function ModerationNotice({ it, trackingKey }: { it: Item; trackingKey: string | null }) {
   const queryClient = useQueryClient();
-  const decision = useQuery({
-    queryKey: ["item", it.id, "decision"],
-    queryFn: () => getDecision({ data: it.id }),
-    enabled: it.moderation === "rejected",
-  });
+  const decision = useQuery({ ...decisionQuery(it.id), enabled: it.moderation === "rejected" });
   const contest = useMutation({
     mutationFn: (text: string) => contestDecision({ data: { itemId: it.id, key: trackingKey, text } }),
     onSuccess: (r) => {
       toast(r.ok ? SENT : r.error);
-      if (r.ok) void queryClient.invalidateQueries({ queryKey: ["item", it.id, "decision"] });
+      if (r.ok) void queryClient.invalidateQueries({ queryKey: decisionQuery(it.id).queryKey });
     },
     onError: () => toast(UNSENT),
   });
@@ -130,14 +127,13 @@ export function ModerationNotice({ it, trackingKey }: { it: Item; trackingKey: s
  */
 export function RemovalNotices({ it }: { it: Item }) {
   const queryClient = useQueryClient();
-  const key = ["item", it.id, "removals"];
-  const removals = useQuery({ queryKey: key, queryFn: () => getMyRemovals({ data: it.id }), staleTime: 30_000 });
+  const removals = useQuery(removalsQuery(it.id));
   const contest = useMutation({
     mutationFn: ({ caseId, text }: { caseId: string; text: string }) =>
       contestDecision({ data: { itemId: it.id, key: null, caseId, text } }),
     onSuccess: (r) => {
       toast(r.ok ? SENT : r.error);
-      if (r.ok) void queryClient.invalidateQueries({ queryKey: key });
+      if (r.ok) void queryClient.invalidateQueries({ queryKey: removalsQuery(it.id).queryKey });
     },
     onError: () => toast(UNSENT),
   });

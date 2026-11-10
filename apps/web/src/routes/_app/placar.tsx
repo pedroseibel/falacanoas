@@ -7,7 +7,7 @@ import { PlacarViewSchema } from "@/features/placar/placar-model";
 import { cityQuery } from "@/lib/city";
 
 export const Route = createFileRoute("/_app/placar")({
-  validateSearch: z.object({ view: PlacarViewSchema.optional() }),
+  validateSearch: z.object({ view: PlacarViewSchema.optional().catch(undefined) }),
   loader: ({ context }) => context.queryClient.ensureQueryData(cityQuery),
   head: () => ({ meta: [{ title: "Placar · Fala, Canoas" }] }),
   component: PlacarRoute,

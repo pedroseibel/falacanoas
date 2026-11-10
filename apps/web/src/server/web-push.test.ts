@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { encryptPayload, fromBase64Url, toBase64Url, vapidAuthorization } from "./web-push";
+import { base64url } from "@fala/core";
+import { encryptPayload, fromBase64Url, vapidAuthorization } from "./web-push";
 
 /** RFC 8291, Appendix A: the worked example. */
 const RFC = {
@@ -12,14 +13,13 @@ const RFC = {
   body: "DGv6ra1nlYgDCS1FRnbzlwAAEABBBP4z9KsN6nGRTbVYI_c7VJSPQTBtkgcy27mlmlMoZIIgDll6e3vCYLocInmYWAmS6TlzAC8wEqKK6PBru3jl7A_yl95bQpu6cVPTpK4Mqgkf1CXztLVBSt2Ks3oZwbuwXPXLWyouBWLVWGNWQexSgSxsj_Qulcy4a-fN",
 };
 
-/** A P-256 private key from its raw scalar and public point, as a JWK. */
 async function importEcdhPrivate(d: string, publicRaw: Uint8Array) {
   const jwk = {
     kty: "EC",
     crv: "P-256",
     d,
-    x: toBase64Url(publicRaw.subarray(1, 33)),
-    y: toBase64Url(publicRaw.subarray(33, 65)),
+    x: base64url(publicRaw.subarray(1, 33)),
+    y: base64url(publicRaw.subarray(33, 65)),
     ext: true,
   };
   return crypto.subtle.importKey("jwk", jwk, { name: "ECDH", namedCurve: "P-256" }, false, ["deriveBits"]);
@@ -36,14 +36,14 @@ describe("encryptPayload", () => {
         sender: { privateKey: await importEcdhPrivate(RFC.asPrivate, asPublic), publicRaw: asPublic },
       },
     );
-    expect(toBase64Url(body)).toBe(RFC.body);
+    expect(base64url(body)).toBe(RFC.body);
   });
 
   test("a fresh salt and sender key every time", async () => {
     const to = { p256dh: RFC.uaPublic, auth: RFC.auth };
     const a = await encryptPayload(new TextEncoder().encode("oi"), to);
     const b = await encryptPayload(new TextEncoder().encode("oi"), to);
-    expect(toBase64Url(a)).not.toBe(toBase64Url(b));
+    expect(base64url(a)).not.toBe(base64url(b));
     // Header: 16-byte salt, record size 4096, a 65-byte key.
     expect(new DataView(a.buffer).getUint32(16)).toBe(4096);
     expect(a[20]).toBe(65);
@@ -55,7 +55,7 @@ test("vapidAuthorization: an ES256 token for the push service's origin, verifiab
   const publicRaw = new Uint8Array(await crypto.subtle.exportKey("raw", pair.publicKey));
   const vapid = {
     privateJwk: JSON.stringify(await crypto.subtle.exportKey("jwk", pair.privateKey)),
-    publicKey: toBase64Url(publicRaw),
+    publicKey: base64url(publicRaw),
     subject: "mailto:contato@falacanoas.com.br",
   };
   const header = await vapidAuthorization("https://fcm.googleapis.com/fcm/send/abc", vapid, 1_800_000_000_000);

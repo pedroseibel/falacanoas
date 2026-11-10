@@ -15,7 +15,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { CalendarDays, CloudRain } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { textLink } from "@/features/landing/bits";
+import { textLink } from "@/components/text-link";
 import { clock, rainNowQuery } from "@/features/map/rain-query";
 
 /**

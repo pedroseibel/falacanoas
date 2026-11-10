@@ -1,4 +1,11 @@
-import { localTime, MONTHS_FULL_PT, type MonthlyFigures, type MonthlyReport, type Municipality } from "@fala/core";
+import {
+  itemUrl,
+  localTime,
+  type MonthlyFigures,
+  type MonthlyReport,
+  MONTHS_FULL_PT,
+  type Municipality,
+} from "@fala/core";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -29,11 +36,10 @@ function facts(f: MonthlyFigures, deadline: number, lastDay: string) {
   ];
 }
 
-export function monthlyTemplateData(
+function monthlyTemplateData(
   r: MonthlyReport,
   { muni, generatedAt, sample = false }: { muni: Municipality; generatedAt: Date; sample?: boolean },
 ) {
-  const site = `https://${muni.branding.domain}`;
   const [year, month] = r.month.split("-").map(Number);
   const last = new Date(Date.UTC(year ?? 0, month ?? 1, 0, 12));
   const lastDay = `${last.getUTCDate()}/${String(month).padStart(2, "0")}`;
@@ -94,7 +100,7 @@ export function monthlyTemplateData(
         category: o.category,
         bairro: o.bairro ?? "—",
         days: plural(o.days, "dia", "dias"),
-        url: `${site}/o/${o.id}`,
+        url: itemUrl(muni, o.id),
       })),
     })),
   };

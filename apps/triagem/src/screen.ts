@@ -17,13 +17,9 @@ export interface Screening {
   ms: number;
 }
 
-/** From this nudity score on, a photo counts as likely nude for the queue (core's LIKELY_NUDE). */
-export const LIKELY_NUDE = 0.45;
-
 /** Images at least this wide or tall are also searched in quarters, for small faces and plates. */
 const TILE_FROM = 1000;
 
-/** A detector over the whole image and, when it's large, over four overlapping quarters too. */
 async function tiled(
   bytes: Uint8Array,
   width: number,
@@ -63,7 +59,7 @@ export async function screen(bytes: Uint8Array): Promise<Screening> {
 }
 
 /** How much a box grows before it's blurred: a blur that just covers a face leaves its edges readable. */
-export const BLUR_PADDING = 1.3;
+const BLUR_PADDING = 1.3;
 
 /**
  * The public copy (round 6, BUILD 2.11): every face and plate blurred, generously, in the same format.

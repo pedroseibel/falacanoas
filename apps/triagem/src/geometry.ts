@@ -40,7 +40,6 @@ export function letterbox(width: number, height: number, size: number) {
   return { ratio, w, h, padX: (size - w) / 2, padY: (size - h) / 2 };
 }
 
-/** A box from letterboxed model space back to the original image. */
 export const unletterbox = (b: Box, l: { ratio: number; padX: number; padY: number }): Box => ({
   x1: (b.x1 - l.padX) / l.ratio,
   y1: (b.y1 - l.padY) / l.ratio,
@@ -92,7 +91,6 @@ export function tiles(width: number, height: number, overlap = 0.2) {
   ];
 }
 
-/** A box found in a tile, moved back to the whole image. */
 export const shift = <T extends Box>(b: T, left: number, top: number): T => ({
   ...b,
   x1: b.x1 + left,

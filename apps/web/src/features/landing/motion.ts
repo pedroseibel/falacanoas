@@ -1,16 +1,16 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
 /**
  * Scroll motion for the landing page as React 19 ref callbacks (set up on attach, torn down by the
  * returned cleanup). No effects: each element owns its observer. Server HTML is always the final
  * state, so nothing hides without JavaScript or with reduced motion.
  */
 
-const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const fmt = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 const noop = () => {};
 
 /** Rises into place when scrolled to. Only elements below the first screen start lowered. */
 export function reveal(el: HTMLElement | null) {
-  if (!el || reduced() || el.getBoundingClientRect().top <= innerHeight * 0.92) return;
+  if (!el || prefersReducedMotion() || el.getBoundingClientRect().top <= innerHeight * 0.92) return;
   el.dataset.pre = "";
   const io = new IntersectionObserver(
     (entries) => {
@@ -24,9 +24,8 @@ export function reveal(el: HTMLElement | null) {
   return () => io.disconnect();
 }
 
-/** Counts a number up from zero, pt-BR formatted, with an exponential ease-out. */
-export function roll(el: HTMLElement, to: number, duration: number) {
-  if (reduced() || !duration) {
+function roll(el: HTMLElement, to: number, duration: number) {
+  if (prefersReducedMotion() || !duration) {
     el.textContent = fmt(to);
     return noop;
   }
@@ -45,9 +44,8 @@ export function roll(el: HTMLElement, to: number, duration: number) {
   };
 }
 
-/** Rolls up when at least 60% visible. */
 export const countUpOnView = (to: number) => (el: HTMLElement | null) => {
-  if (!el || reduced()) return;
+  if (!el || prefersReducedMotion()) return;
   el.textContent = "0";
   let stop = noop;
   const io = new IntersectionObserver(

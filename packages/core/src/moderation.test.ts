@@ -25,6 +25,7 @@ describe("prescreen", () => {
   test("phone numbers, but not protocols or years", () => {
     expect(prescreen("liguem para (51) 99123-4567", off)).toContain("phone");
     expect(prescreen("fone 3477 1234", off)).toContain("phone");
+    expect(prescreen("ligue 51999998888", off)).toContain("phone");
     expect(prescreen("Protocolo 2026/018734, aberto em 2026", off)).not.toContain("phone");
     expect(prescreen("Faz 43 dias", off)).toEqual([]);
   });
@@ -58,11 +59,11 @@ describe("what holds publication", () => {
   });
 
   test("Canoas's 2026 campaign, inclusive of both ends", () => {
-    const muni = { electionPeriods: [{ from: "2026-08-16", to: "2026-10-25" }] };
+    const muni = { timezone: "America/Sao_Paulo", electionPeriods: [{ from: "2026-08-16", to: "2026-10-25" }] };
     expect(inElection(muni, new Date("2026-08-16T00:30:00-03:00"))).toBeTrue();
     expect(inElection(muni, new Date("2026-10-25T23:00:00-03:00"))).toBeTrue();
     expect(inElection(muni, new Date("2026-10-26T00:30:00-03:00"))).toBeFalse();
-    expect(inElection({}, new Date())).toBeFalse();
+    expect(inElection({ timezone: "America/Sao_Paulo" }, new Date())).toBeFalse();
   });
 });
 

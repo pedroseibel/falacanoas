@@ -1,5 +1,4 @@
 import type { Item, ReportFields } from "@fala/core";
-import { createStore } from "@tanstack/react-store";
 import { toast } from "sonner";
 import { createReport, type ReportResult } from "@/server/report";
 import {
@@ -58,9 +57,6 @@ async function allDrafts(): Promise<Draft[]> {
     return d.success ? [d.data] : [];
   });
 }
-
-/** How many are waiting, for anything that wants to show it. */
-export const outboxStore = createStore<{ drafts: Draft[] }>({ drafts: [] });
 
 const asFile = (b: Blob, i: number) => (b instanceof File ? b : new File([b], `foto-${i + 1}.webp`, { type: b.type }));
 
@@ -126,7 +122,6 @@ function schedule(drafts: Draft[]) {
 
 async function refresh(): Promise<void> {
   const drafts = await allDrafts().catch((): Draft[] => []);
-  outboxStore.setState(() => ({ drafts }));
   show(drafts);
   schedule(drafts);
 }
@@ -182,7 +177,6 @@ async function discard(d: Draft) {
   await refresh();
 }
 
-/** Starts the outbox for a signed-in member; the returned function stops it. */
 export function startOutbox(callbacks: { onSent(item: Item): void; onView(id: string): void }): () => void {
   if (typeof indexedDB === "undefined") return () => undefined;
   hooks = callbacks;

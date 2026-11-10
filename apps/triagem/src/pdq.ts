@@ -196,7 +196,6 @@ const DIHEDRAL: ((a: Float64Array[]) => Float64Array[])[] = [
   (a) => transpose(a, (i) => ((i & 1) !== 0 ? 1 : -1)), // rotate 270
 ];
 
-/** B[j][i] = sign(i, j) · A[i][j]. */
 function transpose(a: Float64Array[], sign: (i: number, j: number) => number): Float64Array[] {
   return Array.from({ length: 16 }, (_row, j) =>
     Float64Array.from({ length: 16 }, (_col, i) => sign(i, j) * (a[i]?.[j] ?? 0)),
@@ -238,7 +237,6 @@ export async function pdq(bytes: Uint8Array): Promise<{ hash: PdqHash; orientati
   };
 }
 
-/** Set bits in each byte value. */
 const POPCOUNT = Uint8Array.from({ length: 256 }, (_, v) => {
   let n = 0;
   for (let b = 0; b < 8; b++) n += (v >> b) & 1;

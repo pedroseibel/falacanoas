@@ -1,6 +1,6 @@
-import { localStamp } from "./format";
-import { isOpen } from "./logic";
-import type { CommunityStatus, Item, ItemEvent, ItemEventKind } from "./types";
+import { DAY_MS, localStamp } from "./format";
+import { AFTER_CONFIRMATION, isOpen } from "./logic";
+import type { Item, ItemEvent, ItemEventKind } from "./types";
 
 /**
  * What neighbours can do with an item (DECISIONS rounds 4 and 15): structured actions instead of
@@ -46,7 +46,6 @@ export type ActionOutcome =
       event: ItemEvent;
       /** The pin went back to open: a new round of resolution votes starts. */
       reopened: boolean;
-      /** Photos this action added, in order. */
       photos: string[];
     }
   | { ok: false; reason: ActionRefusal };
@@ -57,13 +56,9 @@ export const RESOLVED_VOTES_TO_CLOSE = 2;
 export const QUIET_CLOSE_DAYS = 15;
 export const UPDATE_MAX = 280;
 
-const AFTER_CONFIRMATION: Record<CommunityStatus, CommunityStatus> = {
-  reported: "confirmed",
-  confirmed: "confirmed",
-  ongoing: "ongoing",
-  apparently_resolved: "ongoing",
-  resolved: "resolved",
-};
+export const resolvedCloses = (author: boolean, votes: number) => author || votes >= RESOLVED_VOTES_TO_CLOSE;
+export const quietCloseDue = (resolvingSince: string | Date) =>
+  new Date(new Date(resolvingSince).getTime() + QUIET_CLOSE_DAYS * DAY_MS);
 
 const refuse = (reason: ActionRefusal): ActionOutcome => ({ ok: false, reason });
 
@@ -148,7 +143,7 @@ export function applyAction(it: Item, action: ItemAction, ctx: ActionContext): A
       if (ctx.already) return refuse("already");
       if (!ctx.author && !ctx.independent) return refuse("too-new");
       const votes = (it.resolvedVotes ?? 0) + (ctx.author ? 0 : 1);
-      const closes = ctx.author || votes >= RESOLVED_VOTES_TO_CLOSE;
+      const closes = resolvedCloses(ctx.author, votes);
       const photo = action.photos.length > 0;
       const since = it.resolvingSince ?? ctx.now.toISOString();
       const said = photo ? "Confirmou o conserto, com foto do depois." : "Confirmou o conserto.";
@@ -184,7 +179,7 @@ export function quietClose(
   by: string,
 ): Extract<ActionOutcome, { ok: true }> | null {
   if (it.community !== "apparently_resolved" || !it.resolvingSince) return null;
-  const due = new Date(new Date(it.resolvingSince).getTime() + QUIET_CLOSE_DAYS * 864e5);
+  const due = quietCloseDue(it.resolvingSince);
   if (due > now) return null;
   const e: ItemEvent = {
     at: localStamp(due, timezone),

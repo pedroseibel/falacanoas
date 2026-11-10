@@ -2,21 +2,22 @@ import {
   accountReply,
   afterCheck,
   cancelsReport,
-  judgeConfirmation,
-  readIntent,
-  REPORT_SESSION_MS,
-  replyFor,
-  reportDoneReply,
-  reportTurn,
-  startsReport,
-  whatsappVariants,
   type Intent,
+  judgeConfirmation,
   type Municipality,
   type Outcome,
+  readIntent,
+  replyFor,
+  REPORT_SESSION_MS,
+  reportDoneReply,
   type ReportDraft,
   type ReportSession,
+  reportTurn,
+  startsReport,
+  type Visibility,
   type WaMessage,
   type WhatsappSignup,
+  whatsappVariants,
 } from "@fala/core";
 
 /**
@@ -44,7 +45,6 @@ export interface Sender {
 /** A message as the provider delivered it. `from`: the sender's WhatsApp id, digits with the country code. */
 export type Inbound = { from: string } & WaMessage;
 
-export type Visibility = "pseudonymous" | "anonymous";
 export type AccountCheck =
   { ok: true; nick: string } | { ok: false; reason: "unlinked" | "nick" | "unavailable" | { refused: string } };
 export type ReportResult = Parameters<typeof reportDoneReply>[0];
@@ -73,7 +73,6 @@ const ACCOUNT_REPLY_MS = 10 * 60_000;
 
 interface Draft {
   session: ReportSession;
-  /** The photos already read, by media id, for publishing. */
   photos: Map<string, Uint8Array>;
 }
 
@@ -123,7 +122,6 @@ export function conversation(deps: {
       },
     );
 
-  /** A message inside a report, or one that starts it. Returns the reply. */
   async function reportMessage(
     msg: Inbound,
     live: Draft | null,
@@ -175,7 +173,6 @@ export function conversation(deps: {
       reply = reportDoneReply(done, muni);
     }
     if (turn.session) {
-      // Photos the draft didn't take (past the limit) aren't kept.
       for (const id of photos.keys()) if (!turn.session.draft.photos.includes(id)) photos.delete(id);
       drafts.set(msg.from, { session: turn.session, photos });
     } else drafts.delete(msg.from);

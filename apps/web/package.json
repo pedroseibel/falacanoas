@@ -38,7 +38,6 @@
     "@tanstack/react-store": "^0.11.2",
     "@tanstack/react-table": "^9.3.1",
     "@tanstack/react-virtual": "^3.14.17",
-    "@tanstack/zod-adapter": "^1.167.0",
     "better-auth": "1.7.7",
     "class-variance-authority": "^0.7.1",
     "cmdk": "^1.1.1",
@@ -56,6 +55,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@fala/dev-vars": "workspace:*",
     "@cloudflare/vite-plugin": "^1.63.1",
     "@tailwindcss/vite": "^4.3.3",
     "@types/geojson": "^7946.0.16",

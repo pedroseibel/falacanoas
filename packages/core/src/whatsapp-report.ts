@@ -1,5 +1,6 @@
 import { FLOOD_CAUSES, FLOOD_DURATIONS, asksFlooding, floodLines, type FloodNotes } from "./flooding";
 import { neighborhoodAt } from "./geo";
+import { bairroName, categoryLabel, itemUrl, siteUrl } from "./logic";
 import { REPORT } from "./report";
 import type { LngLat, Municipality } from "./types";
 
@@ -51,7 +52,6 @@ export interface ReportSession {
 
 export const REPORT_SESSION_MS = 30 * 60_000;
 
-/** What the service does after a turn: reply, ask the app for a duplicate, publish, or add to one. */
 export type ReportNeed =
   | { kind: "check" }
   | { kind: "publish"; visibility: "pseudonymous" | "anonymous" }
@@ -115,7 +115,6 @@ const ASK_CAUSE = `O que você viu? Responda com o número:\n${numbered(FLOOD_CA
 const ASK_RAIN = "Está chovendo agora? Responda SIM ou NÃO, ou PULAR.";
 const ASK_TIME = `Quanto tempo a água ficou? Responda com o número:\n${numbered(FLOOD_DURATIONS)}\n\nOu PULAR.`;
 
-/** The option a numbered answer picks, if any. */
 const pick = <T>(options: T[], msg: WaMessage): T | undefined => {
   const n = msg.kind === "text" ? Number(norm(msg.text)) : Number.NaN;
   return Number.isInteger(n) ? options[n - 1] : undefined;
@@ -123,10 +122,8 @@ const pick = <T>(options: T[], msg: WaMessage): T | undefined => {
 
 /** The draft, read back before publishing. */
 export function summary(draft: ReportDraft, muni: Municipality): string {
-  const category = muni.categories.find((c) => c.key === draft.category)?.label ?? "—";
-  const bairro = draft.location
-    ? muni.neighborhoods.find((n) => n.slug === neighborhoodAt(draft.location ?? [0, 0], muni.geo.neighborhoods))?.name
-    : null;
+  const category = draft.category ? categoryLabel(muni, draft.category) : "—";
+  const bairro = draft.location ? bairroName(muni, neighborhoodAt(draft.location, muni.geo.neighborhoods)) : null;
   const water = floodLines(draft.flooding)
     .map((l) => `${l.term.toLowerCase()}: ${l.value}`)
     .join("; ");
@@ -313,7 +310,7 @@ export function afterCheck(
       draft: { ...s.draft, duplicate: { id: duplicate.id, meters: duplicate.meters } },
     }),
     reply: [
-      `Já existe algo parecido a ${Math.round(duplicate.meters)} m: “${duplicate.title}”, https://${muni.branding.domain}/o/${duplicate.id}`,
+      `Já existe algo parecido a ${Math.round(duplicate.meters)} m: “${duplicate.title}”, ${itemUrl(muni, duplicate.id)}`,
       "Responda 1 para somar a sua foto a ele (e confirmar que continua), ou 2 se é outro problema.",
     ].join("\n\n"),
   };
@@ -324,7 +321,7 @@ export function accountReply(
   reason: "unlinked" | "nick" | "unavailable" | { refused: string },
   muni: Municipality,
 ): string {
-  const site = `https://${muni.branding.domain}`;
+  const site = siteUrl(muni);
   if (reason === "unlinked")
     return `Para registrar por aqui, este número precisa de uma conta no ${muni.branding.name}. Entre uma vez em ${site}/entrar com este celular e escolha um apelido. Depois, mande REGISTRAR.`;
   if (reason === "nick")
@@ -342,7 +339,7 @@ export function reportDoneReply(
     | { kind: "refused"; error: string },
   muni: Municipality,
 ): string {
-  const link = (id: string) => `https://${muni.branding.domain}/o/${id}`;
+  const link = (id: string) => itemUrl(muni, id);
   switch (result.kind) {
     case "published":
       return result.held

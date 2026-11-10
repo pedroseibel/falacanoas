@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { base64url, fromBase64url } from "./encoding";
 
 /**
  * What the identity vault tells the app after a phone code checks out (DECISIONS round 18, Q29):
@@ -33,21 +34,6 @@ export const VaultAssertionSchema = z.object({
 export type VaultAssertion = z.infer<typeof VaultAssertionSchema>;
 
 const ED25519 = { name: "Ed25519" };
-
-const base64url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-
-function fromBase64url(s: string): Uint8Array<ArrayBuffer> | null {
-  try {
-    const bin = atob(s.replaceAll("-", "+").replaceAll("_", "/"));
-    return Uint8Array.from(bin, (c) => c.charCodeAt(0));
-  } catch {
-    return null;
-  }
-}
 
 const KeySchema = z.object({
   kty: z.literal("OKP"),

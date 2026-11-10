@@ -1,23 +1,28 @@
 import {
-  plural,
   asksFlooding,
-  freshFlood,
-  itemLngLat,
   awaitingDigest,
   communityLine,
-  dateAgo,
-  deriveEvents,
-  isOpen,
-  legalDeadline,
-  localStamp,
-  relativeTime,
-  UPDATE_MAX,
   type CommunityStatus,
+  dateAgo,
+  daysLabel,
+  deriveEvents,
+  freshFlood,
+  isOpen,
+  isOverDeadline,
   type Item,
   type ItemEventKind,
+  itemLngLat,
+  itemPath,
+  legalDeadline,
+  localDay,
+  localStampInText,
   type Municipality,
   type OfficialStatus,
+  plural,
+  relativeTime,
+  UPDATE_MAX,
   type Viewer,
+  whereOf,
 } from "@fala/core";
 import {
   BadgeCheck,
@@ -40,13 +45,12 @@ import { CategoryLine } from "@/components/category";
 import { Icon, categoryIcon } from "@/components/Icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { textLink } from "@/features/landing/bits";
+import { textLink } from "@/components/text-link";
 import { Input } from "@/components/ui/input";
 import { DaysMeter } from "@/components/viz";
 import { cn } from "@/lib/utils";
 import { FloodNotesSection } from "./flood-notes";
 import { PhotoViewer } from "./photo-viewer";
-import { whereOf } from "@/features/map/item-card";
 import { openContentReport } from "@/features/moderation/content-report-store";
 import { ItemActions, usePhotoInput } from "./item-actions";
 import { ModerationNotice, RemovalNotices } from "./moderation-notice";
@@ -83,7 +87,6 @@ const COMMUNITY_LABEL: Record<CommunityStatus, string> = {
   resolved: "Resolvido",
 };
 
-const day = (d: Date, timezone: string) => localStamp(d, timezone).split(" · ")[0];
 /** "hoje", "há 1 dia", "há 5 dias". */
 const ago = (days: number) => (days === 0 ? "hoje" : `há ${days} ${plural(days, "dia", "dias")}`);
 /** "1 vizinho diz que continua", "3 vizinhos dizem que continua". */
@@ -107,10 +110,12 @@ function LegalDeadline({
   const at = new Date(protocol.at);
   const { due, daysLeft, overdue } = legalDeadline(at, now);
   const status = overdue
-    ? `vencido há ${-daysLeft} ${-daysLeft === 1 ? "dia" : "dias"}`
+    ? daysLeft === 0
+      ? "vencido há menos de um dia"
+      : `vencido há ${-daysLeft} ${daysLabel(-daysLeft)}`
     : daysLeft === 0
       ? "vence hoje"
-      : `faltam ${daysLeft} ${daysLeft === 1 ? "dia" : "dias"}`;
+      : `faltam ${daysLeft} ${daysLabel(daysLeft)}`;
   return (
     <div className="grid gap-1 border-t border-hairline pt-2.5 text-xs">
       <p className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
@@ -122,8 +127,9 @@ function LegalDeadline({
         </span>
       </p>
       <p className="text-muted-foreground">
-        Protocolo <span className="text-ink-2 tabular-nums">{protocol.number}</span>, recebido em {day(at, timezone)}.
-        Até {day(due, timezone)}, prorrogável uma vez por mais 30 dias (Lei 13.460, art. 16).
+        Protocolo <span className="text-ink-2 tabular-nums">{protocol.number}</span>, recebido em{" "}
+        {localDay(at, timezone)}. Até {localDay(due, timezone)}, prorrogável uma vez por mais 30 dias (Lei 13.460, art.
+        16).
       </p>
     </div>
   );
@@ -178,9 +184,9 @@ export function ItemDetail({
   const write = () => (member ? document.getElementById("composer")?.focus() : onSignIn());
   const open = isOpen(it);
   const issue = it.kind === "public_issue";
-  const over = open && it.days > muni.deadlineDays;
+  const over = isOverDeadline(it, muni.deadlineDays);
   const disagreement = it.official?.status === "resolved" && it.community === "ongoing";
-  const events = historyPending ? [] : deriveEvents(it, (d) => dateAgo(now, d));
+  const events = historyPending ? [] : deriveEvents(it, (d) => dateAgo(now, d, muni.timezone));
   const unit = issue ? "dias em acompanhamento" : open ? "dias em aberto" : "dias até o conserto";
 
   return (
@@ -240,7 +246,7 @@ export function ItemDetail({
             <b className="font-medium text-ink-2">
               {it.visibility === "anonymous" ? "Anônimo" : (it.author ?? viewer.nick)}
             </b>{" "}
-            · {it.createdAt ? day(new Date(it.createdAt), muni.timezone) : dateAgo(now, it.days)}
+            · {it.createdAt ? localDay(new Date(it.createdAt), muni.timezone) : dateAgo(now, it.days, muni.timezone)}
           </p>
           {(it.address || it.reference) && (
             <p className="mt-2 flex min-w-0 gap-1.5 text-sm text-ink-2">
@@ -276,8 +282,8 @@ export function ItemDetail({
                 ? `Ainda não foi enviado. Entra no resumo diário das ${muni.digestHour}h depois que a moderação olhar as fotos, e o relógio começa no envio.`
                 : `Ainda não foi enviado. Entra no próximo resumo diário, às ${muni.digestHour}h, e o relógio começa no envio.`
               : open
-                ? `Enviado à Prefeitura em ${it.sentAt ? localStamp(new Date(it.sentAt), muni.timezone).replace(" · ", ", às ") : `${dateAgo(now, it.days)}, às ${muni.digestHour}:00`}. O relógio conta desde então.`
-                : `Fechado pelos vizinhos em ${it.closedAt ? day(new Date(it.closedAt), muni.timezone) : dateAgo(now, 0)}.`}
+                ? `Enviado à Prefeitura em ${it.sentAt ? localStampInText(new Date(it.sentAt), muni.timezone) : `${dateAgo(now, it.days, muni.timezone)}, às ${muni.digestHour}:00`}.`
+                : `Fechado pelos vizinhos em ${it.closedAt ? localDay(new Date(it.closedAt), muni.timezone) : dateAgo(now, 0, muni.timezone)}.`}
           </p>
           {open && it.protocol && (
             <LegalDeadline protocol={it.protocol} now={now} timezone={muni.timezone} demo={Boolean(it.demo)} />
@@ -453,7 +459,7 @@ export function ItemDetail({
           )}
           Você aparece nele, ou ele mostra um dado seu?{" "}
           <a
-            href={`/privacidade/pedido?quem=in_content&registro=${it.id}&volta=${encodeURIComponent(`/o/${it.id}`)}`}
+            href={`/privacidade/pedido?quem=in_content&registro=${it.id}&volta=${encodeURIComponent(itemPath(it.id))}`}
             className={textLink}
           >
             Peça para ocultar

@@ -1,3 +1,4 @@
+import { WEB_DEV_VARS } from "@fala/dev-vars";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 
 /**
@@ -5,7 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from "node:fs";
  * the gitignored .dev.vars. An existing pair is kept; nothing secret is printed. Production makes one
  * the same way and stores it as Worker secrets (wrangler secret put VAPID_PRIVATE_KEY, VAPID_PUBLIC_KEY).
  */
-const VARS = `${import.meta.dir}/../.dev.vars`;
+const VARS = WEB_DEV_VARS;
 let vars = existsSync(VARS) ? readFileSync(VARS, "utf8") : "";
 const has = (name: string) => new RegExp(`^${name}=`, "m").test(vars);
 

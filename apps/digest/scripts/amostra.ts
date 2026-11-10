@@ -61,8 +61,6 @@ const day = picked.map((it, i): DigestItem => ({
     ? it.photos
     : Array.from({ length: lend[i % lend.length] ?? 0 }, (_, k) => ({
         src: `${PLACEHOLDER}${it.id}-${k + 1}`,
-        takenAt: "",
-        by: "",
       })),
 }));
 

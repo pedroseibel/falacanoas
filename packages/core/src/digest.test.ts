@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { NO_AGENCY, buildDigest, digestDocument, digestible, type DigestItem } from "./digest";
+import { buildDigest, digestDocument, type DigestItem } from "./digest";
+import { NO_AGENCY } from "./logic";
 import type { Municipality } from "./types";
 
 const muni: Municipality = {
@@ -38,22 +39,13 @@ const muni: Municipality = {
 
 const item = (id: string, over: Partial<DigestItem> = {}): DigestItem => ({
   id,
-  kind: "occurrence",
   category: "buraco",
   title: "Buraco fundo na faixa da direita",
   text: "Buraco fundo na faixa da direita. Carros desviam pela contramão.",
   neighborhood: "centro",
   scope: { type: "point", lng: -51.15123, lat: -29.95678 },
-  days: 0,
-  updatedMinutesAgo: 0,
   confirmations: 0,
-  followers: 0,
-  updates: 0,
-  photos: [{ src: "/api/fotos/abc.webp", takenAt: "", by: "vizinha" }],
-  visibility: "pseudonymous",
-  author: "vizinha-secreta",
-  community: "reported",
-  official: null,
+  photos: [{ src: "/api/fotos/abc.webp" }],
   createdAt: "2026-10-12T17:20:00Z",
   ...over,
 });
@@ -91,8 +83,7 @@ describe("buildDigest", () => {
     expect(d.text).toContain("https://fala.example/o/AAAAA");
   });
 
-  test("never who reported", () => {
-    expect(d.text).not.toContain("vizinha-secreta");
+  test("says that whoever reported isn't identified (DigestItem carries no author to print)", () => {
     expect(d.text).toContain("Quem registrou não é identificado neste resumo.");
   });
 });
@@ -189,12 +180,4 @@ describe("the e-mail text", () => {
     expect(buildDigest(items, muni, sentAt, { attachment: true }).text).toContain("Em anexo, o mesmo resumo em PDF");
     expect(buildDigest(items, muni, sentAt).text).not.toContain("Em anexo");
   });
-});
-
-test("digestible: published, real occurrences not sent yet", () => {
-  expect(digestible(item("A"))).toBeTrue();
-  expect(digestible({ ...item("A"), sentAt: "2026-10-11T21:00:00Z" })).toBeFalse();
-  expect(digestible(item("A", { demo: true }))).toBeFalse();
-  expect(digestible(item("A", { moderation: "pending" }))).toBeFalse();
-  expect(digestible(item("A", { kind: "public_issue" }))).toBeFalse();
 });

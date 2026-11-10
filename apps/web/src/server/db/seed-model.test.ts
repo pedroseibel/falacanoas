@@ -51,7 +51,6 @@ describe("parseStamp", () => {
     expect(parseStamp("ontem · 19:30", now, tz)?.toISOString()).toBe("2026-10-11T22:30:00.000Z");
     expect(parseStamp("30 ago · 17:42", now, tz)?.toISOString()).toBe("2026-08-30T20:42:00.000Z");
     expect(parseStamp("30 ago", now, tz)?.toISOString()).toBe("2026-08-30T15:00:00.000Z");
-    // Later in the year than now: last year.
     expect(parseStamp("3 dez · 10:00", now, tz)?.getUTCFullYear()).toBe(2025);
     expect(parseStamp("semana passada", now, tz)).toBeNull();
   });

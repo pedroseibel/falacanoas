@@ -15,7 +15,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useMemo } from "react";
-import { textLink } from "@/features/landing/bits";
+import { textLink } from "@/components/text-link";
 import { cn } from "@/lib/utils";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -264,7 +264,7 @@ export function PlacarPage({
               geo={muni.geo.neighborhoods}
               values={choro}
               unit={`abertos há +${deadline} dias`}
-              label="Bairros de Canoas: mais escuro, mais registros abertos há mais de 30 dias. A tabela Por bairro tem os mesmos números."
+              label={`Bairros de Canoas: mais escuro, mais registros abertos há mais de ${muni.deadlineDays} dias. A tabela Por bairro tem os mesmos números.`}
               onPick={onBairro}
             />
           </section>

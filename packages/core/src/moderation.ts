@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DAY_MS, zonedDate } from "./format";
 import type { Municipality, Visibility } from "./types";
 
 /**
@@ -35,7 +36,7 @@ export function isValidCpf(value: string): boolean {
 
 const CPF = /\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g;
 /** A Brazilian phone: optional DDD, then 8 or 9 digits in a phone's grouping. Protocols (with "/") don't match. */
-const PHONE = /(?<![\d/])(?:\(?\d{2}\)?[\s.-]?)?9?\d{4}[\s.-]?\d{4}(?![\d/])/g;
+const PHONE = /(?<![\d/])(?:\(?\d{2}\)?[\s.-]?)?9?\d{4}[\s.-]?\d{4}(?![\d/])/;
 /** Strong insults only; civic anger ("descaso", "absurdo") is not an insult. */
 const INSULTS = [
   "idiota",
@@ -55,7 +56,6 @@ const INSULTS = [
   "puta",
   "viado",
 ];
-/** Whether these words carry one of the strong insults (accents and case ignored). */
 export function hasInsult(text: string): boolean {
   const p = ` ${plain(text).replace(/[^a-z0-9]+/g, " ")} `;
   return INSULTS.some((w) => p.includes(` ${w} `));
@@ -80,10 +80,18 @@ const PLATE = /\b[a-z]{3}-?\d[a-z0-9]\d{2}\b/i;
 
 const ELECTORAL = /\b(?:vote|votem|votar em|vote em|eleja|elejam|candidat[oa]s?|numero \d{2,5}|reeleicao|reeleger)\b/;
 
-/** Inside one of the instance's campaign periods (round 18, Q31: 2026 included). */
-export function inElection(muni: Pick<Municipality, "electionPeriods">, now: Date): boolean {
+const dayOf = (date: string) => {
+  const [year = 0, month = 1, day = 1] = date.split("-").map(Number);
+  return { year, month, day, hour: 0, minute: 0 };
+};
+
+/** Inside one of the instance's campaign periods (round 18, Q31: 2026 included), on its own clock. */
+export function inElection(muni: Pick<Municipality, "electionPeriods" | "timezone">, now: Date): boolean {
   return (muni.electionPeriods ?? []).some(
-    (p) => now >= new Date(`${p.from}T00:00:00-03:00`) && now <= new Date(`${p.to}T23:59:59-03:00`),
+    (p) =>
+      now >= zonedDate(dayOf(p.from), muni.timezone) &&
+      // The last day whole: up to the midnight that ends it.
+      now.getTime() < zonedDate(dayOf(p.to), muni.timezone).getTime() + DAY_MS,
   );
 }
 
@@ -91,8 +99,9 @@ export function inElection(muni: Pick<Municipality, "electionPeriods">, now: Dat
 export function prescreen(text: string, opts: { electoral: boolean }): ModerationFlag[] {
   const flags = new Set<ModerationFlag>();
   if ([...text.matchAll(CPF)].some((m) => isValidCpf(m[0]))) flags.add("cpf");
-  const withoutCpf = text.replace(CPF, " ");
-  if ([...withoutCpf.matchAll(PHONE)].some((m) => m[0].replace(/\D/g, "").length >= 8)) flags.add("phone");
+  // Only a real CPF is set aside: eleven digits that fail its check digits are a phone ("51999998888").
+  const withoutCpf = text.replace(CPF, (m) => (isValidCpf(m) ? " " : m));
+  if (PHONE.test(withoutCpf)) flags.add("phone");
   const p = ` ${plain(text).replace(/[^a-z0-9]+/g, " ")} `;
   if (hasInsult(text)) flags.add("insult");
   if (NAME.test(text)) flags.add("name");
@@ -117,7 +126,6 @@ export function holdsPublication(flags: ModerationFlag[], visibility: Visibility
  */
 export const refusedInUpdates = (flags: ModerationFlag[]) => flags.filter((f) => f !== "electoral");
 
-/** The sentence that asks someone to take the flagged part out. */
 export function refusalFor(flags: ModerationFlag[]): string {
   if (flags.includes("cpf") || flags.includes("phone"))
     return "Tire o CPF ou o telefone do texto: dados pessoais não aparecem no Fala.";

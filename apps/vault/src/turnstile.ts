@@ -22,7 +22,7 @@ export function turnstile(
   development: boolean,
   action = SEND_CODE_ACTION,
 ): Human {
-  const secret = env.TURNSTILE_SECRET_KEY ?? (development ? TEST_SECRET : "");
+  const secret = env.TURNSTILE_SECRET_KEY || (development ? TEST_SECRET : "");
   return async (token, ip) => {
     if (!secret) return false;
     const form = new FormData();

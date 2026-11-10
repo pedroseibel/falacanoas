@@ -1,4 +1,14 @@
-import { daysLabel, isOpen, SHARE_CARD_SIZE, type Item, type Municipality } from "@fala/core";
+import {
+  bairroName,
+  categoryLabel,
+  daysLabel,
+  isOpen,
+  type Item,
+  itemUrl,
+  type Municipality,
+  SHARE_CARD_SIZE,
+  siteUrl,
+} from "@fala/core";
 
 /**
  * What a shared link shows (DECISIONS rounds 11 and 15): Open Graph and Twitter tags pointing at the
@@ -7,8 +17,6 @@ import { daysLabel, isOpen, SHARE_CARD_SIZE, type Item, type Municipality } from
  */
 
 type Meta = { title: string } | { name: string; content: string } | { property: string; content: string };
-
-const site = (muni: Municipality) => `https://${muni.branding.domain}`;
 
 function common(muni: Municipality, url: string, image: string, alt: string): Meta[] {
   return [
@@ -29,10 +37,10 @@ export const clockText = (it: Item) =>
   isOpen(it) ? `${it.days} ${daysLabel(it.days)} em aberto` : `resolvido em ${it.days} ${daysLabel(it.days)}`;
 
 export function itemShareMeta(it: Item, muni: Municipality): { meta: Meta[]; links: { rel: string; href: string }[] } {
-  const url = `${site(muni)}/o/${it.id}`;
+  const url = itemUrl(muni, it.id);
   const version = `${it.days}${isOpen(it) ? "a" : "r"}${it.photos.length}`;
-  const category = muni.categories.find((c) => c.key === it.category)?.label ?? it.category;
-  const place = muni.neighborhoods.find((n) => n.slug === it.neighborhood)?.name;
+  const category = categoryLabel(muni, it.category);
+  const place = bairroName(muni, it.neighborhood);
   const where = place ? `${category} · ${place}` : category;
   const demo = it.demo ? "Exemplo, dados fictícios. " : "";
   return {
@@ -45,7 +53,7 @@ export function itemShareMeta(it: Item, muni: Municipality): { meta: Meta[]; lin
       ...common(
         muni,
         url,
-        `${site(muni)}/api/cartao/o/${it.id}?v=${version}`,
+        `${siteUrl(muni)}/api/cartao/o/${it.id}?v=${version}`,
         `${it.title}: ${clockText(it)}. ${where}.`,
       ),
     ],
@@ -62,7 +70,7 @@ export interface BairroCounts {
 }
 
 export function bairroShareMeta(b: BairroCounts, muni: Municipality) {
-  const url = `${site(muni)}/bairro/${b.slug}`;
+  const url = `${siteUrl(muni)}/bairro/${b.slug}`;
   const counts = `${b.open} ${b.open === 1 ? "registro aberto" : "registros abertos"}${
     b.overdue ? `, ${b.overdue} há mais de ${muni.deadlineDays} dias` : ""
   }`;
@@ -77,7 +85,7 @@ export function bairroShareMeta(b: BairroCounts, muni: Municipality) {
       ...common(
         muni,
         url,
-        `${site(muni)}/api/cartao/bairro/${b.slug}?v=${b.open}-${b.overdue}`,
+        `${siteUrl(muni)}/api/cartao/bairro/${b.slug}?v=${b.open}-${b.overdue}`,
         `${b.name}: ${counts}.`,
       ),
     ],

@@ -1,12 +1,12 @@
-import { SignupChannelSchema } from "@fala/core";
+import { SignupChannelSchema, siteUrl } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { LandingPage } from "@/features/landing/landing-page";
-import { queueQuery } from "@/lib/city";
+import { queueQuery } from "@/features/landing/queries";
 
-const SITE = `https://${canoas.branding.domain}/`;
+const SITE = `${siteUrl(canoas)}/`;
 const TITLE = "Fala, Canoas · o que está quebrado na sua rua, contado em dias";
 const DESCRIPTION =
   "Mapa independente e de código aberto para registrar problemas urbanos de Canoas (RS) com foto e acompanhar, em dias, quanto tempo levam para ser resolvidos. Entre na fila do seu bairro.";

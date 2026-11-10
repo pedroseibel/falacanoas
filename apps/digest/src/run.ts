@@ -30,7 +30,7 @@ export interface DigestStore {
   exclusive<T>(f: () => Promise<T>): Promise<T | null>;
 }
 
-export interface Attachment {
+interface Attachment {
   filename: string;
   contentType: string;
   content: Uint8Array;

@@ -1,3 +1,4 @@
+import { base64url } from "@fala/core";
 /**
  * Web Push, by the standards and nothing else (RFC 8291 message encryption, RFC 8292 VAPID), on
  * WebCrypto, so it runs in a Worker. The browser's push service (Google's, Mozilla's, Apple's) carries
@@ -24,12 +25,6 @@ export interface Vapid {
 
 const enc = new TextEncoder();
 
-export const toBase64Url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll("+", "-")
-    .replaceAll("/", "_")
-    .replace(/=+$/, "");
-
 export function fromBase64Url(s: string): Uint8Array<ArrayBuffer> {
   const b64 = s.replaceAll("-", "+").replaceAll("_", "/");
   return Uint8Array.from(atob(b64 + "=".repeat((4 - (b64.length % 4)) % 4)), (c) => c.charCodeAt(0));
@@ -55,7 +50,6 @@ async function hkdf(salt: Uint8Array, ikm: Uint8Array, info: Uint8Array, length:
   return new Uint8Array(bits);
 }
 
-/** A P-256 key pair for ECDH, with its public half in raw form. */
 export interface EcdhPair {
   privateKey: CryptoKey;
   publicRaw: Uint8Array;
@@ -113,8 +107,8 @@ export async function encryptPayload(
 
 /** The VAPID Authorization header for an endpoint's push service (RFC 8292), valid 12 hours. */
 export async function vapidAuthorization(endpoint: string, vapid: Vapid, now = Date.now()): Promise<string> {
-  const header = toBase64Url(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
-  const claims = toBase64Url(
+  const header = base64url(enc.encode(JSON.stringify({ typ: "JWT", alg: "ES256" })));
+  const claims = base64url(
     enc.encode(
       JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(now / 1000) + 12 * 3600, sub: vapid.subject }),
     ),
@@ -129,7 +123,7 @@ export async function vapidAuthorization(endpoint: string, vapid: Vapid, now = D
   const signature = new Uint8Array(
     await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, enc.encode(`${header}.${claims}`)),
   );
-  return `vapid t=${header}.${claims}.${toBase64Url(signature)}, k=${vapid.publicKey}`;
+  return `vapid t=${header}.${claims}.${base64url(signature)}, k=${vapid.publicKey}`;
 }
 
 export type PushOutcome = "sent" | "gone" | "failed";

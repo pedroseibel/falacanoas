@@ -43,7 +43,10 @@ export function readVerdict(body: unknown): { classification: KnownClass; matchT
     classification: "no-known-match",
     matchType: null,
   };
-  for (const entry of Object.values(scanned)) {
+  const entries = Object.values(scanned);
+  // Every hash sent comes back as a key (null when it has no match): an empty answer is no answer.
+  if (!entries.length) throw new Error("scanned_hashes vazio");
+  for (const entry of entries) {
     // The SDK documents null for a hash with no match.
     if (entry === null) continue;
     if (typeof entry !== "object" || !("classification" in entry) || !isClass(entry.classification))

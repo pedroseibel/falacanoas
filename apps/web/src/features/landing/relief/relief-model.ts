@@ -8,7 +8,7 @@ import { RESOLVED_VOTES_TO_CLOSE } from "@fala/core";
  * say it was fixed. The pin is an example from the fixtures, and the figure says so.
  */
 
-export const SEND_HOUR = 18;
+const SEND_HOUR = 18;
 /** The example pin (fixtures): its code, bairro, the time it was registered and the day it was fixed. */
 export const EXAMPLE: { code: string; bairro: string; registeredAt: number; fixedOnDay: number } = {
   code: "7K3QF",
@@ -16,7 +16,7 @@ export const EXAMPLE: { code: string; bairro: string; registeredAt: number; fixe
   registeredAt: 14 * 60 + 20,
   fixedOnDay: 43,
 };
-export const VOTES = RESOLVED_VOTES_TO_CLOSE;
+const VOTES = RESOLVED_VOTES_TO_CLOSE;
 
 export type Phase = "registrar" | "enviar" | "contar" | "confirmar" | "resolvido";
 
@@ -44,7 +44,6 @@ const ease = (t: number) => {
   return x < 0.5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2;
 };
 
-/** The relief at `t` seconds into the loop. */
 export function stateAt(t: number): ReliefState {
   let at = ((t % LOOP) + LOOP) % LOOP;
   let phase: Phase = "registrar";
@@ -73,7 +72,7 @@ export function stateAt(t: number): ReliefState {
 /** A still moment for reduced motion: the clock past the deadline, nobody has confirmed yet. */
 export const STILL_AT = TOUR.registrar + TOUR.enviar + TOUR.contar * 0.95;
 
-export const clockText = (minutes: number) => {
+const clockText = (minutes: number) => {
   const m = Math.round(minutes) % (24 * 60);
   return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}`;
 };

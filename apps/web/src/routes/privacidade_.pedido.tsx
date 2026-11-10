@@ -3,9 +3,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { ReturnPathSchema, returnPath } from "@/features/auth/auth-search";
 import { DataRequestPage } from "@/features/legal/data-request-page";
-import { accountQuery } from "@/lib/city";
+import { accountQuery } from "@/lib/account";
 import { getAuthConfig } from "@/server/account";
-import { useBackLink } from "./-auth-links";
+import { useBackLink } from "./-links";
 
 const SearchSchema = z.object({
   volta: ReturnPathSchema.optional().catch(undefined),

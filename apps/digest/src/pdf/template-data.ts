@@ -45,7 +45,6 @@ export function scaleBar(widthMetres: number, target = 0.2): { label: string; fr
   return { label: m >= 1000 ? `${m / 1000} km` : `${m} m`, fraction: m / widthMetres };
 }
 
-/** Marker positions as fractions of the map, for the template. */
 export const markerFractions = (placed: MarkerOut[], width: number, height: number): MapAsset["markers"] =>
   placed.map((m) => ({
     n: m.n,
@@ -65,7 +64,7 @@ const range = (entries: DigestEntry[]) => {
 const bairrosIn = (entries: DigestEntry[]) => new Set(entries.map((e) => e.bairro).filter(Boolean)).size;
 
 /** A body's name without "Secretaria de", for the head of its pages. */
-export const shortAgency = (agency: string) => agency.replace(/^Secretaria (Municipal )?(de|da|do|das|dos) /, "");
+const shortAgency = (agency: string) => agency.replace(/^Secretaria (Municipal )?(de|da|do|das|dos) /, "");
 
 export function templateData(
   doc: DigestDocument,
@@ -179,5 +178,3 @@ export function templateData(
     })),
   };
 }
-
-export type TemplateData = ReturnType<typeof templateData>;

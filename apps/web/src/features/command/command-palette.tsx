@@ -1,4 +1,4 @@
-import { categoryOf, isOpen, type Item, type Municipality } from "@fala/core";
+import { categoryOf, daysLabel, isOpen, isOverDeadline, type Item, type Municipality, whereOf } from "@fala/core";
 import { useSelector } from "@tanstack/react-store";
 import {
   ArrowRight,
@@ -34,10 +34,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
-import { whereOf } from "@/features/map/item-card";
-import { pinIntent } from "@/features/map/pin-intent";
-import { queryWords } from "@/features/map/selectors";
-import { setTheme, useTheme, type Theme } from "@/features/voce/theme";
+import { pinIntent } from "@/lib/pin-intent";
+import { queryWords } from "@/lib/search";
+import { setTheme, useTheme, type Theme } from "@/lib/theme";
 import { useMountEffect } from "@/hooks/use-mount-effect";
 import { cn } from "@/lib/utils";
 import {
@@ -52,7 +51,7 @@ import {
 import { closePalette, openPalette, paletteStore } from "./palette-store";
 
 /** Pages the palette goes to; the route adapter turns them into navigation. */
-export type PalettePage =
+type PalettePage =
   | "/mapa"
   | "/placar"
   | "/voce"
@@ -323,7 +322,10 @@ function PaletteBody({
         <PinRow key={it.id} it={it} muni={muni} onSelect={() => onDone(() => onPin(it.id))} />
       ))}
       {pins.total > 1 && (
-        <CommandItem value="ver-no-mapa" onSelect={() => onDone(() => onMapSearch({ q: query.trim(), f: undefined }))}>
+        <CommandItem
+          value="ver-no-mapa"
+          onSelect={() => onDone(() => onMapSearch({ q: query.trim().slice(0, 80), f: undefined }))}
+        >
           <span className="grid size-8 shrink-0 place-items-center text-muted-foreground">
             <ArrowRight />
           </span>
@@ -363,7 +365,6 @@ function PaletteBody({
       <CommandList className="max-h-96">
         <CommandEmpty>
           <p className="font-medium">Nada encontrado para “{query.trim()}”.</p>
-          <p className="mt-1 text-muted-foreground">Busque pelo título, pelo bairro ou pelo código do registro.</p>
         </CommandEmpty>
         {leads && bairroGroup}
         {pinGroup}
@@ -411,7 +412,7 @@ function Commands({ heading, commands }: { heading: string; commands: PaletteCom
 
 function PinRow({ it, muni, onSelect }: { it: Item; muni: Municipality; onSelect: () => void }) {
   const open = isOpen(it);
-  const late = open && it.days > muni.deadlineDays;
+  const late = isOverDeadline(it, muni.deadlineDays);
   return (
     <CommandItem value={`pin:${it.id}`} onSelect={onSelect}>
       <span className="grid size-8 shrink-0 place-items-center rounded-md border border-hairline bg-panel-3 text-muted-foreground">
@@ -431,7 +432,7 @@ function PinRow({ it, muni, onSelect }: { it: Item; muni: Municipality; onSelect
         <span className="font-mono tracking-wide">{it.id}</span>
         {open ? (
           <span className={cn("tabular-nums", late && "text-signal-text")}>
-            {it.days} {it.days === 1 ? "dia" : "dias"}
+            {it.days} {daysLabel(it.days)}
             {late && <span className="sr-only">, acima do prazo de referência</span>}
           </span>
         ) : (

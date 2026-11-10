@@ -1,5 +1,5 @@
+import { itemPath, whereOf } from "@fala/core";
 import type { Item, Municipality } from "@fala/core";
-import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "@tanstack/react-store";
 import { Copy, Map as MapIcon, Share2, X } from "lucide-react";
 import { useState } from "react";
@@ -9,11 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
-import { whereOf } from "@/features/map/item-card";
-import { cityQuery, itemQuery } from "@/lib/city";
+import { useShowItem } from "@/lib/city";
 import { PHONE_QUERY, useMediaQuery } from "@/lib/use-media-query";
 import { cn } from "@/lib/utils";
-import { Header, ReportForm, type Author, type Created, type Head } from "./report-form";
+import { ReportForm, type Author, type Created } from "./report-form";
+import { Header, type Head } from "@/components/sheet-head";
 import { joinMessage } from "./report-model";
 import { closeReport, reportStore } from "./report-store";
 
@@ -27,8 +27,6 @@ export interface ReportDialogProps {
   author: Author | "guest" | null;
   /** Turnstile site key, for the guest pin's robot check. */
   turnstileSiteKey: string | null;
-  /** Server data changed: the route re-syncs the map. */
-  onChanged: () => void;
   /** Opens an item on the map (the route adapter owns navigation); `key` opens a guest pin in moderation. */
   onView: (id: string, key?: string) => void;
 }
@@ -74,25 +72,17 @@ function ReportFlow({
   author,
   phone,
   head,
-  onChanged,
   onView,
   turnstileSiteKey,
 }: Omit<ReportDialogProps, "author"> & { author: Author | "guest"; phone: boolean; head: Head }) {
-  const queryClient = useQueryClient();
   const [done, setDone] = useState<Created | "queued" | null>(null);
 
   const guest = author === "guest";
-  /** Puts the server's copy of the item in the cache, so the rail, the map and the item page show it at once. */
+  const showItem = useShowItem();
+  /** The server's copy of the item, on the rail, the map and its page at once. */
   const remember = (item: Item) => {
     // A guest pin waits for moderation: it isn't on the map yet.
-    if (item.moderation) return;
-    queryClient.setQueryData(cityQuery.queryKey, (city) => {
-      if (!city) return city;
-      const known = city.items.some((i) => i.id === item.id);
-      return { ...city, items: known ? city.items.map((i) => (i.id === item.id ? item : i)) : [item, ...city.items] };
-    });
-    queryClient.setQueryData(itemQuery(item.id).queryKey, item);
-    onChanged();
+    if (!item.moderation) showItem(item);
   };
 
   if (done === "queued") return <QueuedDone head={head} />;
@@ -125,13 +115,10 @@ function QueuedDone({ head }: { head: Head }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <Header head={head} title="Guardado neste celular" focus>
-        A conexão falhou, mas nada se perdeu: o registro e as fotos ficaram guardados aqui. Eles vão ser enviados
-        sozinhos quando a internet voltar, com o Fala aberto. Não precisa registrar de novo.
+        A conexão falhou. O registro e as fotos ficaram guardados aqui e vão ser enviados sozinhos quando a internet
+        voltar, com o Fala aberto. Não precisa registrar de novo.
       </Header>
       <div className="grid min-h-0 flex-1 content-start gap-4 overflow-y-auto px-5 py-5">
-        <p className="rounded-xl border border-hairline bg-muted px-3.5 py-2.5 text-sm text-pretty text-ink-2">
-          Um aviso no canto da tela mostra o que está esperando. Quando for enviado, aparece o código do registro.
-        </p>
         <Button variant="outline" className="justify-self-start" onClick={closeReport}>
           Fechar
         </Button>
@@ -163,7 +150,11 @@ function RisingCode({ code }: { code: string }) {
 }
 
 async function share(item: Item) {
-  const data = { title: item.title, text: `${item.title} · Fala, Canoas`, url: `${location.origin}/o/${item.id}` };
+  const data = {
+    title: item.title,
+    text: `${item.title} · Fala, Canoas`,
+    url: `${location.origin}${itemPath(item.id)}`,
+  };
   if (typeof navigator.canShare === "function" && navigator.canShare(data)) {
     // Closing the share sheet rejects; nothing to report.
     await navigator.share(data).catch(() => undefined);
@@ -276,7 +267,7 @@ function GuestDone({
   const key = new URL(url, "https://fala.invalid").searchParams.get("chave") ?? undefined;
   const copy = () =>
     void navigator.clipboard.writeText(url).then(
-      () => toast("Link copiado. Guarde em um lugar seguro."),
+      () => toast("Link copiado."),
       () => toast("Não deu para copiar. Selecione o link e copie."),
     );
   return (

@@ -1,10 +1,15 @@
 import {
+  CONFIRMATION_MIN_HOURS,
+  DAY_MS,
+  daysLabel,
   isOpen,
-  localStamp,
-  QUIET_CLOSE_DAYS,
-  RESOLVED_VOTES_TO_CLOSE,
   type Item,
+  localDay,
   type Municipality,
+  QUIET_CLOSE_DAYS,
+  quietCloseDue,
+  RESOLVED_VOTES_TO_CLOSE,
+  resolvedCloses,
 } from "@fala/core";
 import {
   Bell,
@@ -20,15 +25,15 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useRef, useState, type ReactNode } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Thumb } from "@/features/report/photo-thumb";
-import { preparePhoto } from "@/features/report/photo";
+import { Thumb } from "@/components/photo-thumb";
+import { preparePhoto } from "@/lib/photo";
 import type { useItemActions } from "./use-item-actions";
 
 type Actions = ReturnType<typeof useItemActions>;
 
-const DAY = 864e5;
-const day = (iso: string, timezone: string) => localStamp(new Date(iso), timezone).split(" · ")[0];
+const day = (iso: string, timezone: string) => localDay(new Date(iso), timezone);
 
 /** A hidden camera-or-gallery input, opened by a button elsewhere. Photos are re-encoded on the device first. */
 export function usePhotoInput(onPicked: (files: File[]) => void) {
@@ -44,7 +49,12 @@ export function usePhotoInput(onPicked: (files: File[]) => void) {
       onChange={async (e) => {
         const files = [...(e.currentTarget.files ?? [])];
         e.currentTarget.value = "";
-        if (files.length) onPicked(await Promise.all(files.map(preparePhoto)));
+        if (!files.length) return;
+        try {
+          onPicked(await Promise.all(files.map(preparePhoto)));
+        } catch {
+          toast("Não deu para abrir a foto. Tente outra.");
+        }
       }}
     />
   );
@@ -104,7 +114,6 @@ export function ItemActions({
   muni: Municipality;
   actions: Actions;
   now: Date;
-  /** Focuses the update composer. */
   onWrite: () => void;
 }) {
   const [resolving, setResolving] = useState(false);
@@ -120,10 +129,9 @@ export function ItemActions({
       size="action"
       variant={v?.following ? "default" : "outline"}
       aria-pressed={Boolean(v?.following)}
-      disabled={busy("follow")}
       onClick={a.toggleFollow}
     >
-      {busy("follow") ? <Spin /> : <Bell data-icon="inline-start" />}
+      <Bell data-icon="inline-start" />
       {v?.following ? "Acompanhando" : "Acompanhar"}
     </Button>
   );
@@ -198,8 +206,8 @@ export function ItemActions({
     );
 
   // Days until it closes on its own; `now` can lag the vote by a minute, so clamp to the rule's range.
-  const due = it.resolvingSince ? new Date(it.resolvingSince).getTime() + QUIET_CLOSE_DAYS * DAY : 0;
-  const left = Math.min(QUIET_CLOSE_DAYS, Math.max(1, Math.ceil((due - now.getTime()) / DAY)));
+  const due = it.resolvingSince ? quietCloseDue(it.resolvingSince).getTime() : 0;
+  const left = Math.min(QUIET_CLOSE_DAYS, Math.max(1, Math.ceil((due - now.getTime()) / DAY_MS)));
   const votes = it.resolvedVotes ?? 0;
 
   return (
@@ -214,7 +222,7 @@ export function ItemActions({
               Está resolvido?
             </b>{" "}
             {closing
-              ? `${votes === 1 ? "Um vizinho disse" : `${votes} vizinhos disseram`} que sim${it.resolvingSince ? `, em ${day(it.resolvingSince, muni.timezone)}` : ""}. Fecha com mais ${RESOLVED_VOTES_TO_CLOSE - votes === 1 ? "um vizinho" : `${RESOLVED_VOTES_TO_CLOSE - votes} vizinhos`}, ou em ${left} ${left === 1 ? "dia" : "dias"} sem contestação.`
+              ? `${votes === 1 ? "Um vizinho disse" : `${votes} vizinhos disseram`} que sim${it.resolvingSince ? `, em ${day(it.resolvingSince, muni.timezone)}` : ""}. Fecha com mais ${RESOLVED_VOTES_TO_CLOSE - votes === 1 ? "um vizinho" : `${RESOLVED_VOTES_TO_CLOSE - votes} vizinhos`}, ou em ${left} ${daysLabel(left)} sem contestação.`
               : "A Prefeitura diz que resolveu. Quem mora perto confere."}
           </p>
           <div className="flex flex-wrap gap-2">
@@ -255,15 +263,14 @@ export function ItemActions({
 
       {v?.countsFrom && (
         <p className="text-xs text-muted-foreground">
-          Sua palavra passa a contar em {day(v.countsFrom, muni.timezone)}, 72 horas depois de você confirmar o celular.
-          Atualizações e fotos já valem.
+          Sua palavra passa a contar em {day(v.countsFrom, muni.timezone)}, {CONFIRMATION_MIN_HOURS} horas depois de
+          você confirmar o celular. Atualizações e fotos já valem.
         </p>
       )}
     </div>
   );
 }
 
-/** "Foi resolvido?", inline: an optional photo of the after, then the confirmation. */
 function ResolvePanel({
   author,
   votes,
@@ -279,7 +286,7 @@ function ResolvePanel({
 }) {
   const [after, setAfter] = useState<File | null>(null);
   const photo = usePhotoInput((files) => setAfter(files[0] ?? null));
-  const closes = author || votes + 1 >= RESOLVED_VOTES_TO_CLOSE;
+  const closes = resolvedCloses(author, votes + 1);
   return (
     <section aria-labelledby="resolver" className="grid gap-3 rounded-xl border border-hairline bg-muted p-3.5">
       <div className="grid gap-1">
@@ -291,8 +298,7 @@ function ResolvePanel({
             ? "Você registrou este problema: com a sua confirmação, ele fecha."
             : closes
               ? "Com a sua confirmação, o registro fecha."
-              : `Com a sua e a de mais um vizinho, o registro fecha. Sem contestação, fecha em ${QUIET_CLOSE_DAYS} dias.`}{" "}
-          Uma foto do depois ajuda quem confere.
+              : `Com a sua e a de mais um vizinho, o registro fecha. Sem contestação, fecha em ${QUIET_CLOSE_DAYS} dias.`}
         </p>
       </div>
       {photo.element}

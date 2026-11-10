@@ -4,10 +4,12 @@ import { Client } from "pg";
 import * as schema from "./schema";
 
 export type Db = NodePgDatabase<typeof schema>;
+export type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
+export type Q = Db | Tx;
 
 function connectionString(): string {
-  // Production reads a Hyperdrive binding here (BUILD.md 4.5); development uses the Supabase pooler.
-  // Either way the role is fala_app: the fala schema, nothing of the vault's.
+  // The Supabase pooler, as fala_app: the fala schema, nothing of the vault's. (Hyperdrive in
+  // production is still to do: BUILD.md 4.5.)
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL não configurada: veja apps/web/.dev.vars.example.");
   return url;

@@ -69,7 +69,6 @@ const img = (mediaId: string, caption?: string): WaMessage => ({ kind: "image", 
 const inside: WaMessage = { kind: "location", lat: -29.95, lng: -51.15 };
 const outside: WaMessage = { kind: "location", lat: -30.5, lng: -51.15 };
 
-/** Runs messages through the conversation, threading the session, and returns every turn. */
 function run(messages: WaMessage[], start: ReportSession | null = null, now = 1_000_000) {
   let session = start;
   return messages.map((m, i) => {

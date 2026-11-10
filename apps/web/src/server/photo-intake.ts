@@ -5,7 +5,6 @@ import { screenStored } from "./screening";
 
 export const PHOTO_ERROR = "Não deu para ler uma das fotos. Tire outra ou escolha outra da galeria.";
 
-/** Strips metadata from every photo, then stores them, but only if all of them are images. */
 export async function keepPhotos(files: File[]): Promise<{ keys: string[]; srcs: string[] } | null> {
   const clean = await Promise.all(files.map(async (f) => stripImageMetadata(new Uint8Array(await f.arrayBuffer()))));
   const images = clean.flatMap((image) => (image ? [image] : []));

@@ -3,9 +3,7 @@ import { reportSchema, type ReportFields } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import {
   JoinSchema,
-  fitWithin,
   joinMessage,
-  listPt,
   missingParts,
   nearLabel,
   pickerStart,
@@ -14,6 +12,8 @@ import {
   toJoinFormData,
   toReportFormData,
 } from "./report-model";
+import { listPt } from "@fala/core";
+import { fitWithin } from "@/lib/photo";
 
 const photo = () => new File([new Uint8Array([1, 2, 3])], "foto.webp", { type: "image/webp" });
 const niteroi = canoas.neighborhoods.find((n) => n.slug === "niteroi");

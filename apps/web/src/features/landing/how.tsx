@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { MiniMap } from "./bairro-map";
-import { Bar, Num, Panel, SecHead, Section, Stage } from "./bits";
+import { Num, SecHead, Section, Stage } from "./bits";
+import { Bar, Panel } from "@/components/panel";
 import { DIGEST_ROWS } from "./landing-model";
 import { countUpOnView } from "./motion";
 
@@ -301,7 +302,7 @@ export function HowItWorks({ muni }: { muni: Municipality }) {
   return (
     <Section id="como-funciona" divided>
       <SecHead id="como-funciona" title="Como vai funcionar, do celular ao conserto.">
-        O mapa abre bairro por bairro. Estes são os quatro passos de cada registro, com um exemplo do começo ao fim.
+        O mapa abre bairro por bairro.
       </SecHead>
       <div className="grid grid-cols-pair items-start gap-split max-split:grid-cols-1">
         <div role="tablist" aria-orientation="vertical" aria-label="Os quatro passos de um registro" className="grid">

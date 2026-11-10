@@ -1,4 +1,4 @@
-import { prescreen, refusalFor, refusedInUpdates, type Thread } from "@fala/core";
+import { ItemIdSchema, prescreen, refusalFor, refusedInUpdates, type Thread } from "@fala/core";
 import { canoas } from "@fala/instance-canoas";
 import { createServerFn } from "@tanstack/react-start";
 import { and, desc, eq, sql } from "drizzle-orm";
@@ -7,9 +7,9 @@ import { db } from "./db/client";
 import { items, postReports, posts, threads } from "./db/schema";
 import { boardThreads, pinThread } from "./forum-store";
 import { member, mutedRefusal, type Failure } from "./member";
-import { isModerator, moderatorOf } from "./moderation-store";
+import { covers } from "./moderation-store";
+import { sessionModerator } from "./moderator";
 import { markNickPublished } from "./nicks";
-import { getSession } from "./session";
 import { recordEvidence } from "./vault";
 
 /**
@@ -31,8 +31,8 @@ export const getThreads = createServerFn({ method: "GET" })
   .handler(({ data }) => boardThreads(data));
 
 export const getPinThread = createServerFn({ method: "GET" })
-  .validator(z.string().min(4).max(12))
-  .handler(({ data }) => pinThread(data.toUpperCase()));
+  .validator(ItemIdSchema)
+  .handler(({ data }) => pinThread(data));
 
 export const startThread = createServerFn({ method: "POST" })
   .validator(z.object({ neighborhood: Slug, title: z.string().trim().min(8).max(160) }))
@@ -55,12 +55,7 @@ export const startThread = createServerFn({ method: "POST" })
 
 /** A reply on a bairro thread, or under a pin: the pin's conversation starts with its first reply. */
 export const replyToThread = createServerFn({ method: "POST" })
-  .validator(
-    z.union([
-      z.object({ threadId: z.uuid(), text: Text }),
-      z.object({ itemId: z.string().min(4).max(12), text: Text }),
-    ]),
-  )
+  .validator(z.union([z.object({ threadId: z.uuid(), text: Text }), z.object({ itemId: ItemIdSchema, text: Text })]))
   .handler(async ({ data }): Promise<Failure | { ok: true; thread: Thread }> => {
     const who = await member("conversar");
     if ("error" in who) return who;
@@ -77,7 +72,7 @@ export const replyToThread = createServerFn({ method: "POST" })
       const [item] = await tx
         .select({ id: items.id, title: items.title, neighborhood: items.neighborhood, moderation: items.moderation })
         .from(items)
-        .where(eq(items.id, data.itemId.toUpperCase()));
+        .where(eq(items.id, data.itemId));
       if (!item || item.moderation !== "published") return null;
       const [existing] = await tx.select({ id: threads.id }).from(threads).where(eq(threads.itemId, item.id));
       if (existing) return existing.id;
@@ -93,7 +88,7 @@ export const replyToThread = createServerFn({ method: "POST" })
       .values({ threadId, text: data.text, authorNick: who.nick, accountId: who.id, createdAt: now });
     await db.update(threads).set({ lastPostAt: now }).where(eq(threads.id, threadId));
     await markNickPublished(who.id);
-    await recordEvidence("comment", who.id, "itemId" in data ? data.itemId.toUpperCase() : null);
+    await recordEvidence("comment", who.id, "itemId" in data ? data.itemId : null);
     const [row] = await db.select().from(threads).where(eq(threads.id, threadId));
     const thread = row?.itemId
       ? await pinThread(row.itemId)
@@ -126,9 +121,8 @@ export interface ReportedPost {
  * never their own posts.
  */
 export const getReportedPosts = createServerFn({ method: "GET" }).handler(async (): Promise<ReportedPost[] | null> => {
-  const user = (await getSession())?.user;
-  const mod = user ? await moderatorOf(user.id) : null;
-  if (!user || !mod) return null;
+  const who = await sessionModerator();
+  if (!who) return null;
   const rows = await db
     .select({
       id: posts.id,
@@ -148,7 +142,7 @@ export const getReportedPosts = createServerFn({ method: "GET" }).handler(async 
     .orderBy(desc(sql`count(${postReports.id})`))
     .limit(50);
   return rows
-    .filter((r) => r.author !== user.id && (!mod.neighborhoods || mod.neighborhoods.includes(r.neighborhood ?? "")))
+    .filter((r) => r.author !== who.id && covers(who.mod, r.neighborhood))
     .map(({ id, text, by, threadTitle, reports }) => ({ id, text, by, threadTitle, reports }));
 });
 
@@ -156,8 +150,8 @@ export const getReportedPosts = createServerFn({ method: "GET" }).handler(async 
 export const decidePost = createServerFn({ method: "POST" })
   .validator(z.object({ postId: z.uuid(), hide: z.boolean() }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
-    const user = (await getSession())?.user;
-    if (!user || !(await isModerator(user.id))) return { ok: false, error: "Só moderadores decidem." };
+    const user = await sessionModerator();
+    if (!user) return { ok: false, error: "Só moderadores decidem." };
     const [post] = await db.select({ author: posts.accountId }).from(posts).where(eq(posts.id, data.postId));
     if (!post) return { ok: false, error: "Essa mensagem não existe mais." };
     if (post.author === user.id) return { ok: false, error: "Outra pessoa da moderação precisa decidir." };

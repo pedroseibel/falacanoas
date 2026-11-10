@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { AuthSearchSchema, returnPath } from "@/features/auth/auth-search";
 import { MonthlyPage } from "@/features/monthly/monthly-page";
-import { monthlyReportsQuery } from "@/lib/city";
-import { useBackLink } from "./-auth-links";
+import { monthlyReportsQuery } from "@/features/monthly/queries";
+import { useBackLink } from "./-links";
 
 export const Route = createFileRoute("/relatorios")({
   validateSearch: AuthSearchSchema,

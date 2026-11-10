@@ -2,7 +2,8 @@ import type { Municipality } from "@fala/core";
 import { Plus } from "lucide-react";
 import { EmergencyLines } from "@/components/emergency";
 import type { ReactNode } from "react";
-import { Fn, Num, Section, textLink } from "./bits";
+import { Fn, Num, Section } from "./bits";
+import { textLink } from "@/components/text-link";
 import { cn } from "@/lib/utils";
 
 /** The answers name the instance's own emergency lines, so the list is built for a municipality. */
@@ -85,9 +86,6 @@ export function Faq({ muni }: { muni: Municipality }) {
           <h2 id="h-perguntas" className="text-title font-semibold text-balance">
             Perguntas de quem mora aqui.
           </h2>
-          <p className="max-w-claim text-pretty text-ink-2">
-            O que o Fala, Canoas faz, o que ele não faz e o que acontece com os seus dados.
-          </p>
         </div>
         <div>
           {questions(muni).map(({ q, a }) => (

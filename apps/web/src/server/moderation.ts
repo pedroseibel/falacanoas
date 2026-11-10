@@ -1,11 +1,12 @@
 import {
   FLAG_LABEL,
-  LIKELY_NUDE,
-  ReportReasonSchema,
-  weightOf,
   type Item,
+  ItemIdSchema,
+  LIKELY_NUDE,
   type ModerationFlag,
   type ReportReason,
+  ReportReasonSchema,
+  weightOf,
 } from "@fala/core";
 import { createServerFn } from "@tanstack/react-start";
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, ne, or, sql } from "drizzle-orm";
@@ -26,19 +27,16 @@ import { findItem, hashKey } from "./items";
 import { member, type Failure } from "./member";
 import {
   ACTOR,
-  applyDecision,
   heldItem,
-  isModerator,
   moderatorOf,
-  restore,
-  targetAccount,
   targetOf,
   type CaseRow,
   type CaseTarget,
+  decide,
+  overturn,
 } from "./moderation-store";
+import { targetAccount, targetAccountSql, aboutItem, caseAuthor, caseAuthorOn, isRemoval } from "./case-target";
 import { notifyFollowers, notifyPlaces } from "./push-send";
-import { recheck, strike } from "./sanctions-store";
-import { MODERATION_GUIDE_VERSION } from "@/features/moderation/guide-version";
 import type { PhotoScreen } from "./screening";
 import {
   awaitingCheck,
@@ -47,6 +45,7 @@ import {
   visibleToModerators,
   type KnownScreen,
 } from "./known-material";
+import { GUIDE_FIRST, guideCurrent, sessionModerator } from "./moderator";
 import { getSession } from "./session";
 
 /**
@@ -98,11 +97,6 @@ export type QueueCase =
   | (CaseBase & { target: "update"; update: { actor: string; text: string; at: string } });
 
 const pinAuthor = alias(itemAuthors, "pin_author");
-const targetAuthors = alias(itemAuthors, "target_author");
-/** Who is behind a case's target (see moderation-store's targetAccount), as one SQL expression. */
-const targetAccountSql = sql<
-  string | null
->`coalesce(${itemPhotos.accountId}, ${itemEvents.accountId}, ${targetAuthors.accountId})`;
 
 const iso = (d: Date) => d.toISOString();
 /** Reports of nudity or a child, and photos the screening service rates as likely nude, go first. */
@@ -112,9 +106,10 @@ const urgent = (c: QueueCase) =>
 
 /** Open cases and open contests, for the moderator's bairros, never about their own posts. */
 export const getModerationQueue = createServerFn({ method: "GET" }).handler(async (): Promise<QueueCase[] | null> => {
-  const user = (await getSession())?.user;
-  const mod = user ? await moderatorOf(user.id) : null;
-  if (!user || !mod) return null;
+  const who = await sessionModerator();
+  if (!who) return null;
+  const { mod } = who;
+  const user = { id: who.id };
   const rows = await db
     .select({
       c: moderationCases,
@@ -134,20 +129,19 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
     .leftJoin(itemPhotos, eq(itemPhotos.id, moderationCases.photoId))
     .leftJoin(photoScreens, eq(photoScreens.storageKey, itemPhotos.storageKey))
     .leftJoin(itemEvents, eq(itemEvents.id, moderationCases.eventId))
-    .leftJoin(
-      targetAuthors,
+    .leftJoin(caseAuthor, caseAuthorOn)
+    .where(
       and(
-        eq(targetAuthors.itemId, moderationCases.itemId),
-        isNull(moderationCases.photoId),
-        isNull(moderationCases.eventId),
+        or(eq(moderationCases.status, "open"), eq(moderationCases.contestStatus, "open")),
+        // Scoped before the limit: a moderator of one bairro isn't left with an empty page while the
+        // hundred oldest cases belong to other bairros.
+        sql`${targetAccountSql} is distinct from ${user.id}`,
+        mod.neighborhoods ? inArray(items.neighborhood, mod.neighborhoods) : undefined,
       ),
     )
-    .where(or(eq(moderationCases.status, "open"), eq(moderationCases.contestStatus, "open")))
     .orderBy(asc(moderationCases.createdAt))
     .limit(100);
-  const mine = rows.filter(
-    (r) => r.account !== user.id && (!mod.neighborhoods || mod.neighborhoods.includes(r.neighborhood ?? "")),
-  );
+  const mine = rows;
   if (!mine.length) return [];
 
   const ids = mine.map((r) => r.c.id);
@@ -160,15 +154,8 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
           .from(moderationCases)
           .leftJoin(itemPhotos, eq(itemPhotos.id, moderationCases.photoId))
           .leftJoin(itemEvents, eq(itemEvents.id, moderationCases.eventId))
-          .leftJoin(
-            targetAuthors,
-            and(
-              eq(targetAuthors.itemId, moderationCases.itemId),
-              isNull(moderationCases.photoId),
-              isNull(moderationCases.eventId),
-            ),
-          )
-          .where(and(inArray(moderationCases.status, ["rejected", "republish"]), inArray(targetAccountSql, accounts)))
+          .leftJoin(caseAuthor, caseAuthorOn)
+          .where(and(isRemoval, inArray(targetAccountSql, accounts)))
           .groupBy(targetAccountSql)
       : [],
     db
@@ -261,8 +248,7 @@ export const getModerationQueue = createServerFn({ method: "GET" }).handler(asyn
  * who doesn't moderate, or when the check isn't required.
  */
 export const getAwaitingCheck = createServerFn({ method: "GET" }).handler(async () => {
-  const user = (await getSession())?.user;
-  if (!user || !(await isModerator(user.id)) || !hashMatchingRequired()) return null;
+  if (!(await sessionModerator()) || !hashMatchingRequired()) return null;
   return awaitingCheck(db, new Date());
 });
 
@@ -296,11 +282,9 @@ async function announce(c: CaseRow): Promise<void> {
 export const decideCase = createServerFn({ method: "POST" })
   .validator(DecisionSchema)
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
-    const user = (await getSession())?.user;
-    const mod = user ? await moderatorOf(user.id) : null;
-    if (!user || !mod) return { ok: false, error: "Só moderadores decidem." };
-    if (mod.guideVersion !== MODERATION_GUIDE_VERSION)
-      return { ok: false, error: "Leia e aceite o guia da moderação antes de decidir." };
+    const user = await sessionModerator();
+    if (!user) return { ok: false, error: "Só moderadores decidem." };
+    if (!guideCurrent(user.mod)) return GUIDE_FIRST;
     const now = new Date();
     const result = await db.transaction(async (tx): Promise<Failure | { ok: true; c: CaseRow }> => {
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
@@ -315,7 +299,6 @@ export const decideCase = createServerFn({ method: "POST" })
       if (data.decision === "republish" && targetOf(c) !== "item")
         return { ok: false, error: "Só um registro inteiro pode ser republicado." };
       const note = data.decision === "publish" ? null : data.note;
-      const status = data.decision === "publish" ? "published" : data.decision === "reject" ? "rejected" : "republish";
       // Asking to republish signed is not a refusal of the person (round 19).
       const weight =
         data.decision === "reject"
@@ -323,12 +306,7 @@ export const decideCase = createServerFn({ method: "POST" })
           : data.decision === "republish"
             ? "none"
             : "strike";
-      await tx
-        .update(moderationCases)
-        .set({ status, note, weight, decidedBy: user.id, decidedAt: now })
-        .where(eq(moderationCases.id, c.id));
-      await applyDecision(tx, c, data.decision, note, now);
-      if (data.decision === "reject" && weight !== "none") await strike(tx, await targetAccount(tx, c), now);
+      await decide(tx, c, { decision: data.decision, note, weight, by: user.id, now });
       return { ok: true, c };
     });
     if (!result.ok) return result;
@@ -340,11 +318,9 @@ export const decideCase = createServerFn({ method: "POST" })
 export const resolveContest = createServerFn({ method: "POST" })
   .validator(z.object({ caseId: z.uuid(), overturn: z.boolean(), note: z.string().trim().min(3).max(280) }))
   .handler(async ({ data }): Promise<Failure | { ok: true }> => {
-    const user = (await getSession())?.user;
-    const mod = user ? await moderatorOf(user.id) : null;
-    if (!user || !mod) return { ok: false, error: "Só moderadores decidem." };
-    if (mod.guideVersion !== MODERATION_GUIDE_VERSION)
-      return { ok: false, error: "Leia e aceite o guia da moderação antes de decidir." };
+    const user = await sessionModerator();
+    if (!user) return { ok: false, error: "Só moderadores decidem." };
+    if (!guideCurrent(user.mod)) return GUIDE_FIRST;
     const now = new Date();
     const result = await db.transaction(async (tx): Promise<Failure | { ok: true; c: CaseRow }> => {
       const [c] = await tx.select().from(moderationCases).where(eq(moderationCases.id, data.caseId)).for("update");
@@ -355,10 +331,8 @@ export const resolveContest = createServerFn({ method: "POST" })
         .update(moderationCases)
         .set({ contestStatus: data.overturn ? "overturned" : "upheld", contestNote: data.note })
         .where(eq(moderationCases.id, c.id));
-      if (data.overturn) {
-        await restore(tx, c, data.note, now);
-        await recheck(tx, await targetAccount(tx, c), now);
-      } else
+      if (data.overturn) await overturn(tx, c, data.note, now);
+      else
         await tx.insert(itemEvents).values({
           itemId: c.itemId,
           at: now,
@@ -376,13 +350,7 @@ export const resolveContest = createServerFn({ method: "POST" })
 
 /** A case about the item itself (not one of its photos or updates), decided against it. */
 const refusedItemCase = (itemId: string) =>
-  and(
-    eq(moderationCases.itemId, itemId),
-    isNull(moderationCases.photoId),
-    isNull(moderationCases.eventId),
-    inArray(moderationCases.status, ["rejected", "republish"]),
-    isNotNull(moderationCases.decidedAt),
-  );
+  and(eq(moderationCases.itemId, itemId), aboutItem, isRemoval, isNotNull(moderationCases.decidedAt));
 
 /**
  * Whoever posted contests a decision (round 18, Q31): the item's author, through their session or a
@@ -391,7 +359,7 @@ const refusedItemCase = (itemId: string) =>
 export const contestDecision = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      itemId: z.string().min(4).max(12),
+      itemId: ItemIdSchema,
       key: z.string().max(64).nullable(),
       /** A decision about one photo or update; absent for the item's own latest decision. */
       caseId: z.uuid().optional(),
@@ -437,7 +405,7 @@ export const contestDecision = createServerFn({ method: "POST" })
 
 /** For the item page: the latest decision against the item, and whether it was a takedown of a published one. */
 export const getDecision = createServerFn({ method: "GET" })
-  .validator(z.string().min(4).max(12))
+  .validator(ItemIdSchema)
   .handler(async ({ data }) => {
     const [c] = await db
       .select({
@@ -462,7 +430,7 @@ export interface Removal {
 
 /** The signed-in person's photos and updates moderation removed from this item, so they can contest. */
 export const getMyRemovals = createServerFn({ method: "GET" })
-  .validator(z.string().min(4).max(12))
+  .validator(ItemIdSchema)
   .handler(async ({ data }): Promise<Removal[]> => {
     const user = (await getSession())?.user;
     if (!user || user.isAnonymous) return [];
@@ -499,6 +467,5 @@ export const getMyRemovals = createServerFn({ method: "GET" })
 /** Whether the signed-in person moderates, for the link in Você and the takedown in "Denunciar". */
 export const getIsModerator = createServerFn({ method: "GET" }).handler(async () => {
   const who = await member("moderar");
-  if ("error" in who) return false;
-  return isModerator(who.id);
+  return !("error" in who) && Boolean(await moderatorOf(who.id));
 });

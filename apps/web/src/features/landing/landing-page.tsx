@@ -1,3 +1,5 @@
+import { prefersReducedMotion } from "@/lib/reduced-motion";
+import { Wordmark } from "@/components/wordmark";
 import type { Municipality } from "@fala/core";
 import { useStore } from "@tanstack/react-form";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +32,7 @@ function Header() {
       <Wrap className="flex h-16 items-center gap-7">
         <a href="#conteudo" aria-label="Fala, Canoas: início" className="inline-flex items-center gap-3 no-underline">
           <span className="text-wordmark font-semibold whitespace-nowrap">
-            Fala<span className="text-signal">,</span> Canoas
+            <Wordmark />
           </span>
           <Badge variant="chip" className="max-narrow:hidden">
             independente
@@ -92,7 +94,7 @@ export function LandingPage({
   };
   const goJoin = (channel: Channel) => {
     setChannel(channel);
-    const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced = prefersReducedMotion();
     document.getElementById("entrar")?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" });
     setTimeout(
       () => document.getElementById(bairro ? "f-contato" : "f-bairro")?.focus({ preventScroll: true }),

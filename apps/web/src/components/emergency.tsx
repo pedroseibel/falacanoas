@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 const link = "font-medium text-foreground tabular-nums underline-offset-3 hover:underline";
 
 /** A number to call, as a tel: link: short codes as dialled, longer ones with the country code. */
-export function Phone({ line, className }: { line: EmergencyLine; className?: string }) {
+function Phone({ line, className }: { line: EmergencyLine; className?: string }) {
   const href = line.tel.length <= 4 ? `tel:${line.tel}` : `tel:+55${line.tel}`;
   return (
     <a href={href} className={cn(link, className)}>

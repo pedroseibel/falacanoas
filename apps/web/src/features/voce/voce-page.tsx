@@ -1,14 +1,15 @@
-import { CONFIRMATION_MIN_HOURS, initials, localStamp, type Item, type Municipality } from "@fala/core";
+import { bairroName, countsFrom, initials, type Item, localStampInText, type Municipality } from "@fala/core";
 import { useQuery } from "@tanstack/react-query";
 import type { MouseEvent } from "react";
 import { Check, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { textLink } from "@/features/landing/bits";
-import { ItemCard } from "@/features/map/item-card";
+import { textLink } from "@/components/text-link";
+import { ItemCard } from "@/components/item-card";
 import { VolunteerCard } from "./volunteer-card";
-import { followingQuery, isModeratorQuery } from "@/lib/city";
+import { isModeratorQuery } from "@/features/moderation/queries";
+import { followingQuery } from "@/features/voce/queries";
 import { SanctionNotices } from "./sanction-notice";
 import { useNow } from "@/lib/use-now";
 import type { Account } from "@/server/account";
@@ -17,7 +18,7 @@ import { ChangeNumber } from "./change-number";
 import { CloseAccount } from "./close-account";
 import { DownloadData } from "./download-data";
 import { Passkeys } from "./passkeys";
-import { ThemeSchema, setTheme, useTheme, type Theme } from "./theme";
+import { ThemeSchema, setTheme, useTheme, type Theme } from "@/lib/theme";
 
 const THEME_LABEL: Record<Theme, string> = { auto: "Sistema", light: "Claro", dark: "Escuro" };
 const panel = "overflow-hidden rounded-2xl border border-hairline bg-card shadow-soft";
@@ -25,8 +26,8 @@ const panel = "overflow-hidden rounded-2xl border border-hairline bg-card shadow
 /** When this account's confirmations start counting (round 18, Q17), or null if they already do. */
 function confirmationsFrom(account: Account, now: number, timezone: string): string | null {
   if (!account.phoneVerifiedAt || now === 0) return null;
-  const from = new Date(new Date(account.phoneVerifiedAt).getTime() + CONFIRMATION_MIN_HOURS * 36e5);
-  return from.getTime() > now ? localStamp(from, timezone).replace(" · ", ", às ") : null;
+  const from = countsFrom(new Date(account.phoneVerifiedAt));
+  return from.getTime() > now ? localStampInText(from, timezone) : null;
 }
 
 function Levels({ account, timezone }: { account: Account; timezone: string }) {
@@ -44,7 +45,7 @@ function Levels({ account, timezone }: { account: Account; timezone: string }) {
       level: 2,
       done: account.identityVerified,
       label: "Identidade verificada",
-      detail: "Opcional e ainda não disponível. Não muda o que você pode fazer.",
+      detail: "Opcional e ainda não disponível.",
     },
   ];
   return (
@@ -95,7 +96,7 @@ export function VocePage({
 }) {
   const theme = useTheme();
   const nick = account?.nick ?? null;
-  const bairro = muni.neighborhoods.find((n) => n.slug === account?.neighborhood)?.name ?? null;
+  const bairro = bairroName(muni, account?.neighborhood);
   // From the server, by authorship: "Anônimo em público" reports included, since only their owner sees this.
   const { data: following } = useQuery({ ...followingQuery, enabled: Boolean(account && !account.guest) });
   const mine = following?.mine ?? [];
@@ -175,7 +176,7 @@ export function VocePage({
                 Moderação
               </h2>
               <p className="text-sm text-ink-2">
-                Você modera. A fila tem denúncias, fotos novas, registros segurados, contestações e sanções.
+                A fila tem denúncias, fotos novas, registros segurados, contestações e sanções.
               </p>
               <Button variant="outline" className="justify-self-start" onClick={onModerate}>
                 Abrir a fila
