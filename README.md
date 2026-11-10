@@ -8,6 +8,12 @@
   Mapa independente e de código aberto para acompanhar, em dias, os problemas urbanos de Canoas, RS.
 </p>
 
+<p align="center">
+  <img src="docs/mapa.png" width="900" alt="O mapa do Fala, Canoas: à esquerda, a lista de registros com os dias em aberto; à direita, os registros agrupados sobre o mapa da cidade" />
+  <br />
+  <sub>O mapa, com os registros de exemplo (dados fictícios).</sub>
+</p>
+
 Quem mora na cidade registra um problema com foto: buraco, lixo, poste apagado, bueiro entupido, rua que alaga. Uma vez por dia os registros novos vão à Ouvidoria da Prefeitura, e a partir do envio um relógio público conta os dias. O registro só fecha quando os vizinhos confirmam o conserto. Um placar mostra onde os problemas se acumulam e quanto tempo cada órgão leva.
 
 O Fala, Canoas **não é um canal da Prefeitura**. É um projeto independente, sem dinheiro de governos, partidos ou candidatos.
